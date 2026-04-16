@@ -16,18 +16,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isLocal =
+        Env.url.contains('localhost') || Env.url.contains('127.0.0.1');
+
     return MaterialApp(
+      debugShowCheckedModeBanner: isLocal,
       home: Scaffold(
-        appBar: AppBar(title: const Text('Local Supabase Connection')),
-        body: Center(
-          child: StreamBuilder(
-            // Just a test to see if we can reach the Auth module
-            stream: Supabase.instance.client.auth.onAuthStateChange,
-            builder: (context, snapshot) {
-              return const Text('Connection Successful!');
-            },
-          ),
-        ),
+        appBar: AppBar(title: const Text('My App')),
+        body: Center(child: Text('Connection Successful!')),
       ),
     );
   }
