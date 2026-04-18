@@ -51,7 +51,6 @@ CREATE TABLE sites (
 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 firm_id UUID NOT NULL REFERENCES firms(id) ON DELETE CASCADE,
 
-
 name TEXT NOT NULL,
 description TEXT,
 
@@ -241,14 +240,45 @@ ALTER TABLE vendors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expense_attachments ENABLE ROW LEVEL SECURITY;
 
 -- Simple full access (small trusted team)
-CREATE POLICY "Team Full Access" ON firms FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Team Full Access" ON profiles FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Team Full Access" ON sites FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Team Full Access" ON expenses FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Team Full Access" ON documents FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Team Full Access" ON expense_categories FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Team Full Access" ON vendors FOR ALL TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "Team Full Access" ON expense_attachments FOR ALL TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Team Full Access" ON firms
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON profiles
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON sites
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON expenses
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON documents
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON expense_categories
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON vendors
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON expense_attachments
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
 
 -- ########################################################
 -- 8. PERFORMANCE INDEXES (IMPORTANT FOR ANALYTICS)

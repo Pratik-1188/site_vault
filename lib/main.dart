@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:site_vault/feature/site/screen/site_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'env.dart';
 
@@ -8,7 +10,7 @@ Future<void> main() async {
   // Initialize Supabase using the variables from our JSON file
   await Supabase.initialize(url: Env.url, anonKey: Env.anonKey);
 
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -21,10 +23,7 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: isLocal,
-      home: Scaffold(
-        appBar: AppBar(title: const Text('My App')),
-        body: Center(child: Text('Connection Successful!')),
-      ),
+      home: const SitesScreen(), // 👈 show sites screen directly
     );
   }
 }
