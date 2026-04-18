@@ -34,40 +34,37 @@ class DateRange {
 final startedDateRangeProvider = StateProvider<DateRange>((ref) => DateRange());
 
 /// Combines data + filters and returns final list
-final filteredSitesProvider = Provider<List<Site>>((ref) {
+final filteredSitesProvider = Provider<AsyncValue<List<Site>>>((ref) {
   final sitesAsync = ref.watch(sitesProvider);
 
   final selectedFirm = ref.watch(selectedFirmProvider);
   final selectedStatus = ref.watch(selectedStatusProvider);
   final dateRange = ref.watch(startedDateRangeProvider);
 
-  return sitesAsync.when(
-    data: (sites) {
-      return sites.where((site) {
-        if (selectedFirm != null && site.firmId != selectedFirm) return false;
+  return sitesAsync.whenData((sites) {
+    return sites.where((site) {
+      if (selectedFirm != null && site.firmId != selectedFirm) return false;
 
-        if (selectedStatus != null && site.status != selectedStatus) {
+      if (selectedStatus != null && site.status != selectedStatus) {
+        return false;
+      }
+
+      if (dateRange.from != null) {
+        if (site.startedOn == null ||
+            site.startedOn!.isBefore(dateRange.from!)) {
           return false;
         }
+      }
 
-        if (dateRange.from != null) {
-          if (site.startedOn == null ||
-              site.startedOn!.isBefore(dateRange.from!)) {
-            return false;
-          }
+      if (dateRange.to != null) {
+        if (site.startedOn == null || site.startedOn!.isAfter(dateRange.to!)) {
+          return false;
         }
+      }
 
-        if (dateRange.to != null) {
-          if (site.startedOn == null ||
-              site.startedOn!.isAfter(dateRange.to!)) {
-            return false;
-          }
-        }
-
-        return true;
-      }).toList();
-    },
-    loading: () => [],
-    error: (_, _) => [],
-  );
+      return true;
+    }).toList();
+  });
 });
+
+// TODO: Implement infinite scrolling
