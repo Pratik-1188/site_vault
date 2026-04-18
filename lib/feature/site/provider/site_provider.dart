@@ -33,13 +33,17 @@ class DateRange {
 /// Started date range filter
 final startedDateRangeProvider = StateProvider<DateRange>((ref) => DateRange());
 
-/// Combines data + filters and returns final list
+/// Search query for filtering sites by name (case-insensitive)
+final searchQueryProvider = StateProvider<String>((ref) => "");
+
+/// Combines data + filters + search and returns final list
 final filteredSitesProvider = Provider<AsyncValue<List<Site>>>((ref) {
   final sitesAsync = ref.watch(sitesProvider);
 
   final selectedFirm = ref.watch(selectedFirmProvider);
   final selectedStatus = ref.watch(selectedStatusProvider);
   final dateRange = ref.watch(startedDateRangeProvider);
+  final searchQuery = ref.watch(searchQueryProvider);
 
   return sitesAsync.whenData((sites) {
     return sites.where((site) {
@@ -62,9 +66,27 @@ final filteredSitesProvider = Provider<AsyncValue<List<Site>>>((ref) {
         }
       }
 
+      // Apply case-insensitive search
+      if (searchQuery.isNotEmpty) {
+        if (!site.name.toLowerCase().contains(searchQuery.toLowerCase())) {
+          return false;
+        }
+      }
+
       return true;
     }).toList();
   });
 });
 
-// TODO: Implement infinite scrolling
+/// Visible count for pagination (infinite scroll)
+final visibleCountProvider = StateProvider<int>((ref) => 10);
+
+/// Slices the filtered sites for UI pagination
+final paginatedSitesProvider = Provider<AsyncValue<List<Site>>>((ref) {
+  final filteredSitesAsync = ref.watch(filteredSitesProvider);
+  final visibleCount = ref.watch(visibleCountProvider);
+
+  return filteredSitesAsync.whenData((sites) {
+    return sites.take(visibleCount).toList();
+  });
+});
