@@ -133,6 +133,11 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.settings_suggest_rounded),
+            tooltip: 'Administration Hub',
+            onPressed: () => context.push('/admin'),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout_rounded),
             tooltip: 'Sign Out',
             onPressed: () => _showSignOutDialog(context),
