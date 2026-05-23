@@ -14,13 +14,13 @@ Future<void> main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final isLocal =
-        Env.url.contains('localhost') || Env.url.contains('127.0.0.1');
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(appRouterProvider);
+    final isLocal = Env.url.contains('localhost') || Env.url.contains('127.0.0.1');
 
     return MaterialApp.router(
       title: 'KK Group Site Vault',
@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system, // Dynamically follow the OS theme
-      routerConfig: appRouter,
+      routerConfig: router,
     );
   }
 }

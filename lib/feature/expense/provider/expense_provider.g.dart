@@ -549,7 +549,7 @@ final class FilteredSiteExpensesProvider
 }
 
 String _$filteredSiteExpensesHash() =>
-    r'0a5e5e9d149f01842d98795cd9388b4b22b35478';
+    r'1befa4ca75f8abb9d17246866cfbfe17b9cff55c';
 
 /// Filtered expenses selector combining data lists with active searches and tags
 

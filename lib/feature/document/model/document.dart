@@ -1,0 +1,70 @@
+import 'package:site_vault/shared/model/profile.dart';
+
+/// Represents a site-wide project document record in the documents table,
+/// such as layout sheets, approval PDFs, or safety blueprints.
+class SiteDocument {
+  final String id;
+  final String firmId;
+  final String siteId;
+  final String createdBy;
+  final String fileName;
+  final String? description;
+  final String fileUrl;
+  final DateTime? softDeletedAt;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  // Joined profile relation (optional)
+  final Profile? createdByProfile;
+
+  SiteDocument({
+    required this.id,
+    required this.firmId,
+    required this.siteId,
+    required this.createdBy,
+    required this.fileName,
+    this.description,
+    required this.fileUrl,
+    this.softDeletedAt,
+    required this.createdAt,
+    required this.updatedAt,
+    this.createdByProfile,
+  });
+
+  factory SiteDocument.fromJson(Map<String, dynamic> json) {
+    return SiteDocument(
+      id: json['id'] as String,
+      firmId: json['firm_id'] as String,
+      siteId: json['site_id'] as String,
+      createdBy: json['created_by'] as String,
+      fileName: json['file_name'] as String,
+      description: json['description'] as String?,
+      fileUrl: json['file_url'] as String,
+      softDeletedAt: json['soft_deleted_at'] != null
+          ? DateTime.parse(json['soft_deleted_at'] as String)
+          : null,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+      
+      // Parses profiles join automatically if loaded via select
+      createdByProfile: json['profiles'] != null
+          ? Profile.fromJson(json['profiles'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'firm_id': firmId,
+      'site_id': siteId,
+      'created_by': createdBy,
+      'file_name': fileName,
+      'description': description,
+      'file_url': fileUrl,
+      'soft_deleted_at': softDeletedAt?.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+}

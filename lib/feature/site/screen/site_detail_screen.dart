@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:site_vault/shared/theme/firm_colors.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
+import 'package:site_vault/feature/expense/provider/expense_provider.dart';
+import 'package:site_vault/feature/expense/model/expense.dart';
+import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
+import 'package:site_vault/feature/document/provider/document_provider.dart';
+import 'package:site_vault/feature/document/model/document.dart';
+import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../model/site.dart';
 
 /// A premium, highly polished Material 3 screen that displays comprehensive
@@ -14,7 +22,7 @@ import '../model/site.dart';
 /// 2. [Expenses] - Visual listing of categorized expenses and spending tallies.
 /// 3. [Documents] - Attached files vault, receipts list, and upload hooks.
 /// 4. [Analytics] - Beautiful cost distribution indicators and spending splits.
-class SiteDetailScreen extends StatefulWidget {
+class SiteDetailScreen extends ConsumerStatefulWidget {
   final String siteId;
   final Site? site;
 
@@ -25,12 +33,13 @@ class SiteDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<SiteDetailScreen> createState() => _SiteDetailScreenState();
+  ConsumerState<SiteDetailScreen> createState() => _SiteDetailScreenState();
 }
 
-class _SiteDetailScreenState extends State<SiteDetailScreen> with SingleTickerProviderStateMixin {
+class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late String _currentStatus;
+  final TextEditingController _expenseSearchController = TextEditingController();
 
   @override
   void initState() {
@@ -42,6 +51,7 @@ class _SiteDetailScreenState extends State<SiteDetailScreen> with SingleTickerPr
   @override
   void dispose() {
     _tabController.dispose();
+    _expenseSearchController.dispose();
     super.dispose();
   }
 
@@ -167,6 +177,77 @@ class _SiteDetailScreenState extends State<SiteDetailScreen> with SingleTickerPr
     );
   }
 
+  /// Opens the add/edit expense form sheet
+  void _openExpenseFormSheet(BuildContext context, String siteId, String firmId, [Expense? expenseToEdit]) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ExpenseFormSheet(
+        siteId: siteId,
+        firmId: firmId,
+        expenseToEdit: expenseToEdit,
+      ),
+    );
+  }
+
+  /// Opens the upload document form sheet
+  void _openDocumentUploadSheet(BuildContext context, String siteId, String firmId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DocumentUploadSheet(
+        siteId: siteId,
+        firmId: firmId,
+      ),
+    );
+  }
+
+  /// Confirms and deletes an expense
+  Future<void> _confirmDeleteExpense(BuildContext context, Expense expense) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Expense?'),
+        content: Text('Are you sure you want to delete "${expense.title}"? This will soft-delete the transaction record.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('DELETE'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        await ref.read(siteExpensesProvider(widget.siteId).notifier).deleteExpense(expense.id);
+        ref.invalidate(siteTotalExpensesProvider(widget.siteId));
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Expense deleted successfully'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete: $e'), backgroundColor: Colors.redAccent),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final site = widget.site;
@@ -227,11 +308,11 @@ class _SiteDetailScreenState extends State<SiteDetailScreen> with SingleTickerPr
                             child: Text(
                               _getFirmName(site.firmId),
                               style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: baseColor,
-                                letterSpacing: 0.2,
-                              ),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: baseColor,
+                                  letterSpacing: 0.2,
+                                ),
                             ),
                           ),
                         ],
@@ -349,19 +430,16 @@ class _SiteDetailScreenState extends State<SiteDetailScreen> with SingleTickerPr
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Open FAB according to active tab (add expense, add document, etc.)
           final tabIndex = _tabController.index;
           if (tabIndex == 1) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Add Expense dialog clicked!')),
-            );
+            // Live Expense Creation Form sheet!
+            _openExpenseFormSheet(context, site.id, site.firmId);
           } else if (tabIndex == 2) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Upload Document dialog clicked!')),
-            );
+            // Live Document Upload Form sheet!
+            _openDocumentUploadSheet(context, site.id, site.firmId);
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Float action clicked!')),
+              const SnackBar(content: Text('Double click on Expenses/Documents tab to add items!')),
             );
           }
         },
@@ -462,138 +540,287 @@ class _SiteDetailScreenState extends State<SiteDetailScreen> with SingleTickerPr
   }
 
   Widget _buildExpensesTab(Site site, Color baseColor) {
-    // Beautiful placeholder layout waiting for integration in the next phases
+    final expensesAsync = ref.watch(filteredSiteExpensesProvider(site.id));
+    final totalAsync = ref.watch(siteTotalExpensesProvider(site.id));
+    final selectedCategory = ref.watch(expenseCategoryFilterProvider);
+    final categoriesAsync = ref.watch(expenseCategoriesProvider);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // High-fidelity expense aggregate card
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [baseColor, baseColor.withValues(alpha: 0.8)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Total Expenses Spent',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '₹4,25,850.00',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
-                            ),
-                      ),
-                    ],
+          // 1. Live Aggregate total spent sum
+          totalAsync.when(
+            loading: () => Container(height: 80, color: Colors.grey.withValues(alpha: 0.1)),
+            error: (e, _) => Text('Error loading total: $e'),
+            data: (total) {
+              return Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [baseColor, baseColor.withValues(alpha: 0.85)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.account_balance_wallet_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Expense Records',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              TextButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.tune_rounded, size: 14),
-                label: const Text('Filter', style: TextStyle(fontSize: 12)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: ListView.builder(
-              itemCount: 4,
-              padding: EdgeInsets.zero,
-              itemBuilder: (context, index) {
-                final mockExpenses = [
-                  {'title': 'Transformer Installation Cable', 'amount': '₹1,45,000.00', 'date': '24 May, 2026', 'mode': 'NEFT', 'category': 'Cables & Wiring'},
-                  {'title': 'Site Worker Wages (Week 12)', 'amount': '₹48,500.00', 'date': '22 May, 2026', 'mode': 'CASH', 'category': 'Labor'},
-                  {'title': 'Junction Boxes Purchase', 'amount': '₹32,350.00', 'date': '19 May, 2026', 'mode': 'UPI', 'category': 'Hardware'},
-                  {'title': 'Concrete Foundation & Support', 'amount': '₹2,00,000.00', 'date': '12 May, 2026', 'mode': 'RTGS', 'category': 'Civil Work'},
-                ];
-                final expense = mockExpenses[index];
-                
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: Card(
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      leading: CircleAvatar(
-                        backgroundColor: baseColor.withValues(alpha: 0.1),
-                        child: Icon(Icons.bolt_rounded, color: baseColor),
-                      ),
-                      title: Text(
-                        expense['title']!,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                      ),
-                      subtitle: Text(
-                        '${expense['date']} • ${expense['mode']}',
-                        style: const TextStyle(fontSize: 12),
-                      ),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            expense['amount']!,
+                          const Text(
+                            'Total Expenses Spent',
                             style: TextStyle(
-                              color: baseColor,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              expense['category']!,
-                              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
-                            ),
-                          )
+                          const SizedBox(height: 6),
+                          Text(
+                            '₹${total.toStringAsFixed(2)}',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                          ),
                         ],
                       ),
                     ),
-                  ),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_wallet_rounded,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // 2. Search Field inside expenses tab
+          TextField(
+            controller: _expenseSearchController,
+            onChanged: (val) => ref.read(expenseSearchQueryProvider.notifier).update(val),
+            decoration: InputDecoration(
+              hintText: 'Search expenses by title...',
+              prefixIcon: const Icon(Icons.search_rounded),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
+              fillColor: isDarkMode ? Theme.of(context).inputDecorationTheme.fillColor : const Color(0xFFF1F5F9),
+              suffixIcon: _expenseSearchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded),
+                      onPressed: () {
+                        _expenseSearchController.clear();
+                        ref.read(expenseSearchQueryProvider.notifier).update("");
+                      },
+                    )
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // 3. Choice chips row for categories
+          categoriesAsync.when(
+            loading: () => const SizedBox(height: 38),
+            error: (e, _) => const SizedBox.shrink(),
+            data: (categories) {
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ChoiceChip(
+                      label: const Text('All Categories'),
+                      selected: selectedCategory == null,
+                      onSelected: (_) => ref.read(expenseCategoryFilterProvider.notifier).update(null),
+                    ),
+                    const SizedBox(width: 8),
+                    ...categories.map((c) {
+                      final isSelected = selectedCategory == c.id;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: ChoiceChip(
+                          label: Text(c.name),
+                          selected: isSelected,
+                          onSelected: (_) => ref.read(expenseCategoryFilterProvider.notifier).update(isSelected ? null : c.id),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 10),
+
+          // 4. Reactive Expenses List
+          Expanded(
+            child: expensesAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error loading expenses: $e')),
+              data: (expenses) {
+                if (expenses.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.receipt_long_rounded, size: 48, color: Colors.grey[400]),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'No Expenses Recorded',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Add transaction records for this site by clicking the "+" button below.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: expenses.length,
+                  padding: EdgeInsets.zero,
+                  itemBuilder: (context, index) {
+                    final expense = expenses[index];
+                    
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Card(
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          leading: CircleAvatar(
+                            backgroundColor: baseColor.withValues(alpha: 0.1),
+                            child: Icon(_getCategoryIcon(expense.category?.name), color: baseColor),
+                          ),
+                          title: Text(
+                            expense.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${expense.expenseDate.toReadableString()} • ${expense.paymentMode.toDisplayLabel()}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              if (expense.gstPercentage != null) ...[
+                                const SizedBox(height: 4),
+                                GestureDetector(
+                                  onTap: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('GST Split Details'),
+                                        content: Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            _dialogSplitRow('Base Amount', '₹${(expense.amount - (expense.gstAmount ?? 0.0)).toStringAsFixed(2)}'),
+                                            const SizedBox(height: 4),
+                                            _dialogSplitRow('GST Paid (${expense.gstPercentage!.toInt()}%)', '₹${(expense.gstAmount ?? 0.0).toStringAsFixed(2)}'),
+                                            const Divider(height: 16),
+                                            _dialogSplitRow('Total Sum', '₹${expense.amount.toStringAsFixed(2)}', isBold: true),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: Colors.blue.withValues(alpha: 0.2), width: 0.8),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.receipt_rounded, size: 10, color: Colors.blue),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Incl. ${expense.gstPercentage!.toInt()}% GST (₹${expense.gstAmount?.toStringAsFixed(2) ?? '0.00'})',
+                                          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.blue),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                '₹${expense.amount.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  color: baseColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              PopupMenuButton<String>(
+                                icon: const Icon(Icons.more_vert_rounded, size: 20),
+                                splashRadius: 20,
+                                onSelected: (action) {
+                                  if (action == 'edit') {
+                                    _openExpenseFormSheet(context, site.id, site.firmId, expense);
+                                  } else if (action == 'delete') {
+                                    _confirmDeleteExpense(context, expense);
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit_rounded, size: 16),
+                                        SizedBox(width: 8),
+                                        Text('Edit'),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete_outline_rounded, size: 16, color: Colors.redAccent),
+                                        SizedBox(width: 8),
+                                        Text('Delete', style: TextStyle(color: Colors.redAccent)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -603,76 +830,251 @@ class _SiteDetailScreenState extends State<SiteDetailScreen> with SingleTickerPr
     );
   }
 
+  Widget _dialogSplitRow(String label, String value, {bool isBold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 13, fontWeight: isBold ? FontWeight.bold : FontWeight.normal)),
+        Text(value, style: TextStyle(fontSize: 14, fontWeight: isBold ? FontWeight.bold : FontWeight.w600)),
+      ],
+    );
+  }
+
+  IconData _getCategoryIcon(String? categoryName) {
+    if (categoryName == null) return Icons.bolt_rounded;
+    final lower = categoryName.toLowerCase();
+    if (lower.contains('labor') || lower.contains('wage') || lower.contains('salary')) {
+      return Icons.engineering_rounded;
+    } else if (lower.contains('cable') || lower.contains('wire') || lower.contains('transformer')) {
+      return Icons.power_rounded;
+    } else if (lower.contains('hardware') || lower.contains('switch') || lower.contains('fuse')) {
+      return Icons.hardware_rounded;
+    } else if (lower.contains('civil') || lower.contains('concrete') || lower.contains('foundation')) {
+      return Icons.foundation_rounded;
+    } else if (lower.contains('travel') || lower.contains('fuel') || lower.contains('transport')) {
+      return Icons.local_shipping_rounded;
+    }
+    return Icons.bolt_rounded; // Default
+  }
+
+  /// Opens the document URL in a web browser using url_launcher,
+  /// or copies the link to clipboard as a fallback.
+  Future<void> _downloadOrOpenDocument(BuildContext context, String url, String fileName) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch $url';
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open file: $e'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Confirms and deletes a document (soft-deletes)
+  Future<void> _confirmDeleteDocument(BuildContext context, SiteDocument doc) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Document?'),
+        content: Text('Are you sure you want to delete "${doc.fileName}"? This will soft-delete the document record from the vault.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('DELETE'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        await ref.read(siteDocumentsProvider(widget.siteId).notifier).deleteDocument(doc.id);
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Document deleted successfully'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete document: $e'), backgroundColor: Colors.redAccent),
+          );
+        }
+      }
+    }
+  }
+
   Widget _buildDocumentsTab(Site site, Color baseColor) {
-    // Beautiful placeholder document list
+    final documentsAsync = ref.watch(filteredSiteDocumentsProvider(site.id));
+    final searchQuery = ref.watch(documentSearchQueryProvider);
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.all(20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Uploaded Documents',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              Text(
-                '3 Files',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
+          // 1. Search Bar for Documents
+          TextField(
+            onChanged: (val) => ref.read(documentSearchQueryProvider.notifier).update(val),
+            decoration: InputDecoration(
+              hintText: 'Search documents by filename...',
+              prefixIcon: const Icon(Icons.search_rounded),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
+              fillColor: isDarkMode ? Theme.of(context).inputDecorationTheme.fillColor : const Color(0xFFF1F5F9),
+              suffixIcon: searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded),
+                      onPressed: () {
+                        ref.read(documentSearchQueryProvider.notifier).update("");
+                      },
+                    )
+                  : null,
+            ),
           ),
           const SizedBox(height: 16),
+
+          // 2. Count of Documents
+          documentsAsync.when(
+            loading: () => const SizedBox.shrink(),
+            error: (e, _) => const SizedBox.shrink(),
+            data: (documents) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Uploaded Documents',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    '${documents.length} ${documents.length == 1 ? "File" : "Files"}',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: baseColor,
+                        ),
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+
+          // 3. Document List
           Expanded(
-            child: ListView.builder(
-              itemCount: 3,
-              padding: EdgeInsets.zero,
-              itemBuilder: (context, index) {
-                final mockDocs = [
-                  {'name': 'Invoice_CityMall_Wiring.pdf', 'size': '2.4 MB', 'uploadedBy': 'Amit Sharma', 'date': '24 May, 2026'},
-                  {'name': 'SiteLayoutDrawing_V2.dwg', 'size': '15.8 MB', 'uploadedBy': 'Suresh Patel', 'date': '20 May, 2026'},
-                  {'name': 'GST_Receipt_Hardware.pdf', 'size': '850 KB', 'uploadedBy': 'Amit Sharma', 'date': '19 May, 2026'},
-                ];
-                final doc = mockDocs[index];
-                final isPdf = doc['name']!.endsWith('.pdf');
-                
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: Card(
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: (isPdf ? Colors.redAccent : Colors.teal).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          isPdf ? Icons.picture_as_pdf_rounded : Icons.description_rounded,
-                          color: isPdf ? Colors.redAccent : Colors.teal,
-                        ),
-                      ),
-                      title: Text(
-                        doc['name']!,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      subtitle: Text(
-                        '${doc['size']} • By ${doc['uploadedBy']}',
-                        style: const TextStyle(fontSize: 11),
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.file_download_rounded, size: 20),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Downloading ${doc['name']}...')),
-                          );
-                        },
+            child: documentsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error loading documents: $e')),
+              data: (documents) {
+                if (documents.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(32.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.folder_open_rounded, size: 48, color: Colors.grey[400]),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'No Documents Found',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Upload blueprints, layouts, safety manuals, or other project files.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: documents.length,
+                  padding: EdgeInsets.zero,
+                  itemBuilder: (context, index) {
+                    final doc = documents[index];
+                    final isPdf = doc.fileName.toLowerCase().endsWith('.pdf');
+                    
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Card(
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                          leading: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: (isPdf ? Colors.redAccent : Colors.teal).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(
+                              isPdf ? Icons.picture_as_pdf_rounded : Icons.description_rounded,
+                              color: isPdf ? Colors.redAccent : Colors.teal,
+                            ),
+                          ),
+                          title: Text(
+                            doc.fileName,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            'Uploaded by ${doc.createdByProfile?.displayName ?? "Staff"} • ${doc.createdAt.toReadableString()}',
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.file_download_rounded, size: 20),
+                                onPressed: () => _downloadOrOpenDocument(context, doc.fileUrl, doc.fileName),
+                              ),
+                              PopupMenuButton<String>(
+                                icon: const Icon(Icons.more_vert_rounded, size: 20),
+                                splashRadius: 20,
+                                onSelected: (action) {
+                                  if (action == 'delete') {
+                                    _confirmDeleteDocument(context, doc);
+                                  }
+                                },
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete_outline_rounded, size: 16, color: Colors.redAccent),
+                                        SizedBox(width: 8),
+                                        Text('Delete', style: TextStyle(color: Colors.redAccent)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -683,7 +1085,8 @@ class _SiteDetailScreenState extends State<SiteDetailScreen> with SingleTickerPr
   }
 
   Widget _buildAnalyticsTab(Site site, Color baseColor) {
-    // Beautiful placeholder visual cost-split charts
+    final expensesAsync = ref.watch(siteExpensesProvider(site.id));
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
       child: Column(
@@ -700,44 +1103,76 @@ class _SiteDetailScreenState extends State<SiteDetailScreen> with SingleTickerPr
           ),
           const SizedBox(height: 24),
           
-          // Cost breakdown list meters
-          _analyticsProgressBar('Civil Work', '₹2,00,000.00', 0.47, baseColor),
-          const SizedBox(height: 16),
-          _analyticsProgressBar('Cables & Wiring', '₹1,45,000.00', 0.34, baseColor),
-          const SizedBox(height: 16),
-          _analyticsProgressBar('Labor Wages', '₹48,500.00', 0.11, baseColor),
-          const SizedBox(height: 16),
-          _analyticsProgressBar('Hardware & Fuses', '₹32,350.00', 0.08, baseColor),
-          
-          const SizedBox(height: 32),
-          // Summary card
-          Card(
-            color: baseColor.withValues(alpha: 0.05),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Row(
-                children: [
-                  Icon(Icons.insights_rounded, color: baseColor, size: 28),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Spending Insight',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Civil Work represents the largest single expense factor at 47% of total cost on this site.',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12),
-                        ),
-                      ],
-                    ),
+          expensesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text('Error loading charts: $e'),
+            data: (expenses) {
+              if (expenses.isEmpty) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32.0),
+                    child: Text('No expenses recorded for charts analysis.', style: TextStyle(color: Colors.grey, fontSize: 12)),
                   ),
+                );
+              }
+
+              // Compute categories breakdown maps
+              final categorySums = <String, double>{};
+              double total = 0.0;
+              
+              for (final e in expenses) {
+                final catName = e.category?.name ?? 'Hardware & Fuses';
+                categorySums[catName] = (categorySums[catName] ?? 0.0) + e.amount;
+                total += e.amount;
+              }
+
+              final sortedCategories = categorySums.entries.toList()
+                ..sort((a, b) => b.value.compareTo(a.value));
+
+              return Column(
+                children: [
+                  ...sortedCategories.map((entry) {
+                    final percentage = total > 0 ? entry.value / total : 0.0;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: _analyticsProgressBar(entry.key, '₹${entry.value.toStringAsFixed(2)}', percentage, baseColor),
+                    );
+                  }),
+                  
+                  const SizedBox(height: 24),
+                  // Summary insights card
+                  if (sortedCategories.isNotEmpty)
+                    Card(
+                      color: baseColor.withValues(alpha: 0.05),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Row(
+                          children: [
+                            Icon(Icons.insights_rounded, color: baseColor, size: 28),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Spending Insight',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '"${sortedCategories.first.key}" represents the largest single expense factor at ${( (sortedCategories.first.value / total) * 100).toInt()}% of total cost on this site.',
+                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),

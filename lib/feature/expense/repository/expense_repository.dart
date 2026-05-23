@@ -152,4 +152,37 @@ class ExpenseRepository {
       rethrow;
     }
   }
+
+  /// Inserts a new expense attachment record.
+  Future<void> addAttachment(String expenseId, String fileUrl) async {
+    try {
+      await _client.from('expense_attachments').insert({
+        'expense_id': expenseId,
+        'file_url': fileUrl,
+      });
+    } catch (e, stack) {
+      // ignore: avoid_print
+      print('Error in addAttachment: $e');
+      // ignore: avoid_print
+      print(stack);
+      rethrow;
+    }
+  }
+
+  /// Fetches attachments for a specific expense.
+  Future<List<String>> fetchAttachmentsForExpense(String expenseId) async {
+    try {
+      final response = await _client
+          .from('expense_attachments')
+          .select('file_url')
+          .eq('expense_id', expenseId);
+      return (response as List).map((e) => e['file_url'] as String).toList();
+    } catch (e, stack) {
+      // ignore: avoid_print
+      print('Error in fetchAttachmentsForExpense: $e');
+      // ignore: avoid_print
+      print(stack);
+      rethrow;
+    }
+  }
 }

@@ -6,6 +6,7 @@ import 'package:site_vault/shared/theme/firm_colors.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
+import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
 
@@ -69,6 +70,43 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     super.dispose();
   }
 
+  /// Triggers the Sign Out process with a clean M3 warning dialog.
+  Future<void> _showSignOutDialog(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign Out?'),
+        content: const Text('Are you sure you want to sign out of KK Group Site Vault?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('SIGN OUT'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        await ref.read(authRepositoryProvider).signOut();
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error signing out: $e'),
+              backgroundColor: const Color(0xFFEF4444),
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final sitesAsync = ref.watch(paginatedSitesProvider);
@@ -94,6 +132,11 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            tooltip: 'Sign Out',
+            onPressed: () => _showSignOutDialog(context),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: CircleAvatar(
