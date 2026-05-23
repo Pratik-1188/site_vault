@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:site_vault/shared/theme/firm_colors.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
@@ -7,6 +8,7 @@ import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
+
 
 /// A premium, highly consistent Material 3 screen that displays the list of
 /// sites under KK Group.
@@ -377,7 +379,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: () {
-            // TODO: Route to Site Detail Screen
+            context.push('/site/${site.id}', extra: site);
           },
           child: Container(
             decoration: BoxDecoration(
