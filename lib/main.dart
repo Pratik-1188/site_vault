@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:site_vault/feature/site/screen/site_screen.dart';
+import 'package:site_vault/shared/theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'env.dart';
 
@@ -22,8 +23,13 @@ class MyApp extends StatelessWidget {
         Env.url.contains('localhost') || Env.url.contains('127.0.0.1');
 
     return MaterialApp(
+      title: 'KK Group Site Vault',
       debugShowCheckedModeBanner: isLocal,
-      home: const SitesScreen(), // 👈 show sites screen directly
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system, // Dynamically follow the OS theme
+      home: const SitesScreen(),
     );
   }
 }
+
