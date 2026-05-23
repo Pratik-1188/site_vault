@@ -8,11 +8,25 @@ class SiteRepository {
 
   /// Fetches all sites from database ordered by latest created
   Future<List<Site>> fetchSites() async {
-    final response = await _client
-        .from('sites')
-        .select()
-        .order('created_at', ascending: false);
+    try {
+      // ignore: avoid_print
+      print('Fetching sites from Supabase...');
+      
+      final response = await _client
+          .from('sites')
+          .select()
+          .order('created_at', ascending: false);
 
-    return (response as List).map((e) => Site.fromJson(e)).toList();
+      // ignore: avoid_print
+      print('Supabase select response: $response (type: ${response.runtimeType})');
+
+      return (response as List).map((e) => Site.fromJson(e)).toList();
+    } catch (e, stack) {
+      // ignore: avoid_print
+      print('Error in fetchSites: $e');
+      // ignore: avoid_print
+      print(stack);
+      rethrow;
+    }
   }
 }

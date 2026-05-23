@@ -50,3 +50,7 @@ lib/
 └── app/
 ├── router.dart
 └── app.dart
+
+
+Run App with local supabase
+flutter run --dart-define-from-file=config/local.json
