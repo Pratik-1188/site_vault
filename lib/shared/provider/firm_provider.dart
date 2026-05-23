@@ -1,16 +1,21 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/repository/firm_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+part 'firm_provider.g.dart';
+
 /// Provides FirmRepository
-final firmRepositoryProvider = Provider<FirmRepository>((ref) {
+@Riverpod(keepAlive: true)
+FirmRepository firmRepository(Ref ref) {
   final client = Supabase.instance.client;
   return FirmRepository(client);
-});
+}
 
 /// Fetches all firms
-final firmsProvider = FutureProvider<List<Firm>>((ref) async {
-  final repo = ref.read(firmRepositoryProvider);
+@riverpod
+Future<List<Firm>> firms(Ref ref) async {
+  final repo = ref.watch(firmRepositoryProvider);
   return repo.fetchFirms();
-});
+}
+
