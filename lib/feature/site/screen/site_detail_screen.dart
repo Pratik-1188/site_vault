@@ -10,6 +10,8 @@ import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
 import 'package:site_vault/feature/document/provider/document_provider.dart';
 import 'package:site_vault/feature/document/model/document.dart';
 import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
+import 'package:site_vault/feature/analytics/provider/analytics_provider.dart';
+import 'package:site_vault/feature/analytics/model/analytics_models.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../model/site.dart';
 
@@ -1085,70 +1087,69 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> with Single
   }
 
   Widget _buildAnalyticsTab(Site site, Color baseColor) {
-    final expensesAsync = ref.watch(siteExpensesProvider(site.id));
-    
+    // Watch lightweight pre-aggregated server-side views
+    final categorySpendAsync = ref.watch(categorySpendProvider(siteId: site.id));
+    final monthlySpendAsync = ref.watch(monthlySpendProvider(siteId: site.id));
+    final vendorSpendAsync = ref.watch(siteVendorSpendProvider(site.id));
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1. Expense Categories Splits Section
           Text(
             'Expense Distribution',
             style: Theme.of(context).textTheme.titleMedium,
           ),
-          const SizedBox(height: 6),
-          Text(
+          const SizedBox(height: 4),
+          const Text(
             'Cost breakdown by business expense categories for this site.',
-            style: Theme.of(context).textTheme.bodyMedium,
+            style: TextStyle(fontSize: 11, color: Colors.grey),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           
-          expensesAsync.when(
+          categorySpendAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text('Error loading charts: $e'),
-            data: (expenses) {
-              if (expenses.isEmpty) {
+            error: (e, _) => Text('Error loading category splits: $e'),
+            data: (categories) {
+              if (categories.isEmpty) {
                 return const Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 32.0),
-                    child: Text('No expenses recorded for charts analysis.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    child: Text('No category splits recorded.', style: TextStyle(color: Colors.grey, fontSize: 12)),
                   ),
                 );
               }
 
-              // Compute categories breakdown maps
-              final categorySums = <String, double>{};
               double total = 0.0;
-              
-              for (final e in expenses) {
-                final catName = e.category?.name ?? 'Hardware & Fuses';
-                categorySums[catName] = (categorySums[catName] ?? 0.0) + e.amount;
-                total += e.amount;
+              for (final c in categories) {
+                total += c.totalSpend;
               }
 
-              final sortedCategories = categorySums.entries.toList()
-                ..sort((a, b) => b.value.compareTo(a.value));
+              final sorted = List<CategorySpendSummary>.from(categories)
+                ..sort((a, b) => b.totalSpend.compareTo(a.totalSpend));
 
               return Column(
                 children: [
-                  ...sortedCategories.map((entry) {
-                    final percentage = total > 0 ? entry.value / total : 0.0;
+                  ...sorted.map((c) {
+                    final percentage = total > 0 ? c.totalSpend / total : 0.0;
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
-                      child: _analyticsProgressBar(entry.key, '₹${entry.value.toStringAsFixed(2)}', percentage, baseColor),
+                      child: _analyticsProgressBar(c.categoryName, '₹${c.totalSpend.toStringAsFixed(2)}', percentage, baseColor),
                     );
                   }),
                   
-                  const SizedBox(height: 24),
-                  // Summary insights card
-                  if (sortedCategories.isNotEmpty)
+                  const SizedBox(height: 12),
+                  // Spending Insight Card
+                  if (sorted.isNotEmpty)
                     Card(
                       color: baseColor.withValues(alpha: 0.05),
                       child: Padding(
-                        padding: const EdgeInsets.all(20.0),
+                        padding: const EdgeInsets.all(16.0),
                         child: Row(
                           children: [
-                            Icon(Icons.insights_rounded, color: baseColor, size: 28),
+                            Icon(Icons.insights_rounded, color: baseColor, size: 24),
                             const SizedBox(width: 16),
                             Expanded(
                               child: Column(
@@ -1156,11 +1157,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> with Single
                                 children: [
                                   const Text(
                                     'Spending Insight',
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    '"${sortedCategories.first.key}" represents the largest single expense factor at ${( (sortedCategories.first.value / total) * 100).toInt()}% of total cost on this site.',
+                                    '"${sorted.first.categoryName}" represents the largest cost factor at ${((sorted.first.totalSpend / total) * 100).toInt()}% of total expenses on this site.',
                                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12),
                                   ),
                                 ],
@@ -1171,6 +1172,165 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> with Single
                       ),
                     ),
                 ],
+              );
+            },
+          ),
+          
+          const Divider(height: 40, thickness: 0.5),
+
+          // 2. Month-over-Month Cashflow Timelines Section
+          Text(
+            'Monthly Spending Trends',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Timeline history of site spending aggregates.',
+            style: TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+          const SizedBox(height: 16),
+
+          monthlySpendAsync.when(
+            loading: () => const Center(child: LinearProgressIndicator()),
+            error: (e, _) => Text('Error loading monthly trend: $e'),
+            data: (trends) {
+              if (trends.isEmpty) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    child: Text('No historical timelines found.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  ),
+                );
+              }
+
+              double maxVal = 0.0;
+              for (final t in trends) {
+                if (t.totalSpend > maxVal) {
+                  maxVal = t.totalSpend;
+                }
+              }
+
+              final sortedMonths = List<MonthlySpendTrend>.from(trends)
+                ..sort((a, b) => b.monthDate.compareTo(a.monthDate)); // Newest first
+
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: sortedMonths.length,
+                itemBuilder: (context, index) {
+                  final item = sortedMonths[index];
+                  final dateStr = _formatAnalyticsMonth(item.monthDate);
+                  final ratio = maxVal > 0 ? item.totalSpend / maxVal : 0.0;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 80,
+                          child: Text(
+                            dateStr,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                        ),
+                        Expanded(
+                          child: Stack(
+                            alignment: Alignment.centerLeft,
+                            children: [
+                              Container(
+                                height: 22,
+                                decoration: BoxDecoration(
+                                  color: baseColor.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                              FractionallySizedBox(
+                                widthFactor: ratio.clamp(0.02, 1.0),
+                                child: Container(
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    color: baseColor.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border(left: BorderSide(color: baseColor, width: 3)),
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 12.0),
+                                child: Text(
+                                  '₹${item.totalSpend.toStringAsFixed(2)}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 10),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+
+          const Divider(height: 40, thickness: 0.5),
+
+          // 3. Top Suppliers Section
+          Text(
+            'Top Suppliers Tally',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Ranked vendor splits representing top funding receivers on this site.',
+            style: TextStyle(fontSize: 11, color: Colors.grey),
+          ),
+          const SizedBox(height: 16),
+
+          vendorSpendAsync.when(
+            loading: () => const Center(child: LinearProgressIndicator()),
+            error: (e, _) => Text('Error loading vendor spend: $e'),
+            data: (vendors) {
+              if (vendors.isEmpty) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    child: Text('No suppliers recorded for this site.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  ),
+                );
+              }
+
+              // Show top 3 vendors
+              final topVendors = vendors.take(3).toList();
+
+              return Column(
+                children: topVendors.asMap().entries.map((entry) {
+                  final rank = entry.key + 1;
+                  final v = entry.value;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Card(
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: baseColor.withValues(alpha: 0.1),
+                          child: Text(
+                            '#$rank',
+                            style: TextStyle(fontWeight: FontWeight.bold, color: baseColor, fontSize: 13),
+                          ),
+                        ),
+                        title: Text(
+                          v.vendorName,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        ),
+                        trailing: Text(
+                          '₹${v.totalSpend.toStringAsFixed(2)}',
+                          style: TextStyle(fontWeight: FontWeight.bold, color: baseColor, fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
               );
             },
           ),
@@ -1216,6 +1376,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> with Single
         ),
       ],
     );
+  }
+
+  String _formatAnalyticsMonth(DateTime date) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[date.month - 1]} ${date.year}';
   }
 
   Color _getStatusColor(String status) {

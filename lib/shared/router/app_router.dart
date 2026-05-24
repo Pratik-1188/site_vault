@@ -9,6 +9,7 @@ import 'package:site_vault/feature/site/model/site.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/feature/auth/screen/login_screen.dart';
 import 'package:site_vault/feature/admin/screen/admin_screen.dart';
+import 'package:site_vault/feature/analytics/screen/analytics_dashboard_screen.dart';
 
 part 'app_router.g.dart';
 
@@ -67,6 +68,11 @@ GoRouter appRouter(Ref ref) {
         path: '/admin',
         name: 'admin',
         builder: (context, state) => const AdminScreen(),
+      ),
+      GoRoute(
+        path: '/analytics',
+        name: 'analytics',
+        builder: (context, state) => const AnalyticsDashboardScreen(),
       ),
       GoRoute(
         path: '/site/:id',
