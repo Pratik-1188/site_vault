@@ -129,10 +129,10 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.vendors (id, name, contact_info, is_active)
 VALUES 
-    ('v1111111-1111-1111-1111-111111111111', 'Apex Electrical Supplies', 'contact@apexelectrical.com', TRUE),
-    ('v2222222-2222-2222-2222-222222222222', 'Solar Tech Manufacturing', 'support@solartech.com', TRUE),
-    ('v3333333-3333-3333-3333-333333333333', 'KK Contracting Services', 'contracts@kkgroup.com', TRUE),
-    ('v4444444-4444-4444-4444-444444444444', 'Global Heavy Machinery', 'rentals@globalmachinery.com', TRUE)
+    ('81111111-1111-1111-1111-111111111111', 'Apex Electrical Supplies', 'contact@apexelectrical.com', TRUE),
+    ('82222222-2222-2222-2222-222222222222', 'Solar Tech Manufacturing', 'support@solartech.com', TRUE),
+    ('83333333-3333-3333-3333-333333333333', 'KK Contracting Services', 'contracts@kkgroup.com', TRUE),
+    ('84444444-4444-4444-4444-444444444444', 'Global Heavy Machinery', 'rentals@globalmachinery.com', TRUE)
 ON CONFLICT (id) DO NOTHING;
 
 
@@ -157,7 +157,7 @@ VALUES
         'Heavy-duty copper conduit cable reels for main terminal feeds',
         '2026-04-12',
         'a1111111-1111-1111-1111-111111111111', -- Materials
-        'v1111111-1111-1111-1111-111111111111', -- Apex Electrical Supplies
+        '81111111-1111-1111-1111-111111111111', -- Apex Electrical Supplies
         15000.00,
         18.00,
         2700.00,
@@ -210,7 +210,7 @@ VALUES
         'Engineering CAD and structural modeling suite license renewals',
         '2026-03-25',
         'a1111111-1111-1111-1111-111111111111', -- Materials (Software)
-        'v3333333-3333-3333-3333-333333333333', -- KK Contracting Services
+        '83333333-3333-3333-3333-333333333333', -- KK Contracting Services
         8500.00,
         18.00,
         1530.00,
@@ -229,7 +229,7 @@ VALUES
         'Galvanized steel structural rails for multi-angle panel mount racks',
         '2026-03-10',
         'a1111111-1111-1111-1111-111111111111', -- Materials
-        'v2222222-2222-2222-2222-222222222222', -- Solar Tech Manufacturing
+        '82222222-2222-2222-2222-222222222222', -- Solar Tech Manufacturing
         28000.00,
         12.00,
         3360.00,
@@ -246,7 +246,7 @@ VALUES
         '3-day rent for trench digger assisting underground layout cabling',
         '2026-03-18',
         'a3333333-3333-3333-3333-333333333333', -- Equipment Rental
-        'v4444444-4444-4444-4444-444444444444', -- Global Heavy Machinery
+        '84444444-4444-4444-4444-444444444444', -- Global Heavy Machinery
         12500.00,
         18.00,
         2250.00,
