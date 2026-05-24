@@ -33,7 +33,7 @@ updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 
 -- PROFILES: Application users
 CREATE TABLE profiles (
-id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+id UUID PRIMARY KEY,
 display_name TEXT NOT NULL,
 is_active BOOLEAN DEFAULT TRUE,
 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -218,6 +218,7 @@ VALUES (
 new.id,
 COALESCE(
     NULLIF(new.raw_user_meta_data->>'display_name', ''),
+    NULLIF(split_part(new.email, '@', 1), ''),
     'user_' || substr(new.id::text, 1, 8)
 )
 );
@@ -228,6 +229,27 @@ $$;
 CREATE TRIGGER on_auth_user_created
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Mark profile inactive when auth user is deleted
+CREATE OR REPLACE FUNCTION public.handle_deleted_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+UPDATE public.profiles
+SET
+    is_active = FALSE,
+    updated_at = NOW()
+WHERE id = old.id;
+RETURN old;
+END;
+$$;
+
+CREATE TRIGGER on_auth_user_deleted
+BEFORE DELETE ON auth.users
+FOR EACH ROW EXECUTE PROCEDURE public.handle_deleted_user();
 
 -- ########################################################
 -- 7. SECURITY (RLS)
