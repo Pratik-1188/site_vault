@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:site_vault/shared/router/app_router.dart';
 import 'package:site_vault/shared/theme/app_theme.dart';
+import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'env.dart';
 
@@ -11,7 +12,12 @@ Future<void> main() async {
   // Initialize Supabase using the variables from our JSON file
   await Supabase.initialize(url: Env.url, anonKey: Env.anonKey);
 
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(
+    const ProviderScope(
+      observers: [AppProviderObserver()],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends ConsumerWidget {

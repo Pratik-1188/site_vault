@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:site_vault/feature/admin/provider/admin_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/shared/model/profile.dart';
+import 'package:site_vault/shared/utils/error_interceptor.dart';
 
 /// Central administration settings panel managing Vendors, Categories, and Profiles.
 class AdminScreen extends ConsumerStatefulWidget {
@@ -465,8 +466,9 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
       }
     } catch (e) {
       if (mounted) {
+        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text(cleanMessage), backgroundColor: Colors.redAccent),
         );
       }
     } finally {
@@ -619,8 +621,9 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
       }
     } catch (e) {
       if (mounted) {
+        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text(cleanMessage), backgroundColor: Colors.redAccent),
         );
       }
     } finally {
@@ -759,9 +762,10 @@ class _ProfileFormSheetState extends ConsumerState<_ProfileFormSheet> {
       }
     } catch (e) {
       if (mounted) {
+        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error saving: ${e.toString().replaceAll('PostgrestException: ', '')}'),
+            content: Text(cleanMessage),
             backgroundColor: Colors.redAccent,
           ),
         );

@@ -13,6 +13,7 @@ import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
 import 'package:site_vault/feature/analytics/provider/analytics_provider.dart';
 import 'package:site_vault/feature/analytics/model/analytics_models.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:site_vault/shared/utils/error_interceptor.dart';
 import '../model/site.dart';
 
 /// A premium, highly polished Material 3 screen that displays comprehensive
@@ -242,8 +243,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> with Single
         }
       } catch (e) {
         if (context.mounted) {
+          final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete: $e'), backgroundColor: Colors.redAccent),
+            SnackBar(content: Text(cleanMessage), backgroundColor: Colors.redAccent),
           );
         }
       }
@@ -916,8 +918,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> with Single
         }
       } catch (e) {
         if (context.mounted) {
+          final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete document: $e'), backgroundColor: Colors.redAccent),
+            SnackBar(content: Text(cleanMessage), backgroundColor: Colors.redAccent),
           );
         }
       }

@@ -6,6 +6,7 @@ import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/theme/firm_colors.dart';
 import 'package:site_vault/shared/theme/app_theme.dart';
 import 'package:site_vault/feature/expense/provider/expense_provider.dart'; // Re-use profiles lookup
+import 'package:site_vault/shared/utils/error_interceptor.dart';
 import '../model/document.dart';
 import '../provider/document_provider.dart';
 
@@ -143,8 +144,9 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       }
     } catch (e) {
       if (mounted) {
+        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error uploading document: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text(cleanMessage), backgroundColor: Colors.redAccent),
         );
       }
     } finally {

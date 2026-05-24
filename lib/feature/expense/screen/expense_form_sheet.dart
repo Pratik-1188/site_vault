@@ -6,6 +6,7 @@ import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/theme/firm_colors.dart';
 import 'package:site_vault/shared/theme/app_theme.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
+import 'package:site_vault/shared/utils/error_interceptor.dart';
 import '../model/expense.dart';
 import '../provider/expense_provider.dart';
 
@@ -262,8 +263,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       }
     } catch (e) {
       if (mounted) {
+        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error saving expense: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(content: Text(cleanMessage), backgroundColor: Colors.redAccent),
         );
       }
     } finally {
