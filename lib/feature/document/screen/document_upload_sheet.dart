@@ -27,12 +27,13 @@ class DocumentUploadSheet extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<DocumentUploadSheet> createState() => _DocumentUploadSheetState();
+  ConsumerState<DocumentUploadSheet> createState() =>
+      _DocumentUploadSheetState();
 }
 
 class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
   final _formKey = GlobalKey<FormState>();
-  
+
   late TextEditingController _descriptionController;
   String? _selectedCreatedBy;
 
@@ -67,13 +68,18 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
         setState(() {
           _pickedFileName = file.name;
           _pickedFileBytes = file.bytes;
-          _pickedMimeType = file.extension != null ? 'application/${file.extension}' : null;
+          _pickedMimeType = file.extension != null
+              ? 'application/${file.extension}'
+              : null;
         });
       }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking file: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Error picking file: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -106,31 +112,36 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
 
     try {
       // 1. Upload file binary to 'site-documents' bucket
-      final fileUrl = await ref.read(storageRepositoryProvider).uploadFile(
+      final fileUrl = await ref
+          .read(storageRepositoryProvider)
+          .uploadFile(
             bucket: 'site-documents',
             path: 'site_${widget.siteId}',
             fileBytes: _pickedFileBytes!,
             fileName: _pickedFileName!,
             mimeType: _pickedMimeType,
           );
-      
+
       if (!mounted) return;
 
       // 2. Build the SiteDocument Object
       final document = SiteDocument(
         id: '',
-        firmId: widget.firmId,
         siteId: widget.siteId,
         createdBy: _selectedCreatedBy!,
         fileName: _pickedFileName!,
-        description: _descriptionController.text.trim().isEmpty ? null : _descriptionController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
         fileUrl: fileUrl,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
       // 3. Save DB entry using the SiteDocuments controller notifier
-      await ref.read(siteDocumentsProvider(widget.siteId).notifier).addDocument(document);
+      await ref
+          .read(siteDocumentsProvider(widget.siteId).notifier)
+          .addDocument(document);
 
       if (mounted) {
         Navigator.pop(context);
@@ -146,7 +157,10 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       if (mounted) {
         final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(cleanMessage), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text(cleanMessage),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } finally {
@@ -167,7 +181,9 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         height: MediaQuery.of(context).size.height * 0.7,
         decoration: BoxDecoration(
@@ -186,7 +202,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            
+
             // Header
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -195,7 +211,9 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                 children: [
                   Text(
                     'Upload Site Document',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleLarge?.copyWith(fontSize: 22),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded),
@@ -215,7 +233,10 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                         children: [
                           CircularProgressIndicator(),
                           SizedBox(height: 16),
-                          Text('Uploading document to storage...', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text(
+                            'Uploading document to storage...',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ],
                       ),
                     )
@@ -229,8 +250,13 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                               ? Card(
                                   color: baseColor.withValues(alpha: 0.05),
                                   shape: RoundedRectangleBorder(
-                                    side: BorderSide(color: baseColor.withValues(alpha: 0.2), width: 1),
-                                    borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+                                    side: BorderSide(
+                                      color: baseColor.withValues(alpha: 0.2),
+                                      width: 1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(
+                                      AppTheme.radiusMedium,
+                                    ),
                                   ),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
@@ -239,29 +265,49 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                                         Container(
                                           padding: const EdgeInsets.all(10),
                                           decoration: BoxDecoration(
-                                            color: baseColor.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(8),
+                                            color: baseColor.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
                                           ),
-                                          child: Icon(_getFileIcon(_pickedFileName!), color: baseColor),
+                                          child: Icon(
+                                            _getFileIcon(_pickedFileName!),
+                                            color: baseColor,
+                                          ),
                                         ),
                                         const SizedBox(width: 16),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 _pickedFileName!,
-                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                               const SizedBox(height: 4),
-                                              const Text('File picked & ready for upload', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                              const Text(
+                                                'File picked & ready for upload',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ),
                                         IconButton(
-                                          icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                                          icon: const Icon(
+                                            Icons.delete_outline_rounded,
+                                            color: Colors.redAccent,
+                                          ),
                                           onPressed: () {
                                             setState(() {
                                               _pickedFileName = null;
@@ -275,26 +321,53 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                                 )
                               : InkWell(
                                   onTap: _pickDocument,
-                                  borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                                  borderRadius: BorderRadius.circular(
+                                    AppTheme.radiusLarge,
+                                  ),
                                   child: Container(
                                     height: 140,
                                     decoration: BoxDecoration(
-                                      color: isDarkMode ? Theme.of(context).inputDecorationTheme.fillColor : const Color(0xFFF1F5F9),
+                                      color: isDarkMode
+                                          ? Theme.of(
+                                              context,
+                                            ).inputDecorationTheme.fillColor
+                                          : const Color(0xFFF1F5F9),
                                       border: Border.all(
-                                        color: Colors.grey.withValues(alpha: 0.3),
+                                        color: Colors.grey.withValues(
+                                          alpha: 0.3,
+                                        ),
                                         width: 1.5,
                                         style: BorderStyle.solid,
                                       ),
-                                      borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                                      borderRadius: BorderRadius.circular(
+                                        AppTheme.radiusLarge,
+                                      ),
                                     ),
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.cloud_upload_outlined, size: 40, color: baseColor),
+                                        Icon(
+                                          Icons.cloud_upload_outlined,
+                                          size: 40,
+                                          color: baseColor,
+                                        ),
                                         const SizedBox(height: 12),
-                                        const Text('Select Site Blueprint, PDF, or Doc', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                        const Text(
+                                          'Select Site Blueprint, PDF, or Doc',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                          ),
+                                        ),
                                         const SizedBox(height: 4),
-                                        const Text('Tap here to browse file explorer', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                                        const Text(
+                                          'Tap here to browse file explorer',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -313,12 +386,18 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                                 initialValue: _selectedCreatedBy,
                                 decoration: const InputDecoration(
                                   labelText: 'Uploaded By (Staff Profile) *',
-                                  prefixIcon: Icon(Icons.person_outline_rounded),
+                                  prefixIcon: Icon(
+                                    Icons.person_outline_rounded,
+                                  ),
                                 ),
                                 items: profiles.map((p) {
-                                  return DropdownMenuItem(value: p.id, child: Text(p.displayName));
+                                  return DropdownMenuItem(
+                                    value: p.id,
+                                    child: Text(p.displayName),
+                                  );
                                 }).toList(),
-                                onChanged: (val) => setState(() => _selectedCreatedBy = val),
+                                onChanged: (val) =>
+                                    setState(() => _selectedCreatedBy = val),
                               );
                             },
                           ),
@@ -330,7 +409,8 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                             maxLines: 3,
                             decoration: const InputDecoration(
                               labelText: 'Document Description / Tag Details',
-                              hintText: 'Enter helpful notes explaining what this drawing, bill, or invoice covers...',
+                              hintText:
+                                  'Enter helpful notes explaining what this drawing, bill, or invoice covers...',
                               prefixIcon: Icon(Icons.description_rounded),
                             ),
                           ),
@@ -360,11 +440,17 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
     final lower = fileName.toLowerCase();
     if (lower.endsWith('.pdf')) {
       return Icons.picture_as_pdf_rounded;
-    } else if (lower.endsWith('.dwg') || lower.endsWith('.cad') || lower.endsWith('.dxf')) {
+    } else if (lower.endsWith('.dwg') ||
+        lower.endsWith('.cad') ||
+        lower.endsWith('.dxf')) {
       return Icons.architecture_rounded;
-    } else if (lower.endsWith('.xls') || lower.endsWith('.xlsx') || lower.endsWith('.csv')) {
+    } else if (lower.endsWith('.xls') ||
+        lower.endsWith('.xlsx') ||
+        lower.endsWith('.csv')) {
       return Icons.table_chart_rounded;
-    } else if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+    } else if (lower.endsWith('.png') ||
+        lower.endsWith('.jpg') ||
+        lower.endsWith('.jpeg')) {
       return Icons.image_rounded;
     }
     return Icons.insert_drive_file_rounded;

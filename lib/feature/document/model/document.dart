@@ -4,7 +4,6 @@ import 'package:site_vault/shared/model/profile.dart';
 /// such as layout sheets, approval PDFs, or safety blueprints.
 class SiteDocument {
   final String id;
-  final String firmId;
   final String siteId;
   final String createdBy;
   final String fileName;
@@ -19,7 +18,6 @@ class SiteDocument {
 
   SiteDocument({
     required this.id,
-    required this.firmId,
     required this.siteId,
     required this.createdBy,
     required this.fileName,
@@ -34,7 +32,6 @@ class SiteDocument {
   factory SiteDocument.fromJson(Map<String, dynamic> json) {
     return SiteDocument(
       id: json['id'] as String,
-      firmId: json['firm_id'] as String,
       siteId: json['site_id'] as String,
       createdBy: json['created_by'] as String,
       fileName: json['file_name'] as String,
@@ -45,7 +42,7 @@ class SiteDocument {
           : null,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
-      
+
       // Parses profiles join automatically if loaded via select
       createdByProfile: json['profiles'] != null
           ? Profile.fromJson(json['profiles'] as Map<String, dynamic>)
@@ -56,7 +53,6 @@ class SiteDocument {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'firm_id': firmId,
       'site_id': siteId,
       'created_by': createdBy,
       'file_name': fileName,

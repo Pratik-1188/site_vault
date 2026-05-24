@@ -60,7 +60,8 @@ completed_on DATE,
 status site_status NOT NULL DEFAULT 'active',
 
 CONSTRAINT chk_site_dates CHECK (
-    completed_on IS NULL OR completed_on >= started_on
+    completed_on IS NULL OR
+    (started_on IS NOT NULL AND completed_on >= started_on)
 ),
 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -116,7 +117,7 @@ expense_date DATE NOT NULL,
 category_id UUID REFERENCES expense_categories(id),
 vendor_id UUID REFERENCES vendors(id),
 
-amount NUMERIC(15, 2) NOT NULL CHECK (amount >= 0),
+amount NUMERIC(15, 2) NOT NULL CHECK (amount > 0),
 
 gst_percentage NUMERIC(5,2),
 gst_amount NUMERIC(15,2),
@@ -166,7 +167,6 @@ CREATE TABLE documents (
 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
 
-firm_id UUID NOT NULL REFERENCES firms(id) ON DELETE CASCADE,
 site_id UUID NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
 
 created_by UUID NOT NULL REFERENCES profiles(id),
@@ -216,7 +216,10 @@ BEGIN
 INSERT INTO public.profiles (id, display_name)
 VALUES (
 new.id,
-COALESCE(new.raw_user_meta_data->>'display_name', 'JohnDoe')
+COALESCE(
+    NULLIF(new.raw_user_meta_data->>'display_name', ''),
+    'user_' || substr(new.id::text, 1, 8)
+)
 );
 RETURN new;
 END;
