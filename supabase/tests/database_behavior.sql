@@ -398,12 +398,11 @@ BEGIN
       INSERT INTO test_results VALUES (seq, 'sites', 'completed_on requires started_on and must not be before it', false, SQLERRM);
   END;
 
-  -- Table: sites | Test: deleting a site deletes related expenses and documents
+  -- Table: sites | Test: marking a site deleted soft-deletes related expenses
   seq := seq + 1;
   BEGIN
     temp_site_2 := gen_random_uuid();
     temp_expense := gen_random_uuid();
-    temp_doc := gen_random_uuid();
 
     INSERT INTO sites (id, firm_id, name, started_on, status)
     VALUES (temp_site_2, temp_firm, 'Temp Site D', CURRENT_DATE, 'active');
@@ -416,30 +415,28 @@ BEGIN
       'Temp Expense D', CURRENT_DATE, 100, 'cash', false
     );
 
-    INSERT INTO documents (
-      id, site_id, created_by, file_name, description, file_url
-    ) VALUES (
-      temp_doc, temp_site_2, txn_user_id,
-      'temp-doc.pdf', 'temp', 'https://example.com/temp-doc.pdf'
-    );
+    UPDATE sites
+    SET status = 'deleted'
+    WHERE id = temp_site_2
+    RETURNING status::text INTO site_status_value;
 
-    DELETE FROM sites
-    WHERE id = temp_site_2;
-
-    SELECT COUNT(*) INTO count_result FROM expenses WHERE id = temp_expense;
-    IF count_result <> 0 THEN
-      INSERT INTO test_results VALUES (seq, 'sites', 'deleting a site deletes related expenses and documents', false, 'expense row still exists');
+    IF site_status_value <> 'deleted' THEN
+      INSERT INTO test_results VALUES (seq, 'sites', 'marking a site deleted soft-deletes related expenses', false, 'site status did not change to deleted');
     ELSE
-      SELECT COUNT(*) INTO count_result FROM documents WHERE id = temp_doc;
-      IF count_result <> 0 THEN
-        INSERT INTO test_results VALUES (seq, 'sites', 'deleting a site deletes related expenses and documents', false, 'document row still exists');
+      SELECT soft_deleted_at
+      INTO old_ts
+      FROM expenses
+      WHERE id = temp_expense;
+
+      IF old_ts IS NOT NULL THEN
+        INSERT INTO test_results VALUES (seq, 'sites', 'marking a site deleted soft-deletes related expenses', true, NULL);
       ELSE
-        INSERT INTO test_results VALUES (seq, 'sites', 'deleting a site deletes related expenses and documents', true, NULL);
+        INSERT INTO test_results VALUES (seq, 'sites', 'marking a site deleted soft-deletes related expenses', false, 'expense.soft_deleted_at was not populated');
       END IF;
     END IF;
   EXCEPTION
     WHEN others THEN
-      INSERT INTO test_results VALUES (seq, 'sites', 'deleting a site deletes related expenses and documents', false, SQLERRM);
+      INSERT INTO test_results VALUES (seq, 'sites', 'marking a site deleted soft-deletes related expenses', false, SQLERRM);
   END;
 
   -- Table: sites | Test: updated_at changes when a site is updated
@@ -632,39 +629,6 @@ BEGIN
       INSERT INTO test_results VALUES (seq, 'expenses', 'updated_at changes when an expense is updated', false, SQLERRM);
   END;
 
-  -- Table: expenses | Test: deleting a site deletes related expenses
-  seq := seq + 1;
-  BEGIN
-    temp_site_2 := gen_random_uuid();
-    temp_expense_2 := gen_random_uuid();
-
-    INSERT INTO sites (id, firm_id, name, started_on, status)
-    VALUES (temp_site_2, temp_firm, 'Temp Site E', CURRENT_DATE, 'active');
-
-    INSERT INTO expenses (
-      id, firm_id, site_id, created_by, paid_by, title, expense_date, amount, payment_mode, is_refundable
-    ) VALUES (
-      temp_expense_2, temp_firm, temp_site_2, txn_user_id, txn_user_id,
-      'Expense E', CURRENT_DATE, 100, 'cash', false
-    );
-
-    DELETE FROM sites
-    WHERE id = temp_site_2;
-
-    SELECT COUNT(*) INTO count_result
-    FROM expenses
-    WHERE id = temp_expense_2;
-
-    IF count_result = 0 THEN
-      INSERT INTO test_results VALUES (seq, 'expenses', 'deleting a site deletes related expenses', true, NULL);
-    ELSE
-      INSERT INTO test_results VALUES (seq, 'expenses', 'deleting a site deletes related expenses', false, 'expense row still exists');
-    END IF;
-  EXCEPTION
-    WHEN others THEN
-      INSERT INTO test_results VALUES (seq, 'expenses', 'deleting a site deletes related expenses', false, SQLERRM);
-  END;
-
   -- Table: expense_attachments | Test: deleting an expense deletes attachments
   seq := seq + 1;
   BEGIN
@@ -698,7 +662,7 @@ BEGIN
       INSERT INTO test_results VALUES (seq, 'expense_attachments', 'deleting an expense deletes attachments', false, SQLERRM);
   END;
 
-  -- Table: documents | Test: deleting a site deletes related documents
+  -- Table: documents | Test: marking a site deleted keeps related documents
   seq := seq + 1;
   BEGIN
     temp_site_2 := gen_random_uuid();
@@ -714,7 +678,8 @@ BEGIN
       'temp-doc-f.pdf', 'temp', 'https://example.com/temp-doc-f.pdf'
     );
 
-    DELETE FROM sites
+    UPDATE sites
+    SET status = 'deleted'
     WHERE id = temp_site_2;
 
     SELECT COUNT(*) INTO count_result
@@ -722,13 +687,13 @@ BEGIN
     WHERE id = temp_doc;
 
     IF count_result = 0 THEN
-      INSERT INTO test_results VALUES (seq, 'documents', 'deleting a site deletes related documents', true, NULL);
+      INSERT INTO test_results VALUES (seq, 'documents', 'marking a site deleted keeps related documents', false, 'document row was removed');
     ELSE
-      INSERT INTO test_results VALUES (seq, 'documents', 'deleting a site deletes related documents', false, 'document row still exists');
+      INSERT INTO test_results VALUES (seq, 'documents', 'marking a site deleted keeps related documents', true, NULL);
     END IF;
   EXCEPTION
     WHEN others THEN
-      INSERT INTO test_results VALUES (seq, 'documents', 'deleting a site deletes related documents', false, SQLERRM);
+      INSERT INTO test_results VALUES (seq, 'documents', 'marking a site deleted keeps related documents', false, SQLERRM);
   END;
 
   -- Table: documents | Test: created_by must reference an existing profile
