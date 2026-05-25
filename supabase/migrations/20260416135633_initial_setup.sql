@@ -198,12 +198,30 @@ RETURN NEW;
 END;
 $$;
 
+-- Soft-delete expenses when a site is marked deleted
+CREATE OR REPLACE FUNCTION public.handle_site_deleted()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+UPDATE public.expenses
+SET soft_deleted_at = COALESCE(soft_deleted_at, NOW())
+WHERE site_id = NEW.id
+  AND firm_id = NEW.firm_id
+  AND soft_deleted_at IS NULL;
+RETURN NEW;
+END;
+$$;
+
 -- Apply trigger everywhere needed
 CREATE TRIGGER tr_firms_update BEFORE UPDATE ON firms FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER tr_profiles_update BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER tr_sites_update BEFORE UPDATE ON sites FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER tr_expenses_update BEFORE UPDATE ON expenses FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER tr_documents_update BEFORE UPDATE ON documents FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER tr_sites_soft_delete_expenses AFTER UPDATE OF status ON sites FOR EACH ROW WHEN (NEW.status = 'deleted' AND OLD.status IS DISTINCT FROM NEW.status) EXECUTE FUNCTION public.handle_site_deleted();
 
 -- Auto-create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
