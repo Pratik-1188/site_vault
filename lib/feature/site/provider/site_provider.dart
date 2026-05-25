@@ -1,3 +1,4 @@
+import 'package:meta/meta.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:site_vault/feature/site/model/site.dart';
 import 'package:site_vault/feature/site/repository/site_repository.dart';
@@ -5,12 +6,25 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'site_provider.g.dart';
 
-/// Date range model
+/// Date range model with value equality implemented to prevent
+/// unnecessary provider recalculations.
+@immutable
 class DateRange {
   final DateTime? from;
   final DateTime? to;
 
-  DateRange({this.from, this.to});
+  const DateRange({this.from, this.to});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DateRange &&
+          runtimeType == other.runtimeType &&
+          from == other.from &&
+          to == other.to;
+
+  @override
+  int get hashCode => from.hashCode ^ to.hashCode;
 }
 
 /// Provides SiteRepository
@@ -20,7 +34,7 @@ SiteRepository siteRepository(Ref ref) {
   return SiteRepository(client);
 }
 
-/// Fetches all sites from DB
+/// Fetches all sites from DB (Cached for client-side manipulation)
 @riverpod
 Future<List<Site>> sites(Ref ref) async {
   final repo = ref.watch(siteRepositoryProvider);
@@ -49,7 +63,7 @@ class SelectedStatus extends _$SelectedStatus {
 @riverpod
 class StartedDateRange extends _$StartedDateRange {
   @override
-  DateRange build() => DateRange();
+  DateRange build() => const DateRange();
 
   void update(DateRange value) => state = value;
 }
@@ -67,7 +81,17 @@ class SearchQuery extends _$SearchQuery {
 @riverpod
 class VisibleCount extends _$VisibleCount {
   @override
-  int build() => 10;
+  int build() {
+    // Declarative & Pure: Reactively watch filters here.
+    // Whenever ANY filter changes, Riverpod auto-invalidates this provider
+    // and naturally resets the visible count back to 10. No memory leaks.
+    ref.watch(selectedFirmProvider);
+    ref.watch(selectedStatusProvider);
+    ref.watch(startedDateRangeProvider);
+    ref.watch(searchQueryProvider);
+
+    return 10;
+  }
 
   void update(int value) => state = value;
 
@@ -83,20 +107,6 @@ Future<List<Site>> filteredSites(Ref ref) async {
   final selectedStatus = ref.watch(selectedStatusProvider);
   final dateRange = ref.watch(startedDateRangeProvider);
   final searchQuery = ref.watch(searchQueryProvider);
-
-  // Auto-reset pagination when filters change
-  ref.listen(searchQueryProvider, (_, _) {
-    ref.read(visibleCountProvider.notifier).update(10);
-  });
-  ref.listen(selectedFirmProvider, (_, _) {
-    ref.read(visibleCountProvider.notifier).update(10);
-  });
-  ref.listen(selectedStatusProvider, (_, _) {
-    ref.read(visibleCountProvider.notifier).update(10);
-  });
-  ref.listen(startedDateRangeProvider, (_, _) {
-    ref.read(visibleCountProvider.notifier).update(10);
-  });
 
   // Hoist search query transformation for efficiency
   final query = searchQuery.toLowerCase().trim();
