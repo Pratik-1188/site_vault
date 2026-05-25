@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- Site lifecycle status
 DO $$ BEGIN
-CREATE TYPE site_status AS ENUM ('active', 'completed', 'archived');
+CREATE TYPE site_status AS ENUM ('active', 'completed', 'deleted');
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- Payment modes used in expenses

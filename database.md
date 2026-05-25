@@ -7,7 +7,7 @@ This is the simple behavior map for the current Supabase database.
 - `pgcrypto`
   - Used for `gen_random_uuid()`.
 - `site_status`
-  - `active`, `completed`, `archived`.
+  - `active`, `completed`, `deleted`.
 - `payment_mode`
   - `cash`, `upi`, `card`, `net_banking`, `cheque`, `rtgs`, `neft`, `dd`, `other`.
 

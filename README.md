@@ -13,3 +13,5 @@ Why it's a flaw: These queries are not compiler-safe. If a database column or ta
 expense and its attachment addition deletion should happen in ATOMIC way
 
 firm soft deletion should be allowed and when soft deleted all the related expenses must be soft deleted
+
+date filtering for sites and expenses

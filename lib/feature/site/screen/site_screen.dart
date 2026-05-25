@@ -10,7 +10,6 @@ import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
 
-
 /// A premium, highly consistent Material 3 screen that displays the list of
 /// sites under KK Group.
 ///
@@ -76,7 +75,9 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Sign Out?'),
-        content: const Text('Are you sure you want to sign out of KK Group Site Vault?'),
+        content: const Text(
+          'Are you sure you want to sign out of KK Group Site Vault?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -122,10 +123,10 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
               data: (sites) => Text(
                 '${sites.length} total ${sites.length == 1 ? 'site' : 'sites'} matching',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: isDarkMode ? Colors.white70 : Colors.black54,
-                      fontSize: 12,
-                      fontWeight: FontWeight.normal,
-                    ),
+                  color: isDarkMode ? Colors.white70 : Colors.black54,
+                  fontSize: 12,
+                  fontWeight: FontWeight.normal,
+                ),
               ),
               orElse: () => const SizedBox.shrink(),
             ),
@@ -150,7 +151,9 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: CircleAvatar(
-              backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.1),
               child: Text(
                 'KK',
                 style: TextStyle(
@@ -184,10 +187,12 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: isDarkMode ? Colors.black26 : Colors.black12.withValues(alpha: 0.03),
+              color: isDarkMode
+                  ? Colors.black26
+                  : Colors.black12.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
-            )
+            ),
           ],
         ),
         child: TextField(
@@ -197,7 +202,9 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
             hintText: 'Search sites by name...',
             prefixIcon: Icon(
               Icons.search_rounded,
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.6),
             ),
             suffixIcon: searchQuery.isNotEmpty
                 ? IconButton(
@@ -227,8 +234,10 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
           // Row 1: Firms horizontal chips
           firmsAsync.when(
             loading: () => _buildShimmerChips(),
-            error: (error, _) => _buildFirmChipsFallback(selectedFirm, firmColors),
-            data: (firms) => _buildFirmChips(firms, selectedFirm, firmColors, isDarkMode),
+            error: (error, _) =>
+                _buildFirmChipsFallback(selectedFirm, firmColors),
+            data: (firms) =>
+                _buildFirmChips(firms, selectedFirm, firmColors, isDarkMode),
           ),
           const SizedBox(height: 6),
           // Row 2: Status horizontal chips
@@ -237,10 +246,26 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Row(
               children: [
-                _buildStatusChip('All Status', selectedStatus == null, () => _onStatusChanged(null)),
-                _buildStatusChip('Active', selectedStatus == 'active', () => _onStatusChanged('active')),
-                _buildStatusChip('Completed', selectedStatus == 'completed', () => _onStatusChanged('completed')),
-                _buildStatusChip('Archived', selectedStatus == 'archived', () => _onStatusChanged('archived')),
+                _buildStatusChip(
+                  'All Status',
+                  selectedStatus == null,
+                  () => _onStatusChanged(null),
+                ),
+                _buildStatusChip(
+                  'Active',
+                  selectedStatus == 'active',
+                  () => _onStatusChanged('active'),
+                ),
+                _buildStatusChip(
+                  'Completed',
+                  selectedStatus == 'completed',
+                  () => _onStatusChanged('completed'),
+                ),
+                _buildStatusChip(
+                  'Deleted',
+                  selectedStatus == 'deleted',
+                  () => _onStatusChanged('deleted'),
+                ),
               ],
             ),
           ),
@@ -283,7 +308,12 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         children: [
-          _buildChoiceChip('All Firms', selectedFirm == null, () => _onFirmChanged(null), null),
+          _buildChoiceChip(
+            'All Firms',
+            selectedFirm == null,
+            () => _onFirmChanged(null),
+            null,
+          ),
           ...staticFirms.map((f) {
             final isSelected = selectedFirm == f['id'];
             final color = firmColors.getFirmColor(f['id']!);
@@ -299,13 +329,23 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     );
   }
 
-  Widget _buildFirmChips(List<Firm> firms, String? selectedFirm, FirmColors firmColors, bool isDarkMode) {
+  Widget _buildFirmChips(
+    List<Firm> firms,
+    String? selectedFirm,
+    FirmColors firmColors,
+    bool isDarkMode,
+  ) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         children: [
-          _buildChoiceChip('All Firms', selectedFirm == null, () => _onFirmChanged(null), null),
+          _buildChoiceChip(
+            'All Firms',
+            selectedFirm == null,
+            () => _onFirmChanged(null),
+            null,
+          ),
           ...firms.map((firm) {
             final isSelected = selectedFirm == firm.id;
             final color = firmColors.getFirmColor(firm.id);
@@ -321,9 +361,14 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     );
   }
 
-  Widget _buildChoiceChip(String label, bool selected, VoidCallback onTap, Color? firmColor) {
+  Widget _buildChoiceChip(
+    String label,
+    bool selected,
+    VoidCallback onTap,
+    Color? firmColor,
+  ) {
     final isAll = firmColor == null;
-    
+
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
       child: ChoiceChip(
@@ -363,16 +408,18 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
 
   Widget _buildListSection(AsyncValue<List<Site>> sitesAsync) {
     return sitesAsync.when(
-      loading: () => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent),
+              const Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: Colors.redAccent,
+              ),
               const SizedBox(height: 16),
               Text(
                 'Failed to load sites: $error',
@@ -420,11 +467,16 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
   Widget _buildSiteCard(Site site) {
     final firmColors = Theme.of(context).extension<FirmColors>()!;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Retrieve colors dynamically from the ThemeExtension
     final baseColor = firmColors.getFirmColor(site.firmId);
-    final cardBgColor = Theme.of(context).cardTheme.color ?? Theme.of(context).colorScheme.surface;
-    final softSurfaceColor = firmColors.getFirmSurfaceColor(site.firmId, isDarkMode);
+    final cardBgColor =
+        Theme.of(context).cardTheme.color ??
+        Theme.of(context).colorScheme.surface;
+    final softSurfaceColor = firmColors.getFirmSurfaceColor(
+      site.firmId,
+      isDarkMode,
+    );
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -444,11 +496,8 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // 1. Sleek firm-colored indicator bar
-                  Container(
-                    width: 5,
-                    color: baseColor,
-                  ),
-                  
+                  Container(width: 5, color: baseColor),
+
                   // 2. Card Content
                   Expanded(
                     child: Padding(
@@ -463,7 +512,9 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                               Expanded(
                                 child: Text(
                                   site.name,
-                                  style: Theme.of(context).textTheme.titleMedium,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -472,23 +523,29 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                               _buildStatusBadge(site.status),
                             ],
                           ),
-                          
+
                           const SizedBox(height: 8),
-                          
+
                           // Description text
                           Text(
-                            site.description ?? 'No description provided for this site.',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            site.description ??
+                                'No description provided for this site.',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
                                   color: site.description == null
-                                      ? Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.5)
+                                      ? Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.color
+                                            ?.withValues(alpha: 0.5)
                                       : null,
                                 ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          
+
                           const SizedBox(height: 16),
-                          
+
                           // Footer metadata
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -499,21 +556,31 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                                   Icon(
                                     Icons.calendar_today_rounded,
                                     size: 13,
-                                    color: Theme.of(context).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.color
+                                        ?.withValues(alpha: 0.6),
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
                                     site.startedOn != null
                                         ? site.startedOn!.toReadableString()
                                         : 'Not started',
-                                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(fontSize: 12),
                                   ),
                                 ],
                               ),
-                              
+
                               // Firm colored tag
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 3.0),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                  vertical: 3.0,
+                                ),
                                 decoration: BoxDecoration(
                                   color: softSurfaceColor,
                                   borderRadius: BorderRadius.circular(6.0),
@@ -550,7 +617,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
   Widget _buildStatusBadge(String status) {
     Color color;
     Color bgColor;
-    
+
     switch (status.toLowerCase()) {
       case 'active':
         color = const Color(0xFF059669); // Emerald 600
@@ -560,7 +627,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
         color = const Color(0xFF2563EB); // Blue 600
         bgColor = const Color(0xFFDBEAFE); // Blue 100
         break;
-      case 'archived':
+      case 'deleted':
       default:
         color = const Color(0xFF475569); // Slate 600
         bgColor = const Color(0xFFF1F5F9); // Slate 100
@@ -601,7 +668,9 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.08),
+                color: Theme.of(
+                  context,
+                ).colorScheme.secondary.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -620,8 +689,10 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
               'We couldn\'t find any sites matching your selected search criteria or filters.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Theme.of(context).textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
-                  ),
+                color: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
+              ),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
