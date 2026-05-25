@@ -1,32 +1,18 @@
 import 'package:site_vault/feature/site/model/site.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:site_vault/shared/repository/base_repository.dart';
 
-class SiteRepository {
-  final SupabaseClient _client;
-
-  SiteRepository(this._client);
+class SiteRepository extends BaseRepository {
+  SiteRepository(super.client);
 
   /// Fetches all sites from database ordered by latest created
-  Future<List<Site>> fetchSites() async {
-    try {
-      // ignore: avoid_print
-      print('Fetching sites from Supabase...');
-      
-      final response = await _client
+  Future<List<Site>> fetchSites() {
+    return safeCall('SiteRepository.fetchSites', () async {
+      final response = await client
           .from('sites')
           .select()
           .order('created_at', ascending: false);
 
-      // ignore: avoid_print
-      print('Supabase select response: $response (type: ${response.runtimeType})');
-
       return (response as List).map((e) => Site.fromJson(e)).toList();
-    } catch (e, stack) {
-      // ignore: avoid_print
-      print('Error in fetchSites: $e');
-      // ignore: avoid_print
-      print(stack);
-      rethrow;
-    }
+    });
   }
 }

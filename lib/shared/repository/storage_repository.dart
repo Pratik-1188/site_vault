@@ -1,12 +1,11 @@
 import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:site_vault/shared/repository/base_repository.dart';
 
-/// A shared repository managing raw file uploads and assets management
+/// A shared repository managing raw file uploads and asset management
 /// inside Supabase Storage buckets, cross-platform friendly (Uint8List).
-class StorageRepository {
-  final SupabaseClient _client;
-
-  StorageRepository(this._client);
+class StorageRepository extends BaseRepository {
+  StorageRepository(super.client);
 
   /// Uploads raw file bytes to a specific bucket and path, returning its public url
   Future<String> uploadFile({
@@ -15,13 +14,12 @@ class StorageRepository {
     required Uint8List fileBytes,
     required String fileName,
     String? mimeType,
-  }) async {
-    try {
+  }) {
+    return safeCall('StorageRepository.uploadFile', () async {
       final cleanPath = path.endsWith('/') ? path : '$path/';
       final storagePath = '$cleanPath${DateTime.now().millisecondsSinceEpoch}_$fileName';
 
-      // Perform binary upload to bucket
-      await _client.storage.from(bucket).uploadBinary(
+      await client.storage.from(bucket).uploadBinary(
             storagePath,
             fileBytes,
             fileOptions: FileOptions(
@@ -30,38 +28,25 @@ class StorageRepository {
             ),
           );
 
-      // Return public url
-      return _client.storage.from(bucket).getPublicUrl(storagePath);
-    } catch (e, stack) {
-      // ignore: avoid_print
-      print('Error in StorageRepository.uploadFile: $e');
-      // ignore: avoid_print
-      print(stack);
-      rethrow;
-    }
+      return client.storage.from(bucket).getPublicUrl(storagePath);
+    });
   }
 
   /// Deletes a file from Supabase Storage
   Future<void> deleteFile({
     required String bucket,
     required String fileUrl,
-  }) async {
-    try {
-      // Extract the relative storage path from the public URL
+  }) {
+    return safeCall('StorageRepository.deleteFile', () async {
       final uri = Uri.parse(fileUrl);
       final pathSegments = uri.pathSegments;
-      
+
       // The path typically follows: /storage/v1/object/public/bucket-name/relative-path
       final bucketIndex = pathSegments.indexOf(bucket);
       if (bucketIndex != -1 && bucketIndex + 1 < pathSegments.length) {
         final relativePath = pathSegments.sublist(bucketIndex + 1).join('/');
-        await _client.storage.from(bucket).remove([relativePath]);
+        await client.storage.from(bucket).remove([relativePath]);
       }
-    } catch (e, stack) {
-      // ignore: avoid_print
-      print('Error in StorageRepository.deleteFile: $e');
-      // ignore: avoid_print
-      print(stack);
-    }
+    });
   }
 }

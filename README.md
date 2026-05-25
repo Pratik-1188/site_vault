@@ -11,3 +11,5 @@ The Issue: Database relations are joined using raw hardcoded strings, such as se
 Why it's a flaw: These queries are not compiler-safe. If a database column or table name changes (e.g., renaming expense_categories to categories), the Dart compiler won't warn you, and the app will crash at runtime.
 
 expense and its attachment addition deletion should happen in ATOMIC way
+
+firm soft deletion should be allowed and when soft deleted all the related expenses must be soft deleted
