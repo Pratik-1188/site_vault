@@ -4,11 +4,11 @@ import '../../../helpers/provider_container.dart';
 
 void main() {
   group('SelectedStatusProvider', () {
-    test('default state should be null', () {
+    test("default state should be 'active'", () {
       final container = makeContainer();
 
       final initialVal = container.read(selectedStatusProvider);
-      expect(initialVal, isNull);
+      expect(initialVal, equals('active'));
     });
 
     test('update should change the state to the new status', () {

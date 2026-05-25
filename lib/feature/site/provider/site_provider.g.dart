@@ -54,58 +54,15 @@ final class SiteRepositoryProvider
 
 String _$siteRepositoryHash() => r'6a9018dfcd34695d925af7a8f16737d31f702b2f';
 
-/// Fetches all sites from DB
-
-@ProviderFor(sites)
-final sitesProvider = SitesProvider._();
-
-/// Fetches all sites from DB
-
-final class SitesProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<Site>>,
-          List<Site>,
-          FutureOr<List<Site>>
-        >
-    with $FutureModifier<List<Site>>, $FutureProvider<List<Site>> {
-  /// Fetches all sites from DB
-  SitesProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'sitesProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$sitesHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<List<Site>> $createElement($ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<List<Site>> create(Ref ref) {
-    return sites(ref);
-  }
-}
-
-String _$sitesHash() => r'12f49fe2b7d30795414afb4de0b551a9b205ab1d';
-
-/// Selected firm filter (null = All)
+/// Selected firm filter (null = none selected on startup)
 
 @ProviderFor(SelectedFirm)
 final selectedFirmProvider = SelectedFirmProvider._();
 
-/// Selected firm filter (null = All)
+/// Selected firm filter (null = none selected on startup)
 final class SelectedFirmProvider
     extends $NotifierProvider<SelectedFirm, String?> {
-  /// Selected firm filter (null = All)
+  /// Selected firm filter (null = none selected on startup)
   SelectedFirmProvider._()
     : super(
         from: null,
@@ -135,7 +92,7 @@ final class SelectedFirmProvider
 
 String _$selectedFirmHash() => r'51f395f00147d3ed6380d69ba5ac177561753904';
 
-/// Selected firm filter (null = All)
+/// Selected firm filter (null = none selected on startup)
 
 abstract class _$SelectedFirm extends $Notifier<String?> {
   String? build();
@@ -155,15 +112,15 @@ abstract class _$SelectedFirm extends $Notifier<String?> {
   }
 }
 
-/// Selected status filter (null = All)
+/// Selected status filter (defaults to 'active')
 
 @ProviderFor(SelectedStatus)
 final selectedStatusProvider = SelectedStatusProvider._();
 
-/// Selected status filter (null = All)
+/// Selected status filter (defaults to 'active')
 final class SelectedStatusProvider
     extends $NotifierProvider<SelectedStatus, String?> {
-  /// Selected status filter (null = All)
+  /// Selected status filter (defaults to 'active')
   SelectedStatusProvider._()
     : super(
         from: null,
@@ -191,9 +148,9 @@ final class SelectedStatusProvider
   }
 }
 
-String _$selectedStatusHash() => r'8faad3cfad967f4d3f27614a72364bc080182ede';
+String _$selectedStatusHash() => r'dc38bee129dcd30862bba8cce83652417033c455';
 
-/// Selected status filter (null = All)
+/// Selected status filter (defaults to 'active')
 
 abstract class _$SelectedStatus extends $Notifier<String?> {
   String? build();
@@ -213,15 +170,15 @@ abstract class _$SelectedStatus extends $Notifier<String?> {
   }
 }
 
-/// Started date range filter
+/// Started date range filter (defaults to current financial year)
 
 @ProviderFor(StartedDateRange)
 final startedDateRangeProvider = StartedDateRangeProvider._();
 
-/// Started date range filter
+/// Started date range filter (defaults to current financial year)
 final class StartedDateRangeProvider
     extends $NotifierProvider<StartedDateRange, DateRange> {
-  /// Started date range filter
+  /// Started date range filter (defaults to current financial year)
   StartedDateRangeProvider._()
     : super(
         from: null,
@@ -249,9 +206,9 @@ final class StartedDateRangeProvider
   }
 }
 
-String _$startedDateRangeHash() => r'0fda43a095c69a5cc35538353e484fe7bcaeae3d';
+String _$startedDateRangeHash() => r'bed0397cb2f917974d760c0e1be041aa9a3d73d4';
 
-/// Started date range filter
+/// Started date range filter (defaults to current financial year)
 
 abstract class _$StartedDateRange extends $Notifier<DateRange> {
   DateRange build();
@@ -328,71 +285,14 @@ abstract class _$SearchQuery extends $Notifier<String> {
   }
 }
 
-/// Visible count for pagination (infinite scroll)
+/// Fetches sites matching the current filters directly from Supabase (Server-side)
 
-@ProviderFor(VisibleCount)
-final visibleCountProvider = VisibleCountProvider._();
+@ProviderFor(sites)
+final sitesProvider = SitesProvider._();
 
-/// Visible count for pagination (infinite scroll)
-final class VisibleCountProvider extends $NotifierProvider<VisibleCount, int> {
-  /// Visible count for pagination (infinite scroll)
-  VisibleCountProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'visibleCountProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
+/// Fetches sites matching the current filters directly from Supabase (Server-side)
 
-  @override
-  String debugGetCreateSourceHash() => _$visibleCountHash();
-
-  @$internal
-  @override
-  VisibleCount create() => VisibleCount();
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(int value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<int>(value),
-    );
-  }
-}
-
-String _$visibleCountHash() => r'40f1119199a1f27a738a48479181ce3a68aeb7dc';
-
-/// Visible count for pagination (infinite scroll)
-
-abstract class _$VisibleCount extends $Notifier<int> {
-  int build();
-  @$mustCallSuper
-  @override
-  void runBuild() {
-    final ref = this.ref as $Ref<int, int>;
-    final element =
-        ref.element
-            as $ClassProviderElement<
-              AnyNotifier<int, int>,
-              int,
-              Object?,
-              Object?
-            >;
-    element.handleCreate(ref, build);
-  }
-}
-
-/// Combines data + filters + search and returns final list
-
-@ProviderFor(filteredSites)
-final filteredSitesProvider = FilteredSitesProvider._();
-
-/// Combines data + filters + search and returns final list
-
-final class FilteredSitesProvider
+final class SitesProvider
     extends
         $FunctionalProvider<
           AsyncValue<List<Site>>,
@@ -400,20 +300,20 @@ final class FilteredSitesProvider
           FutureOr<List<Site>>
         >
     with $FutureModifier<List<Site>>, $FutureProvider<List<Site>> {
-  /// Combines data + filters + search and returns final list
-  FilteredSitesProvider._()
+  /// Fetches sites matching the current filters directly from Supabase (Server-side)
+  SitesProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'filteredSitesProvider',
+        name: r'sitesProvider',
         isAutoDispose: true,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$filteredSitesHash();
+  String debugGetCreateSourceHash() => _$sitesHash();
 
   @$internal
   @override
@@ -422,51 +322,8 @@ final class FilteredSitesProvider
 
   @override
   FutureOr<List<Site>> create(Ref ref) {
-    return filteredSites(ref);
+    return sites(ref);
   }
 }
 
-String _$filteredSitesHash() => r'03d2ebd07e1493b8f6ad31502efe548f0ef70c10';
-
-/// Slices the filtered sites for UI pagination
-
-@ProviderFor(paginatedSites)
-final paginatedSitesProvider = PaginatedSitesProvider._();
-
-/// Slices the filtered sites for UI pagination
-
-final class PaginatedSitesProvider
-    extends
-        $FunctionalProvider<
-          AsyncValue<List<Site>>,
-          List<Site>,
-          FutureOr<List<Site>>
-        >
-    with $FutureModifier<List<Site>>, $FutureProvider<List<Site>> {
-  /// Slices the filtered sites for UI pagination
-  PaginatedSitesProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'paginatedSitesProvider',
-        isAutoDispose: true,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$paginatedSitesHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<List<Site>> $createElement($ProviderPointer pointer) =>
-      $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<List<Site>> create(Ref ref) {
-    return paginatedSites(ref);
-  }
-}
-
-String _$paginatedSitesHash() => r'71a633e80222c9abcd72593ae7b35f445a6bbec5';
+String _$sitesHash() => r'859dd9f367f8e7cb19e3bd229e3474d17deb02a9';

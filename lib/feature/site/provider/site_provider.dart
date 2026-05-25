@@ -2,6 +2,7 @@ import 'package:meta/meta.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:site_vault/feature/site/model/site.dart';
 import 'package:site_vault/feature/site/repository/site_repository.dart';
+import 'package:site_vault/shared/utils/financial_year.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'site_provider.g.dart';
@@ -34,14 +35,7 @@ SiteRepository siteRepository(Ref ref) {
   return SiteRepository(client);
 }
 
-/// Fetches all sites from DB (Cached for client-side manipulation)
-@riverpod
-Future<List<Site>> sites(Ref ref) async {
-  final repo = ref.watch(siteRepositoryProvider);
-  return repo.fetchSites();
-}
-
-/// Selected firm filter (null = All)
+/// Selected firm filter (null = none selected on startup)
 @riverpod
 class SelectedFirm extends _$SelectedFirm {
   @override
@@ -50,20 +44,23 @@ class SelectedFirm extends _$SelectedFirm {
   void update(String? value) => state = value;
 }
 
-/// Selected status filter (null = All)
+/// Selected status filter (defaults to 'active')
 @riverpod
 class SelectedStatus extends _$SelectedStatus {
   @override
-  String? build() => null;
+  String? build() => 'active';
 
   void update(String? value) => state = value;
 }
 
-/// Started date range filter
+/// Started date range filter (defaults to current financial year)
 @riverpod
 class StartedDateRange extends _$StartedDateRange {
   @override
-  DateRange build() => const DateRange();
+  DateRange build() {
+    final fy = FinancialYear.current();
+    return DateRange(from: fy.startDate, to: fy.endDate);
+  }
 
   void update(DateRange value) => state = value;
 }
@@ -77,92 +74,30 @@ class SearchQuery extends _$SearchQuery {
   void update(String value) => state = value;
 }
 
-/// Visible count for pagination (infinite scroll)
+/// Fetches sites matching the current filters directly from Supabase (Server-side)
 @riverpod
-class VisibleCount extends _$VisibleCount {
-  @override
-  int build() {
-    // Declarative & Pure: Reactively watch filters here.
-    // Whenever ANY filter changes, Riverpod auto-invalidates this provider
-    // and naturally resets the visible count back to 10. No memory leaks.
-    ref.watch(selectedFirmProvider);
-    ref.watch(selectedStatusProvider);
-    ref.watch(startedDateRangeProvider);
-    ref.watch(searchQueryProvider);
-
-    return 10;
-  }
-
-  void update(int value) => state = value;
-
-  void increment(int count) => state = state + count;
-}
-
-/// Combines data + filters + search and returns final list
-@riverpod
-Future<List<Site>> filteredSites(Ref ref) async {
-  final sites = await ref.watch(sitesProvider.future);
-
+Future<List<Site>> sites(Ref ref) async {
+  final repo = ref.watch(siteRepositoryProvider);
   final selectedFirm = ref.watch(selectedFirmProvider);
   final selectedStatus = ref.watch(selectedStatusProvider);
   final dateRange = ref.watch(startedDateRangeProvider);
   final searchQuery = ref.watch(searchQueryProvider);
 
-  // Hoist search query transformation for efficiency
-  final query = searchQuery.toLowerCase().trim();
+  // Return empty list if no firm is selected yet
+  if (selectedFirm == null) {
+    return const [];
+  }
 
-  return sites.where((site) {
-    if (selectedFirm != null && site.firmId != selectedFirm) return false;
+  // Ensure that start/end dates are present (fallback to current financial year limits)
+  final fy = FinancialYear.current();
+  final fromDate = dateRange.from ?? fy.startDate;
+  final toDate = dateRange.to ?? fy.endDate;
 
-    if (selectedStatus != null && site.status != selectedStatus) {
-      return false;
-    }
-
-    // Date normalization: Strip time components for accurate day-level comparison
-    if (dateRange.from != null || dateRange.to != null) {
-      if (site.startedOn == null) return false;
-
-      final siteDate = DateTime(
-        site.startedOn!.year,
-        site.startedOn!.month,
-        site.startedOn!.day,
-      );
-
-      if (dateRange.from != null) {
-        final fromDate = DateTime(
-          dateRange.from!.year,
-          dateRange.from!.month,
-          dateRange.from!.day,
-        );
-        if (siteDate.isBefore(fromDate)) return false;
-      }
-
-      if (dateRange.to != null) {
-        final toDate = DateTime(
-          dateRange.to!.year,
-          dateRange.to!.month,
-          dateRange.to!.day,
-        );
-        if (siteDate.isAfter(toDate)) return false;
-      }
-    }
-
-    // Apply case-insensitive hoisted search
-    if (query.isNotEmpty) {
-      if (!site.name.toLowerCase().contains(query)) {
-        return false;
-      }
-    }
-
-    return true;
-  }).toList();
-}
-
-/// Slices the filtered sites for UI pagination
-@riverpod
-Future<List<Site>> paginatedSites(Ref ref) async {
-  final filteredSites = await ref.watch(filteredSitesProvider.future);
-  final visibleCount = ref.watch(visibleCountProvider);
-
-  return filteredSites.take(visibleCount).toList();
+  return repo.fetchSites(
+    firmId: selectedFirm,
+    fromDate: fromDate,
+    toDate: toDate,
+    status: selectedStatus,
+    searchQuery: searchQuery.isNotEmpty ? searchQuery : null,
+  );
 }

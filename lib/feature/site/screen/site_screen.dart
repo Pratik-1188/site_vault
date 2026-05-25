@@ -6,6 +6,7 @@ import 'package:site_vault/shared/theme/firm_colors.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
+import 'package:site_vault/shared/utils/financial_year.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
@@ -14,7 +15,7 @@ import '../model/site.dart';
 /// sites under KK Group.
 ///
 /// Features dynamic firm-level color coding, advanced real-time search & filters,
-/// custom status badges, and an elegant infinite scroll pagination indicator.
+/// custom status badges, and server-side filtering.
 class SitesScreen extends ConsumerStatefulWidget {
   const SitesScreen({super.key});
 
@@ -23,20 +24,11 @@ class SitesScreen extends ConsumerStatefulWidget {
 }
 
 class _SitesScreenState extends ConsumerState<SitesScreen> {
-  final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      ref.read(visibleCountProvider.notifier).increment(10);
-    }
   }
 
   void _onSearchChanged(String value) {
@@ -58,13 +50,138 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
 
   void _resetAllFilters() {
     _clearSearch();
-    _onFirmChanged(null);
-    _onStatusChanged(null);
+    ref.read(selectedStatusProvider.notifier).update('active');
+    final fy = FinancialYear.current();
+    ref.read(startedDateRangeProvider.notifier).update(
+      DateRange(from: fy.startDate, to: fy.endDate),
+    );
+  }
+
+  void _showDateFilterBottomSheet(BuildContext context) {
+    final currentRange = ref.read(startedDateRangeProvider);
+    final currentFY = FinancialYear.current();
+    final fyList = [
+      currentFY,
+      FinancialYear(currentFY.startYear - 1),
+      FinancialYear(currentFY.startYear - 2),
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Select Date Range',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'FINANCIAL YEARS',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...fyList.map((fy) {
+                  final isSelected = currentRange.from?.year == fy.startDate.year &&
+                      currentRange.from?.month == fy.startDate.month &&
+                      currentRange.from?.day == fy.startDate.day &&
+                      currentRange.to?.year == fy.endDate.year &&
+                      currentRange.to?.month == fy.endDate.month &&
+                      currentRange.to?.day == fy.endDate.day;
+
+                  return ListTile(
+                     leading: Icon(
+                       Icons.calendar_today_rounded,
+                       color: isSelected ? Theme.of(context).colorScheme.primary : null,
+                     ),
+                     title: Text(
+                       fy.label,
+                       style: TextStyle(
+                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                       ),
+                     ),
+                     subtitle: Text(
+                       '${fy.startDate.toReadableString()} - ${fy.endDate.toReadableString()}',
+                     ),
+                     trailing: isSelected
+                         ? Icon(Icons.check_rounded, color: Theme.of(context).colorScheme.primary)
+                         : null,
+                     onTap: () {
+                       ref.read(startedDateRangeProvider.notifier).update(
+                         DateRange(from: fy.startDate, to: fy.endDate),
+                       );
+                       Navigator.pop(context);
+                     },
+                  );
+                }),
+                const Divider(height: 16),
+                ListTile(
+                  leading: const Icon(Icons.date_range_rounded),
+                  title: const Text('Custom Date Range...'),
+                  subtitle: const Text('Select a custom start and end date'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _selectCustomDateRange(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _selectCustomDateRange(BuildContext context) async {
+    final currentRange = ref.read(startedDateRangeProvider);
+    final initialDateRange = (currentRange.from != null && currentRange.to != null)
+        ? DateTimeRange(start: currentRange.from!, end: currentRange.to!)
+        : null;
+
+    final picked = await showDateRangePicker(
+      context: context,
+      initialDateRange: initialDateRange,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2035),
+    );
+
+    if (picked != null) {
+      ref.read(startedDateRangeProvider.notifier).update(
+        DateRange(from: picked.start, to: picked.end),
+      );
+    }
+  }
+
+  String _getDateRangeLabel(DateRange dateRange) {
+    if (dateRange.from == null || dateRange.to == null) {
+      return 'Select Date Range';
+    }
+    final fy = FinancialYear.fromDate(dateRange.from!);
+    if (fy.startDate.year == dateRange.from!.year &&
+        fy.startDate.month == dateRange.from!.month &&
+        fy.startDate.day == dateRange.from!.day &&
+        fy.endDate.year == dateRange.to!.year &&
+        fy.endDate.month == dateRange.to!.month &&
+        fy.endDate.day == dateRange.to!.day) {
+      return fy.label;
+    }
+    return '${dateRange.from!.toShortString()} - ${dateRange.to!.toShortString()}';
   }
 
   @override
   void dispose() {
-    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -110,8 +227,17 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sitesAsync = ref.watch(paginatedSitesProvider);
-    final totalSitesAsync = ref.watch(filteredSitesProvider);
+    // Listen to firmsProvider to default SelectedFirm to the first firm on startup
+    ref.listen(firmsProvider, (previous, next) {
+      next.whenData((firmsList) {
+        final currentFirm = ref.read(selectedFirmProvider);
+        if (currentFirm == null && firmsList.isNotEmpty) {
+          ref.read(selectedFirmProvider.notifier).update(firmsList.first.id);
+        }
+      });
+    });
+
+    final sitesAsync = ref.watch(sitesProvider);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -119,7 +245,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
         title: Column(
           children: [
             const Text('Sites Directory'),
-            totalSitesAsync.maybeWhen(
+            sitesAsync.maybeWhen(
               data: (sites) => Text(
                 '${sites.length} total ${sites.length == 1 ? 'site' : 'sites'} matching',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -269,6 +395,31 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 6),
+          // Row 3: Date Range horizontal chip (Premium, theme-consistent styling)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              children: [
+                ActionChip(
+                  avatar: Icon(
+                    Icons.calendar_today_rounded,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  label: Text(
+                    _getDateRangeLabel(ref.watch(startedDateRangeProvider)),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  onPressed: () => _showDateFilterBottomSheet(context),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -307,24 +458,20 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
-        children: [
-          _buildChoiceChip(
-            'All Firms',
-            selectedFirm == null,
-            () => _onFirmChanged(null),
-            null,
-          ),
-          ...staticFirms.map((f) {
-            final isSelected = selectedFirm == f['id'];
-            final color = firmColors.getFirmColor(f['id']!);
-            return _buildChoiceChip(
-              f['name']!,
-              isSelected,
-              () => _onFirmChanged(isSelected ? null : f['id']),
-              color,
-            );
-          }),
-        ],
+        children: staticFirms.map((f) {
+          final isSelected = selectedFirm == f['id'];
+          final color = firmColors.getFirmColor(f['id']!);
+          return _buildChoiceChip(
+            f['name']!,
+            isSelected,
+            () {
+              if (!isSelected) {
+                _onFirmChanged(f['id']);
+              }
+            },
+            color,
+          );
+        }).toList(),
       ),
     );
   }
@@ -339,24 +486,20 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
-        children: [
-          _buildChoiceChip(
-            'All Firms',
-            selectedFirm == null,
-            () => _onFirmChanged(null),
-            null,
-          ),
-          ...firms.map((firm) {
-            final isSelected = selectedFirm == firm.id;
-            final color = firmColors.getFirmColor(firm.id);
-            return _buildChoiceChip(
-              firm.name,
-              isSelected,
-              () => _onFirmChanged(isSelected ? null : firm.id),
-              color,
-            );
-          }),
-        ],
+        children: firms.map((firm) {
+          final isSelected = selectedFirm == firm.id;
+          final color = firmColors.getFirmColor(firm.id);
+          return _buildChoiceChip(
+            firm.name,
+            isSelected,
+            () {
+              if (!isSelected) {
+                _onFirmChanged(firm.id);
+              }
+            },
+            color,
+          );
+        }).toList(),
       ),
     );
   }
@@ -435,27 +578,10 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
           return _buildEmptyState();
         }
 
-        final visibleCount = ref.watch(visibleCountProvider);
-        final hasMore = sites.length >= visibleCount;
-
         return ListView.builder(
-          controller: _scrollController,
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          itemCount: sites.length + (hasMore ? 1 : 0),
+          itemCount: sites.length,
           itemBuilder: (_, index) {
-            if (index == sites.length) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24.0),
-                child: Center(
-                  child: SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              );
-            }
-
             final site = sites[index];
             return _buildSiteCard(site);
           },

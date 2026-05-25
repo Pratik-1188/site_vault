@@ -1,15 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:site_vault/feature/site/provider/site_provider.dart';
+import 'package:site_vault/shared/utils/financial_year.dart';
 import '../../../helpers/provider_container.dart';
 
 void main() {
   group('StartedDateRangeProvider', () {
-    test('default state should be an empty DateRange (from and to are null)', () {
+    test('default state should be the current financial year bounds', () {
       final container = makeContainer();
+      final fy = FinancialYear.current();
 
       final initialVal = container.read(startedDateRangeProvider);
-      expect(initialVal.from, isNull);
-      expect(initialVal.to, isNull);
+      expect(initialVal.from, equals(fy.startDate));
+      expect(initialVal.to, equals(fy.endDate));
     });
 
     test('update with from date should set from date only', () {
