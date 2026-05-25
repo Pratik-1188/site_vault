@@ -16,15 +16,3 @@ firm soft deletion should be allowed and when soft deleted all the related expen
 
 date filtering for sites and expenses
 
-# Run all repository tests only
-flutter test test/repository/
-
-# Run a single repository test file
-flutter test test/repository/feature/site_repository_test.dart
-
-# Run with verbose output
-flutter test test/repository/ --reporter expanded
-
-# Run with coverage
-flutter test --coverage test/repository/
-genhtml coverage/lcov.info -o coverage/html
