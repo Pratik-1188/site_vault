@@ -5,7 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/theme/firm_colors.dart';
 import 'package:site_vault/shared/theme/app_theme.dart';
-import 'package:site_vault/feature/expense/provider/expense_provider.dart'; // Re-use profiles lookup
+import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import '../model/document.dart';
 import '../provider/document_provider.dart';
@@ -14,7 +14,7 @@ import '../provider/document_provider.dart';
 ///
 /// Features:
 /// - Any-Format File picking using [file_picker] (blueprints, spreadsheets, layout drawings).
-/// - Dynamic profile selectors to capture the dynamic uploader user name.
+/// - Automatically defaults uploader identity to the currently logged in user's UUID.
 /// - Uploads binaries directly to the shared `'site-documents'` bucket via [StorageRepository].
 class DocumentUploadSheet extends ConsumerStatefulWidget {
   final String siteId;
@@ -34,8 +34,8 @@ class DocumentUploadSheet extends ConsumerStatefulWidget {
 class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
   final _formKey = GlobalKey<FormState>();
 
+  late TextEditingController _fileNameController;
   late TextEditingController _descriptionController;
-  String? _selectedCreatedBy;
 
   // File variables
   String? _pickedFileName;
@@ -46,11 +46,13 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
   @override
   void initState() {
     super.initState();
+    _fileNameController = TextEditingController();
     _descriptionController = TextEditingController();
   }
 
   @override
   void dispose() {
+    _fileNameController.dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -71,6 +73,8 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
           _pickedMimeType = file.extension != null
               ? 'application/${file.extension}'
               : null;
+          // Pre-fill the custom file name controller with the picked file's name
+          _fileNameController.text = file.name;
         });
       }
     } catch (e) {
@@ -96,15 +100,18 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       );
       return;
     }
-    if (_selectedCreatedBy == null) {
+
+    final user = ref.read(authRepositoryProvider).currentUser;
+    if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select who is uploading this document.'),
+          content: Text('No active session found. Please sign in again.'),
           backgroundColor: Colors.redAccent,
         ),
       );
       return;
     }
+    final uploaderId = user.id;
 
     setState(() {
       _isUploading = true;
@@ -128,8 +135,8 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       final document = SiteDocument(
         id: '',
         siteId: widget.siteId,
-        createdBy: _selectedCreatedBy!,
-        fileName: _pickedFileName!,
+        createdBy: uploaderId,
+        fileName: _fileNameController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
             ? null
             : _descriptionController.text.trim(),
@@ -174,8 +181,6 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final profilesAsync = ref.watch(profilesProvider);
-
     final firmColors = Theme.of(context).extension<FirmColors>()!;
     final baseColor = firmColors.getFirmColor(widget.firmId);
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
@@ -312,6 +317,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                                             setState(() {
                                               _pickedFileName = null;
                                               _pickedFileBytes = null;
+                                              _fileNameController.clear();
                                             });
                                           },
                                         ),
@@ -374,31 +380,19 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                                 ),
                           const SizedBox(height: 20),
 
-                          // 2. Profile uploader dropdown
-                          profilesAsync.when(
-                            loading: () => const LinearProgressIndicator(),
-                            error: (e, _) => Text('Error profiles: $e'),
-                            data: (profiles) {
-                              if (profiles.isNotEmpty) {
-                                _selectedCreatedBy ??= profiles.first.id;
+                          // 2. Custom File Name field
+                          TextFormField(
+                            controller: _fileNameController,
+                            decoration: const InputDecoration(
+                              labelText: 'File Name *',
+                              hintText: 'Enter a custom name for this document...',
+                              prefixIcon: Icon(Icons.title_rounded),
+                            ),
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) {
+                                    return 'Please enter a file name';
                               }
-                              return DropdownButtonFormField<String>(
-                                initialValue: _selectedCreatedBy,
-                                decoration: const InputDecoration(
-                                  labelText: 'Uploaded By (Staff Profile) *',
-                                  prefixIcon: Icon(
-                                    Icons.person_outline_rounded,
-                                  ),
-                                ),
-                                items: profiles.map((p) {
-                                  return DropdownMenuItem(
-                                    value: p.id,
-                                    child: Text(p.displayName),
-                                  );
-                                }).toList(),
-                                onChanged: (val) =>
-                                    setState(() => _selectedCreatedBy = val),
-                              );
+                              return null;
                             },
                           ),
                           const SizedBox(height: 16),
