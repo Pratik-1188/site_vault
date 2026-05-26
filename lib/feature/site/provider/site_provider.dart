@@ -1,4 +1,4 @@
-import 'package:meta/meta.dart';
+import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:site_vault/feature/site/model/site.dart';
 import 'package:site_vault/feature/site/repository/site_repository.dart';

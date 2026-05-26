@@ -32,6 +32,23 @@ class StorageRepository extends BaseRepository {
     });
   }
 
+  /// Generates a signed URL for a given absolute storage path (bucket/path)
+  /// that is valid for the specified duration (default: 1 hour).
+  Future<String> getSignedUrl({
+    required String absolutePath,
+    int expiresIn = 3600,
+  }) {
+    return safeCall('StorageRepository.getSignedUrl', () async {
+      final parts = absolutePath.split('/');
+      if (parts.length < 2) {
+        throw ArgumentError('Invalid absolute storage path: $absolutePath');
+      }
+      final bucket = parts[0];
+      final path = parts.sublist(1).join('/');
+      return await client.storage.from(bucket).createSignedUrl(path, expiresIn);
+    });
+  }
+
   /// Deletes a file from Supabase Storage
   Future<void> deleteFile({
     required String bucket,

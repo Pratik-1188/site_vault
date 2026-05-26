@@ -13,6 +13,7 @@ import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
 import 'package:site_vault/feature/analytics/provider/analytics_provider.dart';
 import 'package:site_vault/feature/analytics/model/analytics_models.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import '../model/site.dart';
 
@@ -1070,22 +1071,57 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   /// or copies the link to clipboard as a fallback.
   Future<void> _downloadOrOpenDocument(
     BuildContext context,
-    String url,
+    String path,
     String fileName,
   ) async {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text('Generating secure preview link for $fileName...'),
+              ),
+            ],
+          ),
+          duration: const Duration(seconds: 5),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+
     try {
-      final uri = Uri.parse(url);
+      final signedUrl = await ref
+          .read(storageRepositoryProvider)
+          .getSignedUrl(absolutePath: path);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+      }
+
+      final uri = Uri.parse(signedUrl);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        throw 'Could not launch $url';
+        throw 'Could not launch $signedUrl';
       }
     } catch (e) {
       if (context.mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Could not open file: $e'),
             behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.redAccent,
           ),
         );
       }
@@ -1253,6 +1289,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                       padding: const EdgeInsets.only(bottom: 12.0),
                       child: Card(
                         child: ListTile(
+                          onTap: () => _downloadOrOpenDocument(
+                            context,
+                            doc.fileUrl,
+                            doc.fileName,
+                          ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 6,
