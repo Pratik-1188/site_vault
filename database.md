@@ -34,6 +34,8 @@ This is the simple behavior map for the current Supabase database.
 - Each site belongs to one firm.
 - Deleting a firm deletes its sites.
 - Deleting a site deletes related expenses and documents.
+- Creating a site creates a storage bucket named with the site UUID.
+- New site buckets are seeded with `documents/.init` and `expenses/.init`.
 - `completed_on` requires `started_on`.
 - `completed_on` must be on or after `started_on`.
 - `status` uses the `site_status` enum.
@@ -93,6 +95,10 @@ This is the simple behavior map for the current Supabase database.
 - `public.handle_deleted_user()`
   - Runs before delete on `auth.users`.
   - Keeps the profile row and sets `is_active = false`.
+- `public.handle_site_created()`
+  - Runs after insert on `sites`.
+  - Creates a storage bucket named with the site UUID.
+  - Seeds default object keys `documents/.init` and `expenses/.init`.
 
 ## RLS
 

@@ -23,10 +23,7 @@ class DocumentRepository extends BaseRepository {
   /// Inserts a new document row in the database.
   Future<SiteDocument> createDocument(SiteDocument document) {
     return safeCall('DocumentRepository.createDocument', () async {
-      final data = document.toJson();
-      if (document.id.isEmpty) {
-        data.remove('id');
-      }
+      final data = document.toInsertJson();
 
       final response = await client
           .from('documents')

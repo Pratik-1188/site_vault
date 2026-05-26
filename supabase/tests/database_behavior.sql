@@ -373,6 +373,47 @@ BEGIN
       INSERT INTO test_results VALUES (seq, 'sites', 'default status is active', false, SQLERRM);
   END;
 
+  -- Table: sites | Test: creating a site creates storage bucket and default folders
+  seq := seq + 1;
+  BEGIN
+    temp_expense_2 := temp_firm;
+    temp_firm := gen_random_uuid();
+    temp_site_2 := gen_random_uuid();
+
+    INSERT INTO firms (id, name, description)
+    VALUES (temp_firm, 'Temp Firm C', 'temp');
+
+    INSERT INTO sites (id, firm_id, name, started_on, status)
+    VALUES (temp_site_2, temp_firm, 'Temp Site Storage', CURRENT_DATE, 'active');
+
+    SELECT COUNT(*)
+    INTO count_result
+    FROM storage.buckets
+    WHERE id = temp_site_2::text
+      AND name = temp_site_2::text;
+
+    IF count_result <> 1 THEN
+      INSERT INTO test_results VALUES (seq, 'sites', 'creating a site creates storage bucket and default folders', false, 'storage bucket was not created');
+    ELSE
+      SELECT COUNT(*)
+      INTO count_result
+      FROM storage.objects
+      WHERE bucket_id = temp_site_2::text
+        AND name IN ('documents/.init', 'expenses/.init');
+
+      IF count_result = 2 THEN
+        INSERT INTO test_results VALUES (seq, 'sites', 'creating a site creates storage bucket and default folders', true, NULL);
+      ELSE
+        INSERT INTO test_results VALUES (seq, 'sites', 'creating a site creates storage bucket and default folders', false, 'default folder markers were not created');
+      END IF;
+    END IF;
+    temp_firm := temp_expense_2;
+  EXCEPTION
+    WHEN others THEN
+      temp_firm := temp_expense_2;
+      INSERT INTO test_results VALUES (seq, 'sites', 'creating a site creates storage bucket and default folders', false, SQLERRM);
+  END;
+
   -- Table: sites | Test: completed_on requires started_on and must not be before it
   seq := seq + 1;
   BEGIN

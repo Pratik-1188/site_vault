@@ -63,4 +63,20 @@ class SiteDocument {
       'updated_at': updatedAt.toIso8601String(),
     };
   }
+
+  /// Returns only the fields needed for a database INSERT.
+  /// Excludes server-managed fields (created_at, updated_at)
+  /// which are auto-set by database defaults.
+  Map<String, dynamic> toInsertJson() {
+    final data = <String, dynamic>{
+      'site_id': siteId,
+      'created_by': createdBy,
+      'file_name': fileName,
+      'file_url': fileUrl,
+    };
+    if (description != null && description!.isNotEmpty) {
+      data['description'] = description;
+    }
+    return data;
+  }
 }

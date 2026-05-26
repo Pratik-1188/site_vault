@@ -90,44 +90,57 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
 
   /// Submits the file upload and updates database
   Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
+    debugPrint('[DocumentUpload] _submitForm triggered');
+    if (!_formKey.currentState!.validate()) {
+      debugPrint('[DocumentUpload] Form validation failed');
+      return;
+    }
     if (_pickedFileBytes == null || _pickedFileName == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a file to upload.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      debugPrint('[DocumentUpload] No file picked');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select a file to upload.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
       return;
     }
 
     final user = ref.read(authRepositoryProvider).currentUser;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No active session found. Please sign in again.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      debugPrint('[DocumentUpload] No active user session');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No active session found. Please sign in again.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
       return;
     }
     final uploaderId = user.id;
+    debugPrint('[DocumentUpload] Uploader: $uploaderId');
 
     setState(() {
       _isUploading = true;
     });
 
     try {
-      // 1. Upload file binary to 'site-documents' bucket
+      // 1. Upload file binary to the site's auto-created bucket
+      debugPrint('[DocumentUpload] Uploading file to storage...');
       final fileUrl = await ref
           .read(storageRepositoryProvider)
           .uploadFile(
-            bucket: 'site-documents',
-            path: 'site_${widget.siteId}',
+            bucket: widget.siteId,
+            path: 'documents',
             fileBytes: _pickedFileBytes!,
             fileName: _pickedFileName!,
             mimeType: _pickedMimeType,
           );
+      debugPrint('[DocumentUpload] Storage upload OK: $fileUrl');
 
       if (!mounted) return;
 
@@ -146,9 +159,11 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       );
 
       // 3. Save DB entry using the SiteDocuments controller notifier
+      debugPrint('[DocumentUpload] Inserting document record...');
       await ref
           .read(siteDocumentsProvider(widget.siteId).notifier)
           .addDocument(document);
+      debugPrint('[DocumentUpload] Insert OK');
 
       if (mounted) {
         Navigator.pop(context);
@@ -160,7 +175,9 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
           ),
         );
       }
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('[DocumentUpload] ERROR: $e');
+      debugPrint('[DocumentUpload] STACK: $stack');
       if (mounted) {
         final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
         ScaffoldMessenger.of(context).showSnackBar(

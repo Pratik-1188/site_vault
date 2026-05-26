@@ -215,6 +215,32 @@ RETURN NEW;
 END;
 $$;
 
+-- Create a storage bucket and default folders when a site is created
+CREATE OR REPLACE FUNCTION public.handle_site_created()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, storage
+AS $$
+DECLARE
+  v_bucket_id text := NEW.id::text;
+BEGIN
+  INSERT INTO storage.buckets (id, name, public)
+  VALUES (v_bucket_id, v_bucket_id, false)
+  ON CONFLICT (id) DO NOTHING;
+
+  INSERT INTO storage.objects (bucket_id, name)
+  VALUES (v_bucket_id, 'documents/.init')
+  ON CONFLICT (bucket_id, name) DO NOTHING;
+
+  INSERT INTO storage.objects (bucket_id, name)
+  VALUES (v_bucket_id, 'expenses/.init')
+  ON CONFLICT (bucket_id, name) DO NOTHING;
+
+  RETURN NEW;
+END;
+$$;
+
 -- Apply trigger everywhere needed
 CREATE TRIGGER tr_firms_update BEFORE UPDATE ON firms FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER tr_profiles_update BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
@@ -222,6 +248,7 @@ CREATE TRIGGER tr_sites_update BEFORE UPDATE ON sites FOR EACH ROW EXECUTE FUNCT
 CREATE TRIGGER tr_expenses_update BEFORE UPDATE ON expenses FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER tr_documents_update BEFORE UPDATE ON documents FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER tr_sites_soft_delete_expenses AFTER UPDATE OF status ON sites FOR EACH ROW WHEN (NEW.status = 'deleted' AND OLD.status IS DISTINCT FROM NEW.status) EXECUTE FUNCTION public.handle_site_deleted();
+CREATE TRIGGER tr_sites_create_storage AFTER INSERT ON sites FOR EACH ROW EXECUTE FUNCTION public.handle_site_created();
 
 -- Auto-create profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -319,6 +346,11 @@ USING (true)
 WITH CHECK (true);
 
 CREATE POLICY "Team Full Access" ON expense_attachments
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON storage.objects
 FOR ALL TO authenticated, anon
 USING (true)
 WITH CHECK (true);
