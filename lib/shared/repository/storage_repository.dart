@@ -28,7 +28,7 @@ class StorageRepository extends BaseRepository {
             ),
           );
 
-      return client.storage.from(bucket).getPublicUrl(storagePath);
+      return '$bucket/$storagePath';
     });
   }
 
