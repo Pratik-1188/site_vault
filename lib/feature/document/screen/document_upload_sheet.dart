@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
-import 'package:site_vault/shared/theme/firm_colors.dart';
-import 'package:site_vault/shared/theme/app_theme.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import '../model/document.dart';
@@ -211,20 +209,13 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final firmColors = Theme.of(context).extension<FirmColors>()!;
-    final baseColor = firmColors.getFirmColor(widget.firmId);
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
-        ),
+      child: Padding(
+        padding: EdgeInsets.zero,
         child: Column(
           children: [
             // Handlebar indicator
@@ -283,34 +274,12 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                           // 1. File Picker Box
                           _pickedFileName != null
                               ? Card(
-                                  color: baseColor.withValues(alpha: 0.05),
-                                  shape: RoundedRectangleBorder(
-                                    side: BorderSide(
-                                      color: baseColor.withValues(alpha: 0.2),
-                                      width: 1,
-                                    ),
-                                    borderRadius: BorderRadius.circular(
-                                      AppTheme.radiusMedium,
-                                    ),
-                                  ),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Row(
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(10),
-                                          decoration: BoxDecoration(
-                                            color: baseColor.withValues(
-                                              alpha: 0.1,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              8,
-                                            ),
-                                          ),
-                                          child: Icon(
-                                            _getFileIcon(_pickedFileName!),
-                                            color: baseColor,
-                                          ),
+                                        Icon(
+                                          _getFileIcon(_pickedFileName!),
                                         ),
                                         const SizedBox(width: 16),
                                         Expanded(
@@ -355,57 +324,12 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                                     ),
                                   ),
                                 )
-                              : InkWell(
-                                  onTap: _pickDocument,
-                                  borderRadius: BorderRadius.circular(
-                                    AppTheme.radiusLarge,
-                                  ),
-                                  child: Container(
-                                    height: 140,
-                                    decoration: BoxDecoration(
-                                      color: isDarkMode
-                                          ? Theme.of(
-                                              context,
-                                            ).inputDecorationTheme.fillColor
-                                          : const Color(0xFFF1F5F9),
-                                      border: Border.all(
-                                        color: Colors.grey.withValues(
-                                          alpha: 0.3,
-                                        ),
-                                        width: 1.5,
-                                        style: BorderStyle.solid,
-                                      ),
-                                      borderRadius: BorderRadius.circular(
-                                        AppTheme.radiusLarge,
-                                      ),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.cloud_upload_outlined,
-                                          size: 40,
-                                          color: baseColor,
-                                        ),
-                                        const SizedBox(height: 12),
-                                        const Text(
-                                          'Select Site Blueprint, PDF, or Doc',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        const Text(
-                                          'Tap here to browse file explorer',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                              : Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: OutlinedButton.icon(
+                                    onPressed: _pickDocument,
+                                    icon: const Icon(Icons.cloud_upload_outlined),
+                                    label: const Text('Select Site Blueprint, PDF, or Doc'),
                                   ),
                                 ),
                           const SizedBox(height: 20),
@@ -444,11 +368,6 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                           // Upload submit action
                           ElevatedButton(
                             onPressed: _submitForm,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: baseColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
                             child: const Text('UPLOAD SITE DOCUMENT'),
                           ),
                         ],

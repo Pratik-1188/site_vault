@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:site_vault/shared/theme/firm_colors.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/feature/expense/provider/expense_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
@@ -71,9 +70,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   }
 
   void _showStatusUpdateDialog(BuildContext context, String firmId) {
-    final firmColors = Theme.of(context).extension<FirmColors>()!;
-    final baseColor = firmColors.getFirmColor(firmId);
-
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -97,119 +93,68 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 24),
-                _statusSelectionTile(
-                  context,
-                  'active',
-                  'Active',
-                  'Site is actively running with ongoing expenses.',
-                  Icons.play_arrow_rounded,
-                  const Color(0xFF059669),
-                  baseColor,
+                RadioListTile<String>(
+                  title: const Text('Active'),
+                  subtitle: const Text('Site is actively running with ongoing expenses.'),
+                  secondary: const Icon(Icons.play_arrow_rounded),
+                  value: 'active',
+                  groupValue: _currentStatus,
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _currentStatus = val);
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Site status set to ACTIVE'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
                 ),
-                _statusSelectionTile(
-                  context,
-                  'completed',
-                  'Completed',
-                  'Project is finished. Records are sealed.',
-                  Icons.check_circle_outline_rounded,
-                  const Color(0xFF2563EB),
-                  baseColor,
+                RadioListTile<String>(
+                  title: const Text('Completed'),
+                  subtitle: const Text('Project is finished. Records are sealed.'),
+                  secondary: const Icon(Icons.check_circle_outline_rounded),
+                  value: 'completed',
+                  groupValue: _currentStatus,
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _currentStatus = val);
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Site status set to COMPLETED'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
                 ),
-                _statusSelectionTile(
-                  context,
-                  'deleted',
-                  'deleted',
-                  'Site is deleted. Read-only review mode.',
-                  Icons.archive_outlined,
-                  const Color(0xFF475569),
-                  baseColor,
+                RadioListTile<String>(
+                  title: const Text('Deleted'),
+                  subtitle: const Text('Site is deleted. Read-only review mode.'),
+                  secondary: const Icon(Icons.archive_outlined),
+                  value: 'deleted',
+                  groupValue: _currentStatus,
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() => _currentStatus = val);
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Site status set to DELETED'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
+                  },
                 ),
               ],
             ),
           ),
         );
       },
-    );
-  }
-
-  Widget _statusSelectionTile(
-    BuildContext context,
-    String statusKey,
-    String label,
-    String description,
-    IconData icon,
-    Color statusColor,
-    Color activeIndicatorColor,
-  ) {
-    final isSelected = _currentStatus == statusKey;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            _currentStatus = statusKey;
-          });
-          Navigator.pop(context);
-          // TODO: Hook provider state update to push database changes
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Site status set to ${label.toUpperCase()}'),
-              behavior: SnackBarBehavior.floating,
-              backgroundColor: statusColor,
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(16.0),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: isSelected
-                  ? activeIndicatorColor
-                  : Colors.grey.withValues(alpha: 0.2),
-              width: isSelected ? 2 : 1,
-            ),
-            borderRadius: BorderRadius.circular(12),
-            color: isSelected
-                ? activeIndicatorColor.withValues(alpha: 0.05)
-                : null,
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: statusColor, size: 24),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      label,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: isSelected ? activeIndicatorColor : null,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      description,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              if (isSelected)
-                Icon(
-                  Icons.check_rounded,
-                  color: activeIndicatorColor,
-                  size: 20,
-                ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 
@@ -311,13 +256,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
       );
     }
 
-    final firmColors = Theme.of(context).extension<FirmColors>()!;
-    final baseColor = firmColors.getFirmColor(site.firmId);
+    final baseColor = Theme.of(context).colorScheme.primary;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final softSurfaceColor = firmColors.getFirmSurfaceColor(
-      site.firmId,
-      isDarkMode,
-    );
 
     return Scaffold(
       body: NestedScrollView(
@@ -356,28 +296,15 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                       // Sub-row: Firm indicator
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0,
-                              vertical: 3.0,
-                            ),
-                            decoration: BoxDecoration(
-                              color: softSurfaceColor,
-                              borderRadius: BorderRadius.circular(6.0),
-                              border: Border.all(
-                                color: baseColor.withValues(alpha: 0.25),
-                                width: 0.8,
-                              ),
-                            ),
-                            child: Text(
+                          Chip(
+                            label: Text(
                               _getFirmName(site.firmId),
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: baseColor,
-                                letterSpacing: 0.2,
                               ),
                             ),
+                            visualDensity: VisualDensity.compact,
                           ),
                         ],
                       ),
@@ -418,56 +345,23 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                               ),
                             ],
                           ),
-                          GestureDetector(
-                            onTap: () =>
-                                _showStatusUpdateDialog(context, site.firmId),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _getStatusColor(
-                                  _currentStatus,
-                                ).withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: _getStatusColor(
-                                    _currentStatus,
-                                  ).withValues(alpha: 0.3),
-                                  width: 1,
+                          ActionChip(
+                            avatar: const Icon(Icons.circle, size: 10),
+                            label: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _currentStatus.toUpperCase(),
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 6,
-                                    height: 6,
-                                    decoration: BoxDecoration(
-                                      color: _getStatusColor(_currentStatus),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    _currentStatus.toUpperCase(),
-                                    style: TextStyle(
-                                      color: _getStatusColor(_currentStatus),
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 2),
-                                  Icon(
-                                    Icons.keyboard_arrow_down_rounded,
-                                    size: 10,
-                                    color: _getStatusColor(_currentStatus),
-                                  ),
-                                ],
-                              ),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.keyboard_arrow_down_rounded, size: 12),
+                              ],
                             ),
+                            onPressed: () => _showStatusUpdateDialog(context, site.firmId),
                           ),
                         ],
                       ),
@@ -481,20 +375,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
               delegate: _SliverAppBarDelegate(
                 TabBar(
                   controller: _tabController,
-                  labelColor: baseColor,
-                  unselectedLabelColor: isDarkMode
-                      ? Colors.white60
-                      : Colors.black54,
-                  indicatorColor: baseColor,
-                  indicatorWeight: 3,
-                  labelStyle: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                  unselectedLabelStyle: const TextStyle(
-                    fontWeight: FontWeight.normal,
-                    fontSize: 13,
-                  ),
                   tabs: const [
                     Tab(text: 'Overview'),
                     Tab(text: 'Expenses'),
@@ -535,8 +415,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
             );
           }
         },
-        backgroundColor: baseColor,
-        foregroundColor: Colors.white,
         child: const Icon(Icons.add_rounded),
       ),
     );
@@ -659,7 +537,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     final totalAsync = ref.watch(siteTotalExpensesProvider(site.id));
     final selectedCategory = ref.watch(expenseCategoryFilterProvider);
     final categoriesAsync = ref.watch(expenseCategoriesProvider);
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.all(20.0),
@@ -674,56 +551,16 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
             ),
             error: (e, _) => Text('Error loading total: $e'),
             data: (total) {
-              return Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [baseColor, baseColor.withValues(alpha: 0.85)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              return Card(
+                child: ListTile(
+                  leading: const Icon(Icons.account_balance_wallet_rounded, size: 36),
+                  title: const Text('Total Expenses Spent', style: TextStyle(fontSize: 12)),
+                  subtitle: Text(
+                    '₹${total.toStringAsFixed(2)}',
+                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
                   ),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Total Expenses Spent',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            '₹${total.toStringAsFixed(2)}',
-                            style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.account_balance_wallet_rounded,
-                        color: Colors.white,
-                        size: 28,
-                      ),
-                    ),
-                  ],
                 ),
               );
             },
@@ -739,9 +576,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
               hintText: 'Search expenses by title...',
               prefixIcon: const Icon(Icons.search_rounded),
               contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
-              fillColor: isDarkMode
-                  ? Theme.of(context).inputDecorationTheme.fillColor
-                  : const Color(0xFFF1F5F9),
               suffixIcon: _expenseSearchController.text.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear_rounded),
@@ -845,10 +679,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                             vertical: 8,
                           ),
                           leading: CircleAvatar(
-                            backgroundColor: baseColor.withValues(alpha: 0.1),
                             child: Icon(
                               _getCategoryIcon(expense.category?.name),
-                              color: baseColor,
                             ),
                           ),
                           title: Text(
@@ -900,42 +732,16 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                                       ),
                                     );
                                   },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.withValues(
-                                        alpha: 0.08,
-                                      ),
-                                      borderRadius: BorderRadius.circular(4),
-                                      border: Border.all(
-                                        color: Colors.blue.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                        width: 0.8,
+                                  child: Chip(
+                                    avatar: const Icon(Icons.receipt_rounded, size: 12),
+                                    label: Text(
+                                      'Incl. ${expense.gstPercentage!.toInt()}% GST (₹${expense.gstAmount?.toStringAsFixed(2) ?? '0.00'})',
+                                      style: const TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.receipt_rounded,
-                                          size: 10,
-                                          color: Colors.blue,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          'Incl. ${expense.gstPercentage!.toInt()}% GST (₹${expense.gstAmount?.toStringAsFixed(2) ?? '0.00'})',
-                                          style: const TextStyle(
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.blue,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                    visualDensity: VisualDensity.compact,
                                   ),
                                 ),
                               ],
@@ -946,8 +752,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                             children: [
                               Text(
                                 '₹${expense.amount.toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  color: baseColor,
+                                style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 15,
                                 ),
@@ -1185,7 +990,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   Widget _buildDocumentsTab(Site site, Color baseColor) {
     final documentsAsync = ref.watch(filteredSiteDocumentsProvider(site.id));
     final searchQuery = ref.watch(documentSearchQueryProvider);
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.all(20.0),
@@ -1200,9 +1004,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
               hintText: 'Search documents by filename...',
               prefixIcon: const Icon(Icons.search_rounded),
               contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
-              fillColor: isDarkMode
-                  ? Theme.of(context).inputDecorationTheme.fillColor
-                  : const Color(0xFFF1F5F9),
               suffixIcon: searchQuery.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear_rounded),
@@ -1231,9 +1032,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                   ),
                   Text(
                     '${documents.length} ${documents.length == 1 ? "File" : "Files"}',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: baseColor,
                     ),
                   ),
                 ],
@@ -1298,18 +1098,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                             horizontal: 16,
                             vertical: 6,
                           ),
-                          leading: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: (isPdf ? Colors.redAccent : Colors.teal)
-                                  .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                          leading: CircleAvatar(
                             child: Icon(
                               isPdf
                                   ? Icons.picture_as_pdf_rounded
                                   : Icons.description_rounded,
-                              color: isPdf ? Colors.redAccent : Colors.teal,
                             ),
                           ),
                           title: Text(
@@ -1446,7 +1239,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                         c.categoryName,
                         '₹${c.totalSpend.toStringAsFixed(2)}',
                         percentage,
-                        baseColor,
                       ),
                     );
                   }),
@@ -1455,7 +1247,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                   // Spending Insight Card
                   if (sorted.isNotEmpty)
                     Card(
-                      color: baseColor.withValues(alpha: 0.05),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Row(
@@ -1563,42 +1354,24 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                           ),
                         ),
                         Expanded(
-                          child: Stack(
-                            alignment: Alignment.centerLeft,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                height: 22,
-                                decoration: BoxDecoration(
-                                  color: baseColor.withValues(alpha: 0.05),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                              ),
-                              FractionallySizedBox(
-                                widthFactor: ratio.clamp(0.02, 1.0),
-                                child: Container(
-                                  height: 22,
-                                  decoration: BoxDecoration(
-                                    color: baseColor.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border(
-                                      left: BorderSide(
-                                        color: baseColor,
-                                        width: 3,
-                                      ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const SizedBox.shrink(),
+                                  Text(
+                                    '₹${item.totalSpend.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10,
                                     ),
                                   ),
-                                ),
+                                ],
                               ),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 12.0),
-                                child: Text(
-                                  '₹${item.totalSpend.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 10,
-                                  ),
-                                ),
-                              ),
+                              const SizedBox(height: 4),
+                              LinearProgressIndicator(value: ratio),
                             ],
                           ),
                         ),
@@ -1653,12 +1426,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                     child: Card(
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: baseColor.withValues(alpha: 0.1),
                           child: Text(
                             '#$rank',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: baseColor,
                               fontSize: 13,
                             ),
                           ),
@@ -1672,9 +1443,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                         ),
                         trailing: Text(
                           '₹${v.totalSpend.toStringAsFixed(2)}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: baseColor,
                             fontSize: 13,
                           ),
                         ),
@@ -1694,7 +1464,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     String label,
     String value,
     double percentage,
-    Color baseColor,
   ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1708,24 +1477,15 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
             ),
             Text(
               value,
-              style: TextStyle(
+              style: const TextStyle(
                 fontWeight: FontWeight.bold,
-                color: baseColor,
                 fontSize: 13,
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: percentage,
-            minHeight: 8,
-            backgroundColor: baseColor.withValues(alpha: 0.1),
-            valueColor: AlwaysStoppedAnimation<Color>(baseColor),
-          ),
-        ),
+        LinearProgressIndicator(value: percentage),
         const SizedBox(height: 4),
         Align(
           alignment: Alignment.bottomRight,
@@ -1760,17 +1520,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     return '${months[date.month - 1]} ${date.year}';
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'active':
-        return const Color(0xFF059669); // Emerald 600
-      case 'completed':
-        return const Color(0xFF2563EB); // Blue 600
-      case 'deleted':
-      default:
-        return const Color(0xFF475569); // Slate 600
-    }
-  }
+  // Status colors removed
 }
 
 /// Helper Persistent Header Delegate to anchor the custom TabBar

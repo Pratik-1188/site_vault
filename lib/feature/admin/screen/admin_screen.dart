@@ -70,8 +70,6 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -81,10 +79,6 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
         title: const Text('Administrative Hub'),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Theme.of(context).colorScheme.primary,
-          labelColor: Theme.of(context).colorScheme.primary,
-          unselectedLabelColor: isDarkMode ? Colors.white60 : Colors.black54,
-          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
           tabs: const [
             Tab(icon: Icon(Icons.store_rounded, size: 20), text: 'Vendors'),
             Tab(icon: Icon(Icons.category_rounded, size: 20), text: 'Categories'),
@@ -110,8 +104,6 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                   _openCategoryForm(context);
                 }
               },
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Colors.white,
               icon: const Icon(Icons.add_rounded),
               label: Text(_tabController.index == 0 ? 'ADD VENDOR' : 'ADD CATEGORY'),
             ),
@@ -123,7 +115,6 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
   // ==========================================
   Widget _buildVendorsPanel() {
     final vendorsAsync = ref.watch(filteredAdminVendorsProvider);
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -136,7 +127,6 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
             decoration: InputDecoration(
               hintText: 'Search vendors by name or contact...',
               prefixIcon: const Icon(Icons.search_rounded),
-              fillColor: isDarkMode ? Theme.of(context).inputDecorationTheme.fillColor : const Color(0xFFF1F5F9),
               suffixIcon: _vendorSearchController.text.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear_rounded),
@@ -212,7 +202,6 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
   // ==========================================
   Widget _buildCategoriesPanel() {
     final categoriesAsync = ref.watch(filteredAdminCategoriesProvider);
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -225,7 +214,6 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
             decoration: InputDecoration(
               hintText: 'Search categories by name...',
               prefixIcon: const Icon(Icons.search_rounded),
-              fillColor: isDarkMode ? Theme.of(context).inputDecorationTheme.fillColor : const Color(0xFFF1F5F9),
               suffixIcon: _categorySearchController.text.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear_rounded),
@@ -297,7 +285,6 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
   // ==========================================
   Widget _buildProfilesPanel() {
     final profilesAsync = ref.watch(filteredAdminProfilesProvider);
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
@@ -310,7 +297,6 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
             decoration: InputDecoration(
               hintText: 'Search staff profiles by name...',
               prefixIcon: const Icon(Icons.search_rounded),
-              fillColor: isDarkMode ? Theme.of(context).inputDecorationTheme.fillColor : const Color(0xFFF1F5F9),
               suffixIcon: _profileSearchController.text.isNotEmpty
                   ? IconButton(
                       icon: const Icon(Icons.clear_rounded),
@@ -383,24 +369,16 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
 
   /// Small beautiful M3 active/inactive status chip
   Widget _statusChip(bool isActive) {
-    final statusColor = isActive ? const Color(0xFF059669) : const Color(0xFF64748B); // Green vs Slate Gray
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: statusColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 0.8),
-      ),
-      child: Text(
+    return Chip(
+      label: Text(
         isActive ? 'ACTIVE' : 'INACTIVE',
-        style: TextStyle(
-          color: statusColor,
+        style: const TextStyle(
           fontSize: 9,
           fontWeight: FontWeight.bold,
-          letterSpacing: 0.3,
         ),
       ),
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
     );
   }
 }
@@ -480,11 +458,7 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
-        ),
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: Form(
           key: _formKey,
@@ -548,10 +522,6 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                  ),
                   child: _isSaving
                       ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white))
                       : const Text('SAVE VENDOR RECORD'),
@@ -635,11 +605,7 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
-        ),
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: Form(
           key: _formKey,
@@ -693,10 +659,6 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                  ),
                   child: _isSaving
                       ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white))
                       : const Text('SAVE EXPENSE CATEGORY'),
@@ -779,11 +741,7 @@ class _ProfileFormSheetState extends ConsumerState<_ProfileFormSheet> {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
-        ),
+      child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         child: Form(
           key: _formKey,
@@ -831,7 +789,6 @@ class _ProfileFormSheetState extends ConsumerState<_ProfileFormSheet> {
                 title: const Text('Staff Activity'),
                 subtitle: const Text('Toggle to enable/disable staff transaction log access'),
                 value: _isActive,
-                activeThumbColor: Theme.of(context).colorScheme.primary,
                 onChanged: (val) => setState(() => _isActive = val),
               ),
               const SizedBox(height: 24),
@@ -842,10 +799,6 @@ class _ProfileFormSheetState extends ConsumerState<_ProfileFormSheet> {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: _isSaving ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Colors.white,
-                  ),
                   child: _isSaving
                       ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white))
                       : const Text('SAVE PROFILE DETAILS'),

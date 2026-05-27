@@ -4,8 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
-import 'package:site_vault/shared/theme/firm_colors.dart';
-import 'package:site_vault/shared/theme/app_theme.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import '../model/expense.dart';
@@ -354,20 +352,12 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     final vendorsAsync = ref.watch(vendorsProvider);
     final profilesAsync = ref.watch(profilesProvider);
 
-    final firmColors = Theme.of(context).extension<FirmColors>()!;
-    final baseColor = firmColors.getFirmColor(widget.firmId);
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
-        ),
+      child: Padding(
+        padding: EdgeInsets.zero,
         child: Column(
           children: [
             // Handlebar indicator
@@ -514,14 +504,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                               _selectedGstPercentage > 0) ...[
                             const SizedBox(height: 12),
                             Card(
-                              color: baseColor.withValues(alpha: 0.05),
-                              shape: RoundedRectangleBorder(
-                                side: BorderSide(
-                                  color: baseColor.withValues(alpha: 0.15),
-                                  width: 0.8,
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16.0,
@@ -543,7 +525,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                       'Total Inclusive Sum',
                                       '₹${double.parse(_amountController.text.trim()).toStringAsFixed(2)}',
                                       isBold: true,
-                                      valueColor: baseColor,
                                     ),
                                   ],
                                 ),
@@ -712,49 +693,16 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child: InkWell(
+                                child: TextFormField(
+                                  readOnly: true,
+                                  controller: TextEditingController(
+                                    text: _selectedDate.toReadableString(),
+                                  ),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Expense Date',
+                                    prefixIcon: Icon(Icons.calendar_today_rounded),
+                                  ),
                                   onTap: () => _selectDate(context),
-                                  borderRadius: BorderRadius.circular(
-                                    AppTheme.radiusMedium,
-                                  ),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 16,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isDarkMode
-                                          ? Theme.of(
-                                              context,
-                                            ).inputDecorationTheme.fillColor
-                                          : const Color(0xFFF1F5F9),
-                                      borderRadius: BorderRadius.circular(
-                                        AppTheme.radiusMedium,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.calendar_today_rounded,
-                                          size: 18,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withValues(alpha: 0.6),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(
-                                            _selectedDate.toReadableString(),
-                                            style: const TextStyle(
-                                              fontSize: 14,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
                                 ),
                               ),
                             ],
@@ -775,49 +723,11 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                           const SizedBox(height: 16),
 
                           // 7. Refundable Toggle Switch
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? Theme.of(
-                                      context,
-                                    ).inputDecorationTheme.fillColor
-                                  : const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(
-                                AppTheme.radiusMedium,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.assignment_return_rounded,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .primary
-                                          .withValues(alpha: 0.6),
-                                      size: 18,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    const Text(
-                                      'Refundable Expense',
-                                      style: TextStyle(fontSize: 14),
-                                    ),
-                                  ],
-                                ),
-                                Switch(
-                                  value: _isRefundable,
-                                  activeThumbColor: baseColor,
-                                  onChanged: (val) =>
-                                      setState(() => _isRefundable = val),
-                                ),
-                              ],
-                            ),
+                          SwitchListTile(
+                            title: const Text('Refundable Expense'),
+                            secondary: const Icon(Icons.assignment_return_rounded),
+                            value: _isRefundable,
+                            onChanged: (val) => setState(() => _isRefundable = val),
                           ),
                           const SizedBox(height: 20),
 
@@ -829,7 +739,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                           const SizedBox(height: 8),
                           _pickedFileName != null
                               ? Card(
-                                  color: baseColor.withValues(alpha: 0.05),
                                   child: ListTile(
                                     leading: Icon(
                                       _pickedFileName!.toLowerCase().endsWith(
@@ -837,12 +746,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                           )
                                           ? Icons.picture_as_pdf_rounded
                                           : Icons.image_rounded,
-                                      color:
-                                          _pickedFileName!
-                                              .toLowerCase()
-                                              .endsWith('.pdf')
-                                          ? Colors.redAccent
-                                          : baseColor,
                                     ),
                                     title: Text(
                                       _pickedFileName!,
@@ -910,11 +813,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                           // Submit Action Button
                           ElevatedButton(
                             onPressed: _submitForm,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: baseColor,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
                             child: Text(
                               widget.expenseToEdit == null
                                   ? 'CREATE RECORD'

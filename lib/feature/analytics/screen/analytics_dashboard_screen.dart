@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:site_vault/feature/analytics/model/analytics_models.dart';
 import 'package:site_vault/feature/analytics/provider/analytics_provider.dart';
-import 'package:site_vault/shared/theme/firm_colors.dart';
 
 /// Central analytics hub screen showing Group (All Firms) and Firm comparative cost statistics.
 class AnalyticsDashboardScreen extends ConsumerStatefulWidget {
@@ -115,60 +114,28 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
 
   /// Segmented Sliding Scope controller
   Widget _buildScopeSelector() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final scopes = ['All Firms', 'Electricals', 'Solar', 'Associates'];
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: isDarkMode ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: List.generate(scopes.length, (index) {
-          final isSelected = _selectedScopeIndex == index;
-          return Expanded(
-            child: InkWell(
-              onTap: () => setState(() => _selectedScopeIndex = index),
-              borderRadius: BorderRadius.circular(12),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? (isDarkMode ? const Color(0xFF334155) : Colors.white)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: isSelected && !isDarkMode
-                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
-                      : null,
-                ),
-                child: Text(
-                  scopes[index],
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : (isDarkMode ? Colors.white60 : Colors.black54),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: SegmentedButton<int>(
+        segments: const <ButtonSegment<int>>[
+          ButtonSegment<int>(value: 0, label: Text('All Firms')),
+          ButtonSegment<int>(value: 1, label: Text('Electricals')),
+          ButtonSegment<int>(value: 2, label: Text('Solar')),
+          ButtonSegment<int>(value: 3, label: Text('Associates')),
+        ],
+        selected: <int>{_selectedScopeIndex},
+        onSelectionChanged: (Set<int> newSelection) {
+          setState(() {
+            _selectedScopeIndex = newSelection.first;
+          });
+        },
       ),
     );
   }
 
   /// Grid displaying computed aggregated totals
   Widget _buildKPIGrid(double total, double gst, double base, int count) {
-    final firmColors = Theme.of(context).extension<FirmColors>()!;
-    final accentColor = _selectedScopeIndex == 0
-        ? Theme.of(context).colorScheme.primary
-        : firmColors.getFirmColor(_getFirmIdForIndex(_selectedScopeIndex)!);
+    final accentColor = Theme.of(context).colorScheme.primary;
 
     return GridView.count(
       crossAxisCount: 2,
@@ -219,8 +186,6 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
 
   /// Proportional Spend Brand Bar Chart
   Widget _buildFirmSplitsChart(List<FirmAnalyticsSummary> summaries) {
-    final firmColors = Theme.of(context).extension<FirmColors>()!;
-
     double totalElectricals = 0.0;
     double totalSolar = 0.0;
     double totalAssociates = 0.0;
@@ -257,58 +222,38 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
             const Text('Spend proportional distribution across the divisions.', style: TextStyle(fontSize: 11, color: Colors.grey)),
             const SizedBox(height: 20),
 
-            // Segmented proportional M3 progress bar
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: SizedBox(
-                height: 12,
-                child: Row(
-                  children: [
-                    if (pctElec > 0)
-                      Expanded(flex: (pctElec * 100).toInt(), child: Container(color: firmColors.electricals)),
-                    if (pctSolar > 0)
-                      Expanded(flex: (pctSolar * 100).toInt(), child: Container(color: firmColors.solar)),
-                    if (pctAssoc > 0)
-                      Expanded(flex: (pctAssoc * 100).toInt(), child: Container(color: firmColors.associates)),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // Legend indicators
-            _legendRow('KK Electricals', '₹${totalElectricals.toStringAsFixed(2)}', '${(pctElec * 100).toInt()}%', firmColors.electricals),
+            _legendRow('KK Electricals', '₹${totalElectricals.toStringAsFixed(2)}', '${(pctElec * 100).toInt()}%', pctElec),
             const Divider(height: 16, thickness: 0.5),
-            _legendRow('KK Solar', '₹${totalSolar.toStringAsFixed(2)}', '${(pctSolar * 100).toInt()}%', firmColors.solar),
+            _legendRow('KK Solar', '₹${totalSolar.toStringAsFixed(2)}', '${(pctSolar * 100).toInt()}%', pctSolar),
             const Divider(height: 16, thickness: 0.5),
-            _legendRow('KK Associates', '₹${totalAssociates.toStringAsFixed(2)}', '${(pctAssoc * 100).toInt()}%', firmColors.associates),
+            _legendRow('KK Associates', '₹${totalAssociates.toStringAsFixed(2)}', '${(pctAssoc * 100).toInt()}%', pctAssoc),
           ],
         ),
       ),
     );
   }
 
-  Widget _legendRow(String label, String value, String percent, Color color) {
-    return Row(
+  Widget _legendRow(String label, String value, String percent, double ratio) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 12),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-        const Spacer(),
-        Text(value, style: const TextStyle(fontSize: 12)),
-        const SizedBox(width: 12),
-        Text(percent, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+        Row(
+          children: [
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            const Spacer(),
+            Text(value, style: const TextStyle(fontSize: 12)),
+            const SizedBox(width: 12),
+            Text(percent, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+          ],
+        ),
+        const SizedBox(height: 6),
+        LinearProgressIndicator(value: ratio),
       ],
     );
   }
 
   /// Categories Spend progress indicators
   Widget _buildCategoryDistribution(AsyncValue<List<CategorySpendSummary>> categorySpendAsync) {
-    final firmColors = Theme.of(context).extension<FirmColors>()!;
-    final accentColor = _selectedScopeIndex == 0
-        ? Theme.of(context).colorScheme.primary
-        : firmColors.getFirmColor(_getFirmIdForIndex(_selectedScopeIndex)!);
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -356,18 +301,12 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                              Text('₹${entry.value.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, color: accentColor, fontSize: 13)),
+                              Text('₹${entry.value.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary, fontSize: 13)),
                             ],
                           ),
                           const SizedBox(height: 6),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(4),
-                            child: LinearProgressIndicator(
-                              value: percentage,
-                              minHeight: 6,
-                              backgroundColor: accentColor.withValues(alpha: 0.1),
-                              valueColor: AlwaysStoppedAnimation(accentColor),
-                            ),
+                          LinearProgressIndicator(
+                            value: percentage,
                           ),
                           const SizedBox(height: 4),
                           Align(
@@ -389,11 +328,6 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
 
   /// Month-over-month Cashflow Timeline
   Widget _buildMonthlyTrendsTimeline(AsyncValue<List<MonthlySpendTrend>> monthlySpendAsync) {
-    final firmColors = Theme.of(context).extension<FirmColors>()!;
-    final accentColor = _selectedScopeIndex == 0
-        ? Theme.of(context).colorScheme.primary
-        : firmColors.getFirmColor(_getFirmIdForIndex(_selectedScopeIndex)!);
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -455,34 +389,21 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                           
                           // 2. Velocity bar
                           Expanded(
-                            child: Stack(
-                              alignment: Alignment.centerLeft,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: accentColor.withValues(alpha: 0.05),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                                FractionallySizedBox(
-                                  widthFactor: ratio.clamp(0.02, 1.0),
-                                  child: Container(
-                                    height: 24,
-                                    decoration: BoxDecoration(
-                                      color: accentColor.withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(4),
-                                      border: Border(left: BorderSide(color: accentColor, width: 3)),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const SizedBox.shrink(),
+                                    Text(
+                                      '₹${item.value.toStringAsFixed(2)}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.only(left: 12.0),
-                                  child: Text(
-                                    '₹${item.value.toStringAsFixed(2)}',
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
-                                  ),
-                                ),
+                                const SizedBox(height: 4),
+                                LinearProgressIndicator(value: ratio),
                               ],
                             ),
                           ),
