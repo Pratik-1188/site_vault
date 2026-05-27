@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/theme/firm_colors.dart';
 import 'package:site_vault/shared/theme/app_theme.dart';
@@ -148,6 +149,60 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     }
   }
 
+  /// Maps file extensions to their standard, robust MIME types
+  String? _getMimeType(String fileName) {
+    final ext = fileName.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'png':
+        return 'image/png';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'heic':
+        return 'image/heic';
+      case 'heif':
+        return 'image/heif';
+      case 'webp':
+        return 'image/webp';
+      case 'gif':
+        return 'image/gif';
+      case 'csv':
+        return 'text/csv';
+      case 'xls':
+        return 'application/vnd.ms-excel';
+      case 'xlsx':
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      default:
+        return 'application/$ext';
+    }
+  }
+
+  /// Takes a photo from the device camera
+  Future<void> _takePhoto() async {
+    try {
+      final picker = ImagePicker();
+      final XFile? photo = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85, // Balanced quality and size
+      );
+      if (photo != null) {
+        final bytes = await photo.readAsBytes();
+        setState(() {
+          _pickedFileName = photo.name;
+          _pickedFileBytes = bytes;
+          _pickedMimeType = _getMimeType(photo.name);
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error capturing photo: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   /// Picks a receipt attachment using file_picker
   Future<void> _pickAttachment() async {
     try {
@@ -161,7 +216,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
         setState(() {
           _pickedFileName = file.name;
           _pickedFileBytes = file.bytes;
-          _pickedMimeType = file.extension != null ? 'application/${file.extension}' : null;
+          _pickedMimeType = _getMimeType(file.name);
         });
       }
     } catch (e) {
@@ -192,11 +247,11 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     try {
       String? fileUrl;
 
-      // 1. Upload receipt to storage if picked
+      // 1. Upload receipt to storage if picked or captured
       if (_pickedFileBytes != null && _pickedFileName != null) {
         fileUrl = await ref.read(storageRepositoryProvider).uploadFile(
-              bucket: 'expense-attachments',
-              path: 'expense_${widget.siteId}',
+              bucket: widget.siteId, // Site's unique UUID bucket
+              path: 'expenses',      // Folder path inside site bucket
               fileBytes: _pickedFileBytes!,
               fileName: _pickedFileName!,
               mimeType: _pickedMimeType,
@@ -639,7 +694,14 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                               ? Card(
                                   color: baseColor.withValues(alpha: 0.05),
                                   child: ListTile(
-                                    leading: const Icon(Icons.picture_as_pdf_rounded, color: Colors.redAccent),
+                                    leading: Icon(
+                                      _pickedFileName!.toLowerCase().endsWith('.pdf')
+                                          ? Icons.picture_as_pdf_rounded
+                                          : Icons.image_rounded,
+                                      color: _pickedFileName!.toLowerCase().endsWith('.pdf')
+                                          ? Colors.redAccent
+                                          : baseColor,
+                                    ),
                                     title: Text(_pickedFileName!, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                                     subtitle: const Text('Ready to upload on save', style: TextStyle(fontSize: 11)),
                                     trailing: IconButton(
@@ -653,10 +715,30 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                     ),
                                   ),
                                 )
-                              : OutlinedButton.icon(
-                                  onPressed: _pickAttachment,
-                                  icon: const Icon(Icons.cloud_upload_rounded),
-                                  label: const Text('Pick Invoice / PDF receipt'),
+                              : Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: _takePhoto,
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                        ),
+                                        icon: const Icon(Icons.camera_alt_rounded),
+                                        label: const Text('Camera'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: _pickAttachment,
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 14),
+                                        ),
+                                        icon: const Icon(Icons.cloud_upload_rounded),
+                                        label: const Text('Upload File'),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                           
                           const SizedBox(height: 32),
