@@ -77,7 +77,9 @@ class ExpenseRepository extends BaseRepository {
           .eq('is_active', true)
           .order('name', ascending: true);
 
-      return (response as List).map((e) => ExpenseCategory.fromJson(e)).toList();
+      return (response as List)
+          .map((e) => ExpenseCategory.fromJson(e))
+          .toList();
     });
   }
 
@@ -104,27 +106,6 @@ class ExpenseRepository extends BaseRepository {
           .order('display_name', ascending: true);
 
       return (response as List).map((e) => Profile.fromJson(e)).toList();
-    });
-  }
-
-  /// Inserts a new expense attachment record.
-  Future<void> addAttachment(String expenseId, String fileUrl) {
-    return safeCall('ExpenseRepository.addAttachment', () async {
-      await client.from('expense_attachments').insert({
-        'expense_id': expenseId,
-        'file_url': fileUrl,
-      });
-    });
-  }
-
-  /// Fetches attachments for a specific expense.
-  Future<List<String>> fetchAttachmentsForExpense(String expenseId) {
-    return safeCall('ExpenseRepository.fetchAttachmentsForExpense', () async {
-      final response = await client
-          .from('expense_attachments')
-          .select('file_url')
-          .eq('expense_id', expenseId);
-      return (response as List).map((e) => e['file_url'] as String).toList();
     });
   }
 }

@@ -105,7 +105,9 @@ class ExpenseCategory {
       id: json['id'] as String,
       name: json['name'] as String,
       isActive: json['is_active'] as bool? ?? true,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
     );
   }
 
@@ -141,7 +143,9 @@ class Vendor {
       name: json['name'] as String,
       contactInfo: json['contact_info'] as String?,
       isActive: json['is_active'] as bool? ?? true,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+      createdAt: json['created_at'] != null
+          ? DateTime.parse(json['created_at'])
+          : null,
     );
   }
 
@@ -161,26 +165,27 @@ class Expense {
   final String id;
   final String firmId;
   final String siteId;
-  
+
   final String createdBy;
   final String paidBy;
-  
+
   final String title;
   final String? description;
+  final String? attachmentPath;
   final DateTime expenseDate;
-  
+
   final String? categoryId;
   final String? vendorId;
-  
+
   /// Total amount spent (includes GST)
   final double amount;
-  
+
   final double? gstPercentage;
   final double? gstAmount;
-  
+
   final PaymentMode paymentMode;
   final bool isRefundable;
-  
+
   final DateTime? softDeletedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -199,6 +204,7 @@ class Expense {
     required this.paidBy,
     required this.title,
     this.description,
+    this.attachmentPath,
     required this.expenseDate,
     this.categoryId,
     this.vendorId,
@@ -225,29 +231,38 @@ class Expense {
       paidBy: json['paid_by'] as String,
       title: json['title'] as String,
       description: json['description'] as String?,
+      attachmentPath: json['attachment_path'] as String?,
       expenseDate: DateTime.parse(json['expense_date'] as String),
       categoryId: json['category_id'] as String?,
       vendorId: json['vendor_id'] as String?,
       amount: (json['amount'] as num).toDouble(),
-      gstPercentage: json['gst_percentage'] != null ? (json['gst_percentage'] as num).toDouble() : null,
-      gstAmount: json['gst_amount'] != null ? (json['gst_amount'] as num).toDouble() : null,
+      gstPercentage: json['gst_percentage'] != null
+          ? (json['gst_percentage'] as num).toDouble()
+          : null,
+      gstAmount: json['gst_amount'] != null
+          ? (json['gst_amount'] as num).toDouble()
+          : null,
       paymentMode: PaymentMode.fromString(json['payment_mode'] as String),
       isRefundable: json['is_refundable'] as bool? ?? false,
-      softDeletedAt: json['soft_deleted_at'] != null ? DateTime.parse(json['soft_deleted_at'] as String) : null,
+      softDeletedAt: json['soft_deleted_at'] != null
+          ? DateTime.parse(json['soft_deleted_at'] as String)
+          : null,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
-      
+
       // Relations parsed if joined in Supabase select query
-      category: json['expense_categories'] != null 
-          ? ExpenseCategory.fromJson(json['expense_categories'] as Map<String, dynamic>)
+      category: json['expense_categories'] != null
+          ? ExpenseCategory.fromJson(
+              json['expense_categories'] as Map<String, dynamic>,
+            )
           : null,
-      vendor: json['vendors'] != null 
+      vendor: json['vendors'] != null
           ? Vendor.fromJson(json['vendors'] as Map<String, dynamic>)
           : null,
-      paidByProfile: json['paid_by_profile'] != null 
+      paidByProfile: json['paid_by_profile'] != null
           ? Profile.fromJson(json['paid_by_profile'] as Map<String, dynamic>)
           : null,
-      createdByProfile: json['created_by_profile'] != null 
+      createdByProfile: json['created_by_profile'] != null
           ? Profile.fromJson(json['created_by_profile'] as Map<String, dynamic>)
           : null,
     );
@@ -262,7 +277,9 @@ class Expense {
       'paid_by': paidBy,
       'title': title,
       'description': description,
-      'expense_date': '${expenseDate.year.toString().padLeft(4, '0')}-${expenseDate.month.toString().padLeft(2, '0')}-${expenseDate.day.toString().padLeft(2, '0')}',
+      'attachment_path': attachmentPath,
+      'expense_date':
+          '${expenseDate.year.toString().padLeft(4, '0')}-${expenseDate.month.toString().padLeft(2, '0')}-${expenseDate.day.toString().padLeft(2, '0')}',
       'category_id': categoryId,
       'vendor_id': vendorId,
       'amount': amount,

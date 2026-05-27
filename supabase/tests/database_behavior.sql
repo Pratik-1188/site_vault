@@ -19,7 +19,6 @@ DECLARE
   temp_expense uuid;
   temp_expense_2 uuid;
   temp_doc uuid;
-  temp_attachment uuid;
   old_ts timestamptz;
   new_ts timestamptz;
   total numeric;
@@ -670,37 +669,32 @@ BEGIN
       INSERT INTO test_results VALUES (seq, 'expenses', 'updated_at changes when an expense is updated', false, SQLERRM);
   END;
 
-  -- Table: expense_attachments | Test: deleting an expense deletes attachments
+  -- Table: expenses | Test: attachment_path is stored on the expense row
   seq := seq + 1;
   BEGIN
     temp_expense := gen_random_uuid();
-    temp_attachment := gen_random_uuid();
 
     INSERT INTO expenses (
-      id, firm_id, site_id, created_by, paid_by, title, expense_date, amount, payment_mode, is_refundable
+      id, firm_id, site_id, created_by, paid_by, title, expense_date, amount, payment_mode, is_refundable, attachment_path
     ) VALUES (
       temp_expense, temp_firm, temp_site, txn_user_id, txn_user_id,
-      'Attachment Expense', CURRENT_DATE, 100, 'cash', false
+      'Attachment Expense', CURRENT_DATE, 100, 'cash', false, 'https://example.com/file.pdf'
     );
 
-    INSERT INTO expense_attachments (id, expense_id, file_url)
-    VALUES (temp_attachment, temp_expense, 'https://example.com/file.pdf');
+    SELECT COUNT(*)
+    INTO count_result
+    FROM expenses
+    WHERE id = temp_expense
+      AND attachment_path = 'https://example.com/file.pdf';
 
-    DELETE FROM expenses
-    WHERE id = temp_expense;
-
-    SELECT COUNT(*) INTO count_result
-    FROM expense_attachments
-    WHERE id = temp_attachment;
-
-    IF count_result = 0 THEN
-      INSERT INTO test_results VALUES (seq, 'expense_attachments', 'deleting an expense deletes attachments', true, NULL);
+    IF count_result = 1 THEN
+      INSERT INTO test_results VALUES (seq, 'expenses', 'attachment_path is stored on the expense row', true, NULL);
     ELSE
-      INSERT INTO test_results VALUES (seq, 'expense_attachments', 'deleting an expense deletes attachments', false, 'attachment row still exists');
+      INSERT INTO test_results VALUES (seq, 'expenses', 'attachment_path is stored on the expense row', false, 'attachment_path was not stored on expense');
     END IF;
   EXCEPTION
     WHEN others THEN
-      INSERT INTO test_results VALUES (seq, 'expense_attachments', 'deleting an expense deletes attachments', false, SQLERRM);
+      INSERT INTO test_results VALUES (seq, 'expenses', 'attachment_path is stored on the expense row', false, SQLERRM);
   END;
 
   -- Table: documents | Test: marking a site deleted keeps related documents

@@ -66,13 +66,8 @@ This is the simple behavior map for the current Supabase database.
 - `title` must be longer than 2 trimmed characters.
 - `payment_mode` uses the `payment_mode` enum.
 - `soft_deleted_at` marks the row as deleted for app queries and analytics.
+- `attachment_path` stores the expense receipt/document path directly on the expense row.
 - `updated_at` is auto-filled on update by a trigger.
-
-## `expense_attachments`
-
-- Each attachment belongs to one expense.
-- Deleting an expense deletes its attachments.
-- No update trigger.
 
 ## `documents`
 

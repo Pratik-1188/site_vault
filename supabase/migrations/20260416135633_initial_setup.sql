@@ -111,6 +111,7 @@ paid_by UUID NOT NULL REFERENCES profiles(id),
 
 title TEXT NOT NULL,
 description TEXT,
+attachment_path TEXT,
 
 expense_date DATE NOT NULL,
 
@@ -153,14 +154,6 @@ ON DELETE CASCADE;
 -- ########################################################
 -- 5. ATTACHMENTS & DOCUMENTS
 -- ########################################################
-
--- EXPENSE ATTACHMENTS
-CREATE TABLE expense_attachments (
-id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-expense_id UUID NOT NULL REFERENCES expenses(id) ON DELETE CASCADE,
-file_url TEXT NOT NULL,
-created_at TIMESTAMPTZ DEFAULT NOW()
-);
 
 -- DOCUMENTS
 CREATE TABLE documents (
@@ -307,7 +300,6 @@ ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expense_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vendors ENABLE ROW LEVEL SECURITY;
-ALTER TABLE expense_attachments ENABLE ROW LEVEL SECURITY;
 
 -- Simple full access (small trusted team)
 CREATE POLICY "Team Full Access" ON firms
@@ -341,11 +333,6 @@ USING (true)
 WITH CHECK (true);
 
 CREATE POLICY "Team Full Access" ON vendors
-FOR ALL TO authenticated, anon
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Team Full Access" ON expense_attachments
 FOR ALL TO authenticated, anon
 USING (true)
 WITH CHECK (true);
