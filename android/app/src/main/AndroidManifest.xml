@@ -42,4 +42,20 @@
             <data android:mimeType="text/plain"/>
         </intent>
     </queries>
+
+    <!-- Allows the app to query for installed browsers and external viewers -->
+    <queries>
+        <!-- Required to open secure links (https) in Chrome or external browser -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="https" />
+        </intent>
+        <!-- Required to open standard links (http) in Chrome or external browser -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="http" />
+        </intent>
+    </queries>
 </manifest>

@@ -70,9 +70,22 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
         setState(() {
           _pickedFileName = file.name;
           _pickedFileBytes = file.bytes;
-          _pickedMimeType = file.extension != null
-              ? 'application/${file.extension}'
-              : null;
+
+          // Determine correct MIME type based on extension
+          final ext = file.extension?.toLowerCase();
+          if (ext == 'jpg' || ext == 'jpeg') {
+            _pickedMimeType = 'image/jpeg';
+          } else if (ext == 'png') {
+            _pickedMimeType = 'image/png';
+          } else if (ext == 'pdf') {
+            _pickedMimeType = 'application/pdf';
+          } else if (ext != null) {
+            // Fallback for other files (e.g., zip, docx)
+            _pickedMimeType = 'application/octet-stream';
+          } else {
+            _pickedMimeType = null;
+          }
+
           // Pre-fill the custom file name controller with the picked file's name
           _fileNameController.text = file.name;
         });
@@ -402,12 +415,13 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                             controller: _fileNameController,
                             decoration: const InputDecoration(
                               labelText: 'File Name *',
-                              hintText: 'Enter a custom name for this document...',
+                              hintText:
+                                  'Enter a custom name for this document...',
                               prefixIcon: Icon(Icons.title_rounded),
                             ),
                             validator: (val) {
                               if (val == null || val.trim().isEmpty) {
-                                    return 'Please enter a file name';
+                                return 'Please enter a file name';
                               }
                               return null;
                             },
