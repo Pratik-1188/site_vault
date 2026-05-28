@@ -6,11 +6,11 @@ class HomeRepository extends BaseRepository {
   Future<double> fetchCurrentMonthExpenseTotal() {
     return safeCall('HomeRepository.fetchCurrentMonthExpenseTotal', () async {
       final response = await client
-          .from('view_homescreen_analytics')
-          .select('current_year_expense_total')
+          .from('view_current_financial_year_expense_total')
+          .select('total_expense')
           .single();
 
-      final val = response['current_year_expense_total'];
+      final val = response['total_expense'];
       return val is num ? val.toDouble() : 0.0;
     });
   }
@@ -20,7 +20,7 @@ class HomeRepository extends BaseRepository {
       'HomeRepository.fetchActiveSitesForCurrentFinancialYear',
       () async {
         final response = await client
-            .from('view_homescreen_analytics')
+            .from('view_active_sites_count')
             .select('active_sites_count')
             .single();
 
@@ -35,11 +35,11 @@ class HomeRepository extends BaseRepository {
       'HomeRepository.fetchMissingBillExpensesForCurrentFinancialYear',
       () async {
         final response = await client
-            .from('view_homescreen_analytics')
-            .select('missing_bill_expense_total')
+            .from('view_missing_bill_expense_total')
+            .select('missing_bill_total')
             .single();
 
-        final val = response['missing_bill_expense_total'];
+        final val = response['missing_bill_total'];
         return val is num ? val.toDouble() : 0.0;
       },
     );
