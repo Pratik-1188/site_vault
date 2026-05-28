@@ -290,60 +290,7 @@ BEFORE DELETE ON auth.users
 FOR EACH ROW EXECUTE PROCEDURE public.handle_deleted_user();
 
 -- ########################################################
--- 7. SECURITY (RLS)
--- ########################################################
-
-ALTER TABLE firms ENABLE ROW LEVEL SECURITY;
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sites ENABLE ROW LEVEL SECURITY;
-ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
-ALTER TABLE expense_categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE vendors ENABLE ROW LEVEL SECURITY;
-
--- Simple full access (small trusted team)
-CREATE POLICY "Team Full Access" ON firms
-FOR ALL TO authenticated, anon
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Team Full Access" ON profiles
-FOR ALL TO authenticated, anon
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Team Full Access" ON sites
-FOR ALL TO authenticated, anon
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Team Full Access" ON expenses
-FOR ALL TO authenticated, anon
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Team Full Access" ON documents
-FOR ALL TO authenticated, anon
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Team Full Access" ON expense_categories
-FOR ALL TO authenticated, anon
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Team Full Access" ON vendors
-FOR ALL TO authenticated, anon
-USING (true)
-WITH CHECK (true);
-
-CREATE POLICY "Team Full Access" ON storage.objects
-FOR ALL TO authenticated, anon
-USING (true)
-WITH CHECK (true);
-
--- ########################################################
--- 8. PERFORMANCE INDEXES (IMPORTANT FOR ANALYTICS)
+-- 7. PERFORMANCE INDEXES (IMPORTANT FOR ANALYTICS)
 -- ########################################################
 
 CREATE INDEX idx_expenses_site ON expenses(site_id);
@@ -354,7 +301,7 @@ CREATE INDEX idx_expenses_category ON expenses(category_id);
 CREATE INDEX idx_documents_site ON documents(site_id);
 
 -- ########################################################
--- 9. Logging
+-- 8. Logging
 -- ########################################################
 
 CREATE TABLE public.audit_logs (
@@ -453,3 +400,62 @@ FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
 CREATE TRIGGER tr_audit_documents
 AFTER INSERT OR UPDATE OR DELETE ON public.documents
 FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
+
+-- ########################################################
+-- 9. SECURITY (RLS)
+-- ########################################################
+
+ALTER TABLE firms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE expense_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE vendors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- Simple full access (small trusted team)
+CREATE POLICY "Team Full Access" ON firms
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON profiles
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON sites
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON expenses
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON documents
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON expense_categories
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON vendors
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON storage.objects
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
+
+CREATE POLICY "Team Full Access" ON audit_logs
+FOR ALL TO authenticated, anon
+USING (true)
+WITH CHECK (true);
