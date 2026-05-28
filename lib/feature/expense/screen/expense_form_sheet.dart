@@ -6,6 +6,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
+import 'package:site_vault/shared/provider/firm_provider.dart';
+import 'package:site_vault/feature/site/provider/site_provider.dart';
+import 'package:site_vault/feature/site/model/site.dart';
+import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import '../model/expense.dart';
 import '../provider/expense_provider.dart';
 
@@ -38,6 +42,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
   late TextEditingController _titleController;
   late TextEditingController _amountController;
   late TextEditingController _descriptionController;
+  late TextEditingController _customGstController;
 
   late DateTime _selectedDate;
   late PaymentMode _selectedPaymentMode;
@@ -45,10 +50,17 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
   String? _selectedCategoryId;
   String? _selectedVendorId;
-  String? _selectedCreatedBy;
   String? _selectedPaidBy;
 
+  // Firm & Site dynamic selection state
+  String? _selectedFirmId;
+  String? _selectedSiteId;
+  List<Site>? _activeSites;
+  bool _isLoadingSites = false;
+  late bool _isContextLocked; // Locked if started from specific site details screen
+
   double _selectedGstPercentage = 0.0;
+  bool _isCustomGst = false;
   double _calculatedBaseAmount = 0.0;
   double _calculatedGstAmount = 0.0;
 
@@ -57,8 +69,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
   Uint8List? _pickedFileBytes;
   String? _pickedMimeType;
   bool _isUploading = false;
-
-  final List<double> _gstRates = [0.0, 5.0, 12.0, 18.0, 28.0];
 
   @override
   void initState() {
@@ -72,6 +82,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     _descriptionController = TextEditingController(
       text: expense?.description ?? '',
     );
+    _customGstController = TextEditingController();
 
     _selectedDate = expense?.expenseDate ?? DateTime.now();
     _selectedPaymentMode = expense?.paymentMode ?? PaymentMode.cash;
@@ -79,15 +90,34 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
     _selectedCategoryId = expense?.categoryId;
     _selectedVendorId = expense?.vendorId;
-    _selectedCreatedBy = expense?.createdBy;
     _selectedPaidBy = expense?.paidBy;
 
-    _selectedGstPercentage = expense?.gstPercentage ?? 0.0;
+    // Firm & Site context selection (locked if both firmId and siteId are provided)
+    _selectedFirmId = expense?.firmId ?? (widget.firmId.isNotEmpty ? widget.firmId : null);
+    _selectedSiteId = expense?.siteId ?? (widget.siteId.isNotEmpty ? widget.siteId : null);
+    _isContextLocked = widget.firmId.isNotEmpty && widget.siteId.isNotEmpty;
+
+    // GST initialization
+    final gstVal = expense?.gstPercentage ?? 0.0;
+    final standardRates = [0.0, 5.0, 12.0, 18.0, 28.0];
+    if (gstVal > 0.0 && !standardRates.contains(gstVal)) {
+      _isCustomGst = true;
+      _selectedGstPercentage = gstVal;
+      _customGstController.text = gstVal.toString();
+    } else {
+      _isCustomGst = false;
+      _selectedGstPercentage = gstVal;
+    }
 
     // Trigger initial calculation
     _calculateGst();
 
     _amountController.addListener(_calculateGst);
+
+    // Fetch initial active sites if firm is selected
+    if (_selectedFirmId != null) {
+      _loadSitesForFirm(_selectedFirmId!);
+    }
   }
 
   @override
@@ -96,7 +126,46 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     _titleController.dispose();
     _amountController.dispose();
     _descriptionController.dispose();
+    _customGstController.dispose();
     super.dispose();
+  }
+
+  /// Fetches active sites dynamically under the selected firm
+  Future<void> _loadSitesForFirm(String firmId) async {
+    if (!mounted) return;
+    setState(() {
+      _isLoadingSites = true;
+      _activeSites = null;
+    });
+
+    try {
+      final response = await ref.read(siteRepositoryProvider).client
+          .from('sites')
+          .select()
+          .eq('firm_id', firmId)
+          .eq('status', 'active');
+
+      if (!mounted) return;
+
+      final sitesList = (response as List).map((e) => Site.fromJson(e)).toList();
+
+      setState(() {
+        _activeSites = sitesList;
+        _isLoadingSites = false;
+
+        // Reset selected site if it is not in the newly loaded active sites list
+        if (_selectedSiteId != null && !_activeSites!.any((s) => s.id == _selectedSiteId)) {
+          _selectedSiteId = null;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _activeSites = [];
+        _isLoadingSites = false;
+        _selectedSiteId = null;
+      });
+    }
   }
 
   /// Extracts the Base Amount and GST Amount dynamically from the Total Amount
@@ -120,7 +189,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     }
 
     final percentage = _selectedGstPercentage;
-    if (percentage == 0.0) {
+    if (percentage <= 0.0) {
       setState(() {
         _calculatedBaseAmount = total;
         _calculatedGstAmount = 0.0;
@@ -187,7 +256,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       final picker = ImagePicker();
       final XFile? photo = await picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 85, // Balanced quality and size
+        imageQuality: 85,
       );
       if (photo != null) {
         final bytes = await photo.readAsBytes();
@@ -213,7 +282,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     try {
       final result = await FilePicker.pickFiles(
         type: FileType.any,
-        withData: true, // Crucial to load file bytes cross-platform
+        withData: true,
       );
 
       if (result != null && result.files.isNotEmpty) {
@@ -235,13 +304,66 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     }
   }
 
+  /// Shows options to upload file or capture photo
+  void _showAttachmentPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.camera_alt_rounded),
+                title: const Text('Take Photo (Camera)'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _takePhoto();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.cloud_upload_rounded),
+                title: const Text('Upload File (PDF, Images)'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAttachment();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   /// Handles file upload and database mutations
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedCreatedBy == null || _selectedPaidBy == null) {
+
+    final currentUserId = ref.read(authRepositoryProvider).currentUser?.id;
+    if (currentUserId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select who Created and Paid for the expense.'),
+          content: Text('User session expired. Please log in again.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedFirmId == null || _selectedSiteId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select both Firm and Site.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedPaidBy == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select who Paid for the expense.'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -260,8 +382,8 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
         fileUrl = await ref
             .read(storageRepositoryProvider)
             .uploadFile(
-              bucket: widget.siteId, // Site's unique UUID bucket
-              path: 'expenses', // Folder path inside site bucket
+              bucket: _selectedSiteId!, // Site's unique UUID bucket
+              path: 'expenses',
               fileBytes: _pickedFileBytes!,
               fileName: _pickedFileName!,
               mimeType: _pickedMimeType,
@@ -273,9 +395,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       final total = double.parse(_amountController.text.trim());
       final expense = Expense(
         id: widget.expenseToEdit?.id ?? '',
-        firmId: widget.firmId,
-        siteId: widget.siteId,
-        createdBy: _selectedCreatedBy!,
+        firmId: _selectedFirmId!,
+        siteId: _selectedSiteId!,
+        createdBy: currentUserId, // Bind creator user ID behind the scenes
         paidBy: _selectedPaidBy!,
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
@@ -286,10 +408,8 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
         categoryId: _selectedCategoryId,
         vendorId: _selectedVendorId,
         amount: total,
-        gstPercentage: _selectedGstPercentage == 0.0
-            ? null
-            : _selectedGstPercentage,
-        gstAmount: _calculatedGstAmount == 0.0 ? null : _calculatedGstAmount,
+        gstPercentage: _selectedGstPercentage <= 0.0 ? null : _selectedGstPercentage,
+        gstAmount: _calculatedGstAmount <= 0.0 ? null : _calculatedGstAmount,
         paymentMode: _selectedPaymentMode,
         isRefundable: _isRefundable,
         createdAt: widget.expenseToEdit?.createdAt ?? DateTime.now(),
@@ -297,21 +417,25 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       );
 
       // 3. Database Write operations
-      final siteExpensesNotifier = ref.read(
-        siteExpensesProvider(widget.siteId).notifier,
-      );
-
       if (widget.expenseToEdit == null) {
         // Create Mode
         await ref.read(expenseRepositoryProvider).createExpense(expense);
       } else {
         // Edit Mode
-        await siteExpensesNotifier.editExpense(expense);
+        if (_selectedSiteId == widget.siteId) {
+          await ref.read(siteExpensesProvider(widget.siteId).notifier).editExpense(expense);
+        } else {
+          await ref.read(expenseRepositoryProvider).updateExpense(expense);
+        }
       }
 
       // 4. Invalidate providers to force live updates
       ref.invalidate(siteExpensesProvider(widget.siteId));
       ref.invalidate(siteTotalExpensesProvider(widget.siteId));
+      if (_selectedSiteId != widget.siteId) {
+        ref.invalidate(siteExpensesProvider(_selectedSiteId!));
+        ref.invalidate(siteTotalExpensesProvider(_selectedSiteId!));
+      }
 
       if (mounted) {
         Navigator.pop(context);
@@ -348,6 +472,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final firmsAsync = ref.watch(firmsProvider);
     final categoriesAsync = ref.watch(expenseCategoriesProvider);
     final vendorsAsync = ref.watch(vendorsProvider);
     final profilesAsync = ref.watch(profilesProvider);
@@ -399,366 +524,561 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                     ),
                   )
                 else ...[
-                  // 1. Title Input
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Expense Title *',
-                      hintText: 'e.g. Purchase of Fuses & Wires',
-                      prefixIcon: Icon(Icons.title_rounded),
+                  // 1. Context Scope Card
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    textCapitalization: TextCapitalization.sentences,
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) return 'Title is required';
-                      if (val.trim().length <= 2) return 'Title must be longer than 2 characters';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 2. Amount & GST Selector row
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: TextFormField(
-                          controller: _amountController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: const InputDecoration(
-                            labelText: 'Total Amount (INR) *',
-                            hintText: '0.00',
-                            prefixIcon: Icon(Icons.currency_rupee_rounded),
-                          ),
-                          validator: (val) {
-                            if (val == null || val.trim().isEmpty) return 'Amount required';
-                            final numVal = double.tryParse(val);
-                            if (numVal == null || numVal < 0) return 'Invalid amount';
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        flex: 2,
-                        child: DropdownButtonFormField<double>(
-                          initialValue: _selectedGstPercentage,
-                          decoration: const InputDecoration(
-                            labelText: 'GST %',
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 15),
-                          ),
-                          items: _gstRates.map((double rate) {
-                            return DropdownMenuItem<double>(
-                              value: rate,
-                              child: Text(rate == 0.0 ? 'None' : '${rate.toInt()}%'),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() {
-                                _selectedGstPercentage = val;
-                              });
-                              _calculateGst();
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  // GST Split breakdown Summary Card
-                  if (_amountController.text.isNotEmpty &&
-                      double.tryParse(_amountController.text) != null &&
-                      _selectedGstPercentage > 0) ...[
-                    const SizedBox(height: 12),
-                    Card(
-                      elevation: 0,
-                      color: Theme.of(context).colorScheme.surfaceContainer,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-                        child: Column(
-                          children: [
-                            _summaryLine(
-                              'Base Amount (Untaxed)',
-                              '₹${_calculatedBaseAmount.toStringAsFixed(2)}',
-                            ),
-                            const SizedBox(height: 4),
-                            _summaryLine(
-                              'GST Amount Extractions (${_selectedGstPercentage.toInt()}%)',
-                              '₹${_calculatedGstAmount.toStringAsFixed(2)}',
-                            ),
-                            const Divider(height: 16, thickness: 0.5),
-                            _summaryLine(
-                              'Total Inclusive Sum',
-                              '₹${double.parse(_amountController.text.trim()).toStringAsFixed(2)}',
-                              isBold: true,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-
-                  // 3. User Selectors: Paid By & Created By
-                  profilesAsync.when(
-                    loading: () => const LinearProgressIndicator(),
-                    error: (e, _) => Text('Error loading profiles: $e'),
-                    data: (profiles) {
-                      if (profiles.isNotEmpty) {
-                        _selectedCreatedBy ??= profiles.first.id;
-                        _selectedPaidBy ??= profiles.first.id;
-                      }
-
-                      return Row(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: _selectedPaidBy,
-                              decoration: const InputDecoration(
-                                labelText: 'Paid By *',
-                                prefixIcon: Icon(Icons.person_rounded),
-                              ),
-                              items: profiles.map((p) {
-                                return DropdownMenuItem(
-                                  value: p.id,
-                                  child: Text(p.displayName),
-                                );
-                              }).toList(),
-                              onChanged: (val) => setState(() => _selectedPaidBy = val),
-                            ),
+                          Text(
+                            'Scope',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: _selectedCreatedBy,
-                              decoration: const InputDecoration(
-                                labelText: 'Created By *',
-                                prefixIcon: Icon(Icons.edit_note_rounded),
-                              ),
-                              items: profiles.map((p) {
-                                return DropdownMenuItem(
-                                  value: p.id,
-                                  child: Text(p.displayName),
-                                );
-                              }).toList(),
-                              onChanged: (val) => setState(() => _selectedCreatedBy = val),
+                          const SizedBox(height: 16),
+                          firmsAsync.when(
+                            loading: () => const LinearProgressIndicator(),
+                            error: (err, _) => Text('Error loading firms: $err'),
+                            data: (firms) {
+                              return DropdownButtonFormField<String>(
+                                initialValue: _selectedFirmId,
+                                decoration: InputDecoration(
+                                  labelText: 'Firm',
+                                  prefixIcon: const Icon(Icons.business_rounded),
+                                  suffixIcon: _isContextLocked
+                                      ? const Icon(Icons.lock_outline_rounded)
+                                      : null,
+                                ),
+                                icon: _isContextLocked ? const SizedBox.shrink() : null,
+                                items: firms.map((firm) {
+                                  return DropdownMenuItem<String>(
+                                    value: firm.id,
+                                    child: Text(firm.name),
+                                  );
+                                }).toList(),
+                                onChanged: _isContextLocked
+                                    ? null
+                                    : (val) {
+                                        if (val != null) {
+                                          setState(() {
+                                            _selectedFirmId = val;
+                                            _selectedSiteId = null;
+                                          });
+                                          _loadSitesForFirm(val);
+                                        }
+                                      },
+                                validator: (val) => val == null ? 'Firm is required' : null,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            initialValue: _selectedSiteId,
+                            decoration: InputDecoration(
+                              labelText: 'Site',
+                              prefixIcon: const Icon(Icons.location_on_rounded),
+                              suffixIcon: _isContextLocked
+                                  ? const Icon(Icons.lock_outline_rounded)
+                                  : _isLoadingSites
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: Padding(
+                                            padding: EdgeInsets.all(12.0),
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          ),
+                                        )
+                                      : null,
                             ),
+                            icon: (_isContextLocked || _isLoadingSites)
+                                ? const SizedBox.shrink()
+                                : null,
+                            items: _activeSites?.map((site) {
+                                  return DropdownMenuItem<String>(
+                                    value: site.id,
+                                    child: Text(site.name),
+                                  );
+                                }).toList() ??
+                                [],
+                            onChanged: (_isContextLocked || _selectedFirmId == null)
+                                ? null
+                                : (val) {
+                                    setState(() {
+                                      _selectedSiteId = val;
+                                    });
+                                  },
+                            validator: (val) => val == null ? 'Site is required' : null,
                           ),
                         ],
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 4. Selectors Category & Vendor
-                  Row(
-                    children: [
-                      Expanded(
-                        child: categoriesAsync.when(
-                          loading: () => const Center(
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          ),
-                          error: (e, _) => Text('Err: $e'),
-                          data: (categories) {
-                            return DropdownButtonFormField<String>(
-                              initialValue: _selectedCategoryId,
-                              decoration: const InputDecoration(
-                                labelText: 'Category',
-                                prefixIcon: Icon(Icons.category_rounded),
-                              ),
-                              items: categories.map((c) {
-                                return DropdownMenuItem(
-                                  value: c.id,
-                                  child: Text(c.name),
-                                );
-                              }).toList(),
-                              onChanged: (val) => setState(() => _selectedCategoryId = val),
-                            );
-                          },
-                        ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: vendorsAsync.when(
-                          loading: () => const Center(
-                            child: SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          ),
-                          error: (e, _) => Text('Err: $e'),
-                          data: (vendors) {
-                            return DropdownButtonFormField<String>(
-                              initialValue: _selectedVendorId,
-                              decoration: const InputDecoration(
-                                labelText: 'Vendor',
-                                prefixIcon: Icon(Icons.store_rounded),
-                              ),
-                              items: vendors.map((v) {
-                                return DropdownMenuItem(
-                                  value: v.id,
-                                  child: Text(v.name),
-                                );
-                              }).toList(),
-                              onChanged: (val) => setState(() => _selectedVendorId = val),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 5. Selectors: Payment Mode & Date Picker
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<PaymentMode>(
-                          initialValue: _selectedPaymentMode,
-                          decoration: const InputDecoration(
-                            labelText: 'Payment Mode',
-                            prefixIcon: Icon(Icons.payment_rounded),
-                          ),
-                          items: PaymentMode.values.map((mode) {
-                            return DropdownMenuItem(
-                              value: mode,
-                              child: Text(mode.toDisplayLabel()),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() => _selectedPaymentMode = val);
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          readOnly: true,
-                          controller: TextEditingController(text: _selectedDate.toReadableString()),
-                          decoration: const InputDecoration(
-                            labelText: 'Expense Date',
-                            prefixIcon: Icon(Icons.calendar_today_rounded),
-                          ),
-                          onTap: () => _selectDate(context),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 6. Description
-                  TextFormField(
-                    controller: _descriptionController,
-                    maxLines: 2,
-                    decoration: const InputDecoration(
-                      labelText: 'Additional Description',
-                      hintText: 'Describe details of this transaction...',
-                      prefixIcon: Icon(Icons.description_rounded),
                     ),
                   ),
                   const SizedBox(height: 16),
 
-                  // 7. Refundable Toggle Switch
-                  SwitchListTile(
-                    title: const Text('Refundable Expense'),
-                    secondary: const Icon(Icons.assignment_return_rounded),
-                    value: _isRefundable,
-                    onChanged: (val) => setState(() => _isRefundable = val),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 8. Attachments Manager Section
-                  Text(
-                    'Receipt / Attachment',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  _pickedFileName != null
-                      ? Card(
-                          elevation: 0,
-                          color: Theme.of(context).colorScheme.surfaceContainer,
-                          child: ListTile(
-                            leading: Icon(
-                              _pickedFileName!.toLowerCase().endsWith('.pdf')
-                                  ? Icons.picture_as_pdf_rounded
-                                  : Icons.image_rounded,
-                              color: Theme.of(context).colorScheme.primary,
+                  // 2. Core Transaction Data Card
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Core Transaction Data',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _titleController,
+                            decoration: const InputDecoration(
+                              labelText: 'Expense Title',
+                              hintText: 'e.g. Purchase of Fuses & Wires',
+                              prefixIcon: Icon(Icons.title_rounded),
                             ),
-                            title: Text(
-                              _pickedFileName!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
+                            textCapitalization: TextCapitalization.sentences,
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) return 'Title is required';
+                              if (val.trim().length <= 2) return 'Title must be longer than 2 characters';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _amountController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: const InputDecoration(
+                              labelText: 'Total Amount',
+                              hintText: '0.00',
+                              prefixIcon: Icon(Icons.currency_rupee_rounded),
+                            ),
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) return 'Amount required';
+                              final numVal = double.tryParse(val);
+                              if (numVal == null || numVal <= 0) return 'Enter a valid positive amount';
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'GST Rate',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          SegmentedButton<double>(
+                            segments: const [
+                              ButtonSegment<double>(value: 0.0, label: Text('0%')),
+                              ButtonSegment<double>(value: 5.0, label: Text('5%')),
+                              ButtonSegment<double>(value: 12.0, label: Text('12%')),
+                              ButtonSegment<double>(value: 18.0, label: Text('18%')),
+                              ButtonSegment<double>(value: 28.0, label: Text('28%')),
+                              ButtonSegment<double>(value: -1.0, label: Text('Custom')),
+                            ],
+                            selected: {
+                              _isCustomGst ? -1.0 : _selectedGstPercentage
+                            },
+                            onSelectionChanged: (Set<double> newSelection) {
+                              final val = newSelection.first;
+                              setState(() {
+                                if (val == -1.0) {
+                                  _isCustomGst = true;
+                                  _selectedGstPercentage = double.tryParse(_customGstController.text) ?? 0.0;
+                                } else {
+                                  _isCustomGst = false;
+                                  _selectedGstPercentage = val;
+                                }
+                                _calculateGst();
+                              });
+                            },
+                            showSelectedIcon: false,
+                          ),
+                          if (_isCustomGst) ...[
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _customGstController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: const InputDecoration(
+                                labelText: 'Custom GST %',
+                                hintText: 'e.g. 15.0',
+                                suffixText: '%',
+                                prefixIcon: Icon(Icons.percent_rounded),
                               ),
-                            ),
-                            subtitle: Text(
-                              'Ready to upload on save',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline_rounded,
-                                color: Colors.redAccent,
-                              ),
-                              onPressed: () {
+                              validator: (val) {
+                                if (!_isCustomGst) return null;
+                                if (val == null || val.trim().isEmpty) return 'Please enter GST %';
+                                final numVal = double.tryParse(val);
+                                if (numVal == null || numVal < 0 || numVal > 100) {
+                                  return 'Enter a valid percentage between 0 and 100';
+                                }
+                                return null;
+                              },
+                              onChanged: (val) {
                                 setState(() {
-                                  _pickedFileName = null;
-                                  _pickedFileBytes = null;
+                                  _selectedGstPercentage = double.tryParse(val) ?? 0.0;
+                                  _calculateGst();
                                 });
                               },
                             ),
-                          ),
-                        )
-                      : Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: _takePhoto,
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                          ],
+                          if (_amountController.text.isNotEmpty &&
+                              double.tryParse(_amountController.text) != null &&
+                              _selectedGstPercentage > 0) ...[
+                            const SizedBox(height: 16),
+                            Card(
+                              elevation: 0,
+                              color: Theme.of(context).colorScheme.surfaceContainer,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                                child: Column(
+                                  children: [
+                                    _summaryLine(
+                                      'Base Amount (Untaxed)',
+                                      '₹${_calculatedBaseAmount.toStringAsFixed(2)}',
+                                    ),
+                                    const SizedBox(height: 4),
+                                    _summaryLine(
+                                      'GST Amount Extractions (${_selectedGstPercentage.toStringAsFixed(_selectedGstPercentage % 1 == 0 ? 0 : 2)}%)',
+                                      '₹${_calculatedGstAmount.toStringAsFixed(2)}',
+                                    ),
+                                    const Divider(height: 16, thickness: 0.5),
+                                    _summaryLine(
+                                      'Total Inclusive Sum',
+                                      '₹${double.parse(_amountController.text.trim()).toStringAsFixed(2)}',
+                                      isBold: true,
+                                    ),
+                                  ],
                                 ),
-                                icon: const Icon(Icons.camera_alt_rounded),
-                                label: const Text('Camera'),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: _pickAttachment,
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
-                                ),
-                                icon: const Icon(Icons.cloud_upload_rounded),
-                                label: const Text('Upload File'),
                               ),
                             ),
                           ],
-                        ),
-
-                  const SizedBox(height: 24),
-
-                  // Submit Action Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _submitForm,
-                      child: Text(
-                        widget.expenseToEdit == null ? 'CREATE RECORD' : 'SAVE CHANGES',
+                        ],
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 3. Transaction Attributes Card
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Transaction Attributes',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          profilesAsync.when(
+                            loading: () => const LinearProgressIndicator(),
+                            error: (e, _) => Text('Error loading profiles: $e'),
+                            data: (profiles) {
+                              if (profiles.isNotEmpty) {
+                                _selectedPaidBy ??= profiles.first.id;
+                              }
+
+                              return DropdownButtonFormField<String>(
+                                initialValue: _selectedPaidBy,
+                                decoration: const InputDecoration(
+                                  labelText: 'Paid By',
+                                  prefixIcon: Icon(Icons.person_rounded),
+                                ),
+                                items: profiles.map((p) {
+                                  return DropdownMenuItem(
+                                    value: p.id,
+                                    child: Text(p.displayName),
+                                  );
+                                }).toList(),
+                                onChanged: (val) => setState(() => _selectedPaidBy = val),
+                                validator: (val) => val == null ? 'Paid By is required' : null,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: categoriesAsync.when(
+                                  loading: () => const Center(
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                  ),
+                                  error: (e, _) => Text('Err: $e'),
+                                  data: (categories) {
+                                    return DropdownButtonFormField<String>(
+                                      initialValue: _selectedCategoryId,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Category',
+                                        prefixIcon: Icon(Icons.category_rounded),
+                                      ),
+                                      items: categories.map((c) {
+                                        return DropdownMenuItem(
+                                          value: c.id,
+                                          child: Text(c.name),
+                                        );
+                                      }).toList(),
+                                      onChanged: (val) => setState(() => _selectedCategoryId = val),
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: DropdownButtonFormField<PaymentMode>(
+                                  initialValue: _selectedPaymentMode,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Payment Mode',
+                                    prefixIcon: Icon(Icons.payment_rounded),
+                                  ),
+                                  items: PaymentMode.values.map((mode) {
+                                    return DropdownMenuItem(
+                                      value: mode,
+                                      child: Text(mode.toDisplayLabel()),
+                                    );
+                                  }).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() => _selectedPaymentMode = val);
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          vendorsAsync.when(
+                            loading: () => const Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                            ),
+                            error: (e, _) => Text('Err: $e'),
+                            data: (vendors) {
+                              return DropdownButtonFormField<String>(
+                                initialValue: _selectedVendorId,
+                                decoration: const InputDecoration(
+                                  labelText: 'Vendor',
+                                  prefixIcon: Icon(Icons.store_rounded),
+                                ),
+                                items: vendors.map((v) {
+                                  return DropdownMenuItem(
+                                    value: v.id,
+                                    child: Text(v.name),
+                                  );
+                                }).toList(),
+                                onChanged: (val) => setState(() => _selectedVendorId = val),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            readOnly: true,
+                            controller: TextEditingController(text: _selectedDate.toReadableString()),
+                            decoration: const InputDecoration(
+                              labelText: 'Expense Date',
+                              prefixIcon: Icon(Icons.calendar_today_rounded),
+                            ),
+                            onTap: () => _selectDate(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 4. Documentation Card
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Documentation',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Refundable Expense'),
+                            secondary: const Icon(Icons.assignment_return_rounded),
+                            value: _isRefundable,
+                            onChanged: (val) => setState(() => _isRefundable = val),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _descriptionController,
+                            maxLines: 3,
+                            decoration: const InputDecoration(
+                              labelText: 'Notes',
+                              hintText: 'Additional details...',
+                              prefixIcon: Icon(Icons.description_rounded),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'Attachment',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                          const SizedBox(height: 8),
+                          _pickedFileName != null
+                              ? Card(
+                                  elevation: 0,
+                                  color: Theme.of(context).colorScheme.surfaceContainer,
+                                  child: ListTile(
+                                    leading: Icon(
+                                      _pickedFileName!.toLowerCase().endsWith('.pdf')
+                                          ? Icons.picture_as_pdf_rounded
+                                          : Icons.image_rounded,
+                                      color: Theme.of(context).colorScheme.primary,
+                                    ),
+                                    title: Text(
+                                      _pickedFileName!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      'Ready to upload on save',
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                          ),
+                                    ),
+                                    trailing: IconButton(
+                                      icon: const Icon(
+                                        Icons.delete_outline_rounded,
+                                        color: Colors.redAccent,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _pickedFileName = null;
+                                          _pickedFileBytes = null;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                )
+                              : Card(
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    side: BorderSide(
+                                      color: Theme.of(context).colorScheme.outlineVariant,
+                                      style: BorderStyle.solid,
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(8),
+                                    onTap: () => _showAttachmentPicker(context),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 24.0),
+                                      child: Column(
+                                        children: [
+                                          Icon(
+                                            Icons.add_a_photo_rounded,
+                                            size: 32,
+                                            color: Theme.of(context).colorScheme.primary,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Upload Receipt',
+                                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Tap to capture or select',
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Bottom Action Buttons
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      FilledButton(
+                        onPressed: _submitForm,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                        child: Text(
+                          widget.expenseToEdit == null ? 'Submit Expense' : 'Save Changes',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                        child: const Text('Cancel'),
+                      ),
+                    ],
                   ),
                 ],
               ],
@@ -773,7 +1093,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     String label,
     String value, {
     bool isBold = false,
-    Color? valueColor,
   }) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -783,7 +1102,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            color: Colors.grey[600],
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         Text(
@@ -791,7 +1110,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
           style: TextStyle(
             fontSize: 13,
             fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: valueColor ?? (isBold ? Colors.black : Colors.grey[800]),
+            color: isBold
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
