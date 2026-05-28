@@ -60,7 +60,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      showDragHandle: true,
       builder: (_) => const ExpenseFormSheet(
         siteId: '',
         firmId: '',
@@ -73,7 +73,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      showDragHandle: true,
       builder: (_) => const DocumentUploadSheet(
         siteId: '',
         firmId: '',
