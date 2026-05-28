@@ -352,3 +352,104 @@ CREATE INDEX idx_expenses_date ON expenses(expense_date);
 CREATE INDEX idx_expenses_category ON expenses(category_id);
 
 CREATE INDEX idx_documents_site ON documents(site_id);
+
+-- ########################################################
+-- 9. Logging
+-- ########################################################
+
+CREATE TABLE public.audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    table_name TEXT NOT NULL,
+    operation TEXT NOT NULL, -- 'INSERT', 'UPDATE', or 'DELETE'
+    record_id UUID,          -- ID of the altered record
+    old_data JSONB,          -- Null on INSERT
+    new_data JSONB,          -- Null on DELETE
+    changed_by UUID REFERENCES public.profiles(id), -- Tracks your user profile
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Turn on standard index tracking for fast system searching later
+CREATE INDEX idx_audit_table ON public.audit_logs(table_name);
+CREATE INDEX idx_audit_user ON public.audit_logs(changed_by);
+
+CREATE OR REPLACE FUNCTION public.process_audit_log()
+RETURNS TRIGGER AS $$
+DECLARE
+    current_user_id UUID;
+    target_id UUID;
+BEGIN
+    -- 1. Extract the active Supabase User UUID from the transaction context metadata
+    BEGIN
+        current_user_id := auth.uid();
+    EXCEPTION WHEN OTHERS THEN
+        current_user_id := NULL; -- Handles fallback edge-cases (like system seed files running)
+    END;
+
+    -- 2. Extract the target record's unique ID dynamically
+    IF (TG_OP = 'DELETE') THEN
+        target_id := OLD.id;
+    ELSE
+        target_id := NEW.id;
+    END IF;
+
+    -- 3. Ingest the data tracking variables into our ledger
+    INSERT INTO public.audit_logs (
+        table_name,
+        operation,
+        record_id,
+        old_data,
+        new_data,
+        changed_by
+    )
+    VALUES (
+        TG_TABLE_NAME, -- Automatically inserts the name of the target database table
+        TG_OP,         -- Automatically inserts 'INSERT', 'UPDATE', or 'DELETE'
+        target_id,
+        CASE WHEN TG_OP IN ('UPDATE', 'DELETE') THEN to_jsonb(OLD) ELSE NULL END,
+        CASE WHEN TG_OP IN ('INSERT', 'UPDATE') THEN to_jsonb(NEW) ELSE NULL END,
+        current_user_id
+    );
+
+    -- Keep out of the way of the original operation loop
+    IF (TG_OP = 'DELETE') THEN
+        RETURN OLD;
+    ELSE
+        RETURN NEW;
+    END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 1. Track Corporate Entities
+CREATE TRIGGER tr_audit_firms
+AFTER INSERT OR UPDATE OR DELETE ON public.firms
+FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
+
+-- 2. Track Team Profiles
+CREATE TRIGGER tr_audit_profiles
+AFTER INSERT OR UPDATE OR DELETE ON public.profiles
+FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
+
+-- 3. Track Project Sites
+CREATE TRIGGER tr_audit_sites
+AFTER INSERT OR UPDATE OR DELETE ON public.sites
+FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
+
+-- 4. Track Expense Categories
+CREATE TRIGGER tr_audit_expense_categories
+AFTER INSERT OR UPDATE OR DELETE ON public.expense_categories
+FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
+
+-- 5. Track Vendor Registers
+CREATE TRIGGER tr_audit_vendors
+AFTER INSERT OR UPDATE OR DELETE ON public.vendors
+FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
+
+-- 6. Track Financial Ledger Entries
+CREATE TRIGGER tr_audit_expenses
+AFTER INSERT OR UPDATE OR DELETE ON public.expenses
+FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
+
+-- 7. Track Site Reference Documents
+CREATE TRIGGER tr_audit_documents
+AFTER INSERT OR UPDATE OR DELETE ON public.documents
+FOR EACH ROW EXECUTE FUNCTION public.process_audit_log();
