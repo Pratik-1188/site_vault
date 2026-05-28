@@ -13,10 +13,7 @@ Future<void> main() async {
   await Supabase.initialize(url: Env.url, anonKey: Env.anonKey);
 
   runApp(
-    const ProviderScope(
-      observers: [AppProviderObserver()],
-      child: MyApp(),
-    ),
+    const ProviderScope(observers: [AppProviderObserver()], child: MyApp()),
   );
 }
 
@@ -26,13 +23,14 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
-    final isLocal = Env.url.contains('localhost') || Env.url.contains('127.0.0.1');
+    final isLocal =
+        Env.url.contains('localhost') || Env.url.contains('127.0.0.1');
 
     return MaterialApp.router(
       title: 'KK Group Site Vault',
       debugShowCheckedModeBanner: isLocal,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system, // Dynamically follow the OS theme
       routerConfig: router,
     );
