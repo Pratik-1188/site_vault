@@ -41,6 +41,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   late String _currentStatus;
   final TextEditingController _expenseSearchController =
       TextEditingController();
+  final TextEditingController _documentSearchController =
+      TextEditingController();
 
   @override
   void initState() {
@@ -53,6 +55,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   void dispose() {
     _tabController.dispose();
     _expenseSearchController.dispose();
+    _documentSearchController.dispose();
     super.dispose();
   }
 
@@ -72,13 +75,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   void _showStatusUpdateDialog(BuildContext context, String firmId) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-      ),
+      showDragHandle: true,
       builder: (BuildContext bc) {
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
+            padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,7 +169,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      showDragHandle: true,
       builder: (_) => ExpenseFormSheet(
         siteId: siteId,
         firmId: firmId,
@@ -186,7 +187,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      showDragHandle: true,
       builder: (_) => DocumentUploadSheet(siteId: siteId, firmId: firmId),
     );
   }
@@ -272,98 +273,80 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
               elevation: 0,
               scrolledUnderElevation: 1,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                icon: const Icon(Icons.arrow_back_rounded),
                 onPressed: () => context.pop(),
               ),
-              title: innerBoxIsScrolled
-                  ? Text(
-                      site.name,
-                      style: Theme.of(context).appBarTheme.titleTextStyle,
-                    )
-                  : null,
+              title: Text(
+                site.name,
+                style: Theme.of(context).appBarTheme.titleTextStyle,
+              ),
               flexibleSpace: FlexibleSpaceBar(
                 background: Padding(
                   padding: EdgeInsets.fromLTRB(
-                    20,
-                    MediaQuery.of(context).padding.top + 50,
-                    20,
-                    20,
+                    16,
+                    MediaQuery.of(context).padding.top + 56,
+                    16,
+                    16,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      // Sub-row: Firm indicator
-                      Row(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Chip(
-                            label: Text(
-                              _getFirmName(site.firmId),
-                              style: const TextStyle(
-                                fontSize: 10,
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: Text(
+                              _getFirmName(site.firmId).toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 9,
                                 fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onPrimaryContainer,
                               ),
                             ),
-                            visualDensity: VisualDensity.compact,
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      // Main name display
-                      Text(
-                        site.name,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleLarge?.copyWith(fontSize: 24),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      // Meta info: Date & Interactive Status Tag
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
+                          const SizedBox(height: 8),
                           Row(
                             children: [
                               Icon(
                                 Icons.calendar_today_rounded,
-                                size: 12,
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium
-                                    ?.color
-                                    ?.withValues(alpha: 0.6),
+                                size: 14,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 6),
                               Text(
                                 site.startedOn != null
                                     ? site.startedOn!.toReadableString()
                                     : 'Not started',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.bodyMedium?.copyWith(fontSize: 12),
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12),
                               ),
                             ],
                           ),
-                          ActionChip(
-                            avatar: const Icon(Icons.circle, size: 10),
-                            label: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  _currentStatus.toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                const Icon(Icons.keyboard_arrow_down_rounded, size: 12),
-                              ],
-                            ),
-                            onPressed: () => _showStatusUpdateDialog(context, site.firmId),
-                          ),
                         ],
+                      ),
+                      ActionChip(
+                        avatar: const Icon(Icons.circle, size: 8),
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _currentStatus.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.keyboard_arrow_down_rounded, size: 12),
+                          ],
+                        ),
+                        onPressed: () => _showStatusUpdateDialog(context, site.firmId),
                       ),
                     ],
                   ),
@@ -568,28 +551,29 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
           const SizedBox(height: 16),
 
           // 2. Search Field inside expenses tab
-          TextField(
+          SearchBar(
             controller: _expenseSearchController,
-            onChanged: (val) =>
-                ref.read(expenseSearchQueryProvider.notifier).update(val),
-            decoration: InputDecoration(
-              hintText: 'Search expenses by title...',
-              prefixIcon: const Icon(Icons.search_rounded),
-              contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
-              suffixIcon: _expenseSearchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_rounded),
-                      onPressed: () {
-                        _expenseSearchController.clear();
-                        ref
-                            .read(expenseSearchQueryProvider.notifier)
-                            .update("");
-                      },
-                    )
-                  : null,
-            ),
+            onChanged: (val) {
+              ref.read(expenseSearchQueryProvider.notifier).update(val);
+              setState(() {});
+            },
+            hintText: 'Search expenses by title...',
+            leading: const Icon(Icons.search_rounded),
+            trailing: [
+              if (_expenseSearchController.text.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.clear_rounded),
+                  onPressed: () {
+                    _expenseSearchController.clear();
+                    ref.read(expenseSearchQueryProvider.notifier).update("");
+                    setState(() {});
+                  },
+                ),
+            ],
+            elevation: WidgetStateProperty.all(0),
+            backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.surfaceContainerHigh),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
           // 3. Choice chips row for categories
           categoriesAsync.when(
@@ -626,7 +610,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
               );
             },
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
           // 4. Reactive Expenses List
           Expanded(
@@ -673,14 +657,18 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12.0),
                       child: Card(
+                        elevation: 0,
+                        color: Theme.of(context).colorScheme.surfaceContainer,
                         child: ListTile(
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 8,
                           ),
                           leading: CircleAvatar(
+                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                             child: Icon(
                               _getCategoryIcon(expense.category?.name),
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
                             ),
                           ),
                           title: Text(
@@ -989,7 +977,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
 
   Widget _buildDocumentsTab(Site site, Color baseColor) {
     final documentsAsync = ref.watch(filteredSiteDocumentsProvider(site.id));
-    final searchQuery = ref.watch(documentSearchQueryProvider);
 
     return Padding(
       padding: const EdgeInsets.all(20.0),
@@ -997,24 +984,27 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Search Bar for Documents
-          TextField(
-            onChanged: (val) =>
-                ref.read(documentSearchQueryProvider.notifier).update(val),
-            decoration: InputDecoration(
-              hintText: 'Search documents by filename...',
-              prefixIcon: const Icon(Icons.search_rounded),
-              contentPadding: const EdgeInsets.symmetric(vertical: 12.0),
-              suffixIcon: searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_rounded),
-                      onPressed: () {
-                        ref
-                            .read(documentSearchQueryProvider.notifier)
-                            .update("");
-                      },
-                    )
-                  : null,
-            ),
+          SearchBar(
+            controller: _documentSearchController,
+            onChanged: (val) {
+              ref.read(documentSearchQueryProvider.notifier).update(val);
+              setState(() {});
+            },
+            hintText: 'Search documents by filename...',
+            leading: const Icon(Icons.search_rounded),
+            trailing: [
+              if (_documentSearchController.text.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.clear_rounded),
+                  onPressed: () {
+                    _documentSearchController.clear();
+                    ref.read(documentSearchQueryProvider.notifier).update("");
+                    setState(() {});
+                  },
+                ),
+            ],
+            elevation: WidgetStateProperty.all(0),
+            backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.surfaceContainerHigh),
           ),
           const SizedBox(height: 16),
 
@@ -1088,6 +1078,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12.0),
                       child: Card(
+                        elevation: 0,
+                        color: Theme.of(context).colorScheme.surfaceContainer,
                         child: ListTile(
                           onTap: () => _downloadOrOpenDocument(
                             context,
@@ -1096,13 +1088,15 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
-                            vertical: 6,
+                            vertical: 8,
                           ),
                           leading: CircleAvatar(
+                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                             child: Icon(
                               isPdf
                                   ? Icons.picture_as_pdf_rounded
                                   : Icons.description_rounded,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
                             ),
                           ),
                           title: Text(

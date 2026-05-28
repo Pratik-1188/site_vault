@@ -470,7 +470,11 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
 
   Widget _buildSiteCard(Site site) {
     return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      margin: const EdgeInsets.only(bottom: 12.0),
       child: InkWell(
+        borderRadius: BorderRadius.circular(12.0),
         onTap: () {
           context.push('/site/${site.id}', extra: site);
         },
@@ -485,7 +489,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                   Expanded(
                     child: Text(
                       site.name,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                       maxLines: 1,
@@ -499,7 +503,9 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
               const SizedBox(height: 8),
               Text(
                 site.description ?? 'No description provided for this site.',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -509,11 +515,12 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                 children: [
                   Row(
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.calendar_today_rounded,
-                        size: 13,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: 6),
                       Text(
                         site.startedOn != null
                             ? site.startedOn!.toReadableString()
@@ -526,7 +533,10 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                   ),
                   Text(
                     _getFirmName(site.firmId),
-                    style: Theme.of(context).textTheme.labelSmall,
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                 ],
               ),
@@ -538,17 +548,30 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
   }
 
   Widget _buildStatusBadge(BuildContext context, String status) {
-    return Chip(
-      label: Text(
+    final isActive = status.toLowerCase() == 'active';
+    final colorScheme = Theme.of(context).colorScheme;
+    final bgColor = isActive 
+        ? colorScheme.primaryContainer 
+        : colorScheme.surfaceContainerHighest;
+    final textColor = isActive 
+        ? colorScheme.onPrimaryContainer 
+        : colorScheme.onSurfaceVariant;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8.0),
+      ),
+      child: Text(
         status.toUpperCase(),
-        style: const TextStyle(
-          fontSize: 9,
+        style: TextStyle(
+          color: textColor,
+          fontSize: 10,
           fontWeight: FontWeight.bold,
           letterSpacing: 0.5,
         ),
       ),
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
     );
   }
 

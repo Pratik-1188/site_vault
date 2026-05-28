@@ -46,7 +46,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
         title: const Text('Executive Analytics'),
@@ -63,8 +63,8 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
               data: (firmSummaries) {
                 // If All Firms, compute combined summary; otherwise select matching firm
                 final activeSummaries = selectedFirmId == null
-                    ? firmSummaries
-                    : firmSummaries.where((s) => s.firmId.toLowerCase() == selectedFirmId.toLowerCase()).toList();
+                     ? firmSummaries
+                     : firmSummaries.where((s) => s.firmId.toLowerCase() == selectedFirmId.toLowerCase()).toList();
 
                 if (firmSummaries.isEmpty) {
                   return const Center(child: Text('No transaction logs recorded.'));
@@ -83,7 +83,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                 }
 
                 return ListView(
-                  padding: const EdgeInsets.all(20.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
                   children: [
                     // 1. KPI Cards Grid
                     _buildKPIGrid(totalSpend, totalGst, totalBase, totalCount),
@@ -101,7 +101,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
 
                     // 4. Monthly Trend Chronological Timeline
                     _buildMonthlyTrendsTimeline(monthlySpendAsync),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
                   ],
                 );
               },
@@ -115,20 +115,23 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
   /// Segmented Sliding Scope controller
   Widget _buildScopeSelector() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: SegmentedButton<int>(
-        segments: const <ButtonSegment<int>>[
-          ButtonSegment<int>(value: 0, label: Text('All Firms')),
-          ButtonSegment<int>(value: 1, label: Text('Electricals')),
-          ButtonSegment<int>(value: 2, label: Text('Solar')),
-          ButtonSegment<int>(value: 3, label: Text('Associates')),
-        ],
-        selected: <int>{_selectedScopeIndex},
-        onSelectionChanged: (Set<int> newSelection) {
-          setState(() {
-            _selectedScopeIndex = newSelection.first;
-          });
-        },
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: SizedBox(
+        width: double.infinity,
+        child: SegmentedButton<int>(
+          segments: const <ButtonSegment<int>>[
+            ButtonSegment<int>(value: 0, label: Text('All Firms', style: TextStyle(fontSize: 12))),
+            ButtonSegment<int>(value: 1, label: Text('Electricals', style: TextStyle(fontSize: 12))),
+            ButtonSegment<int>(value: 2, label: Text('Solar', style: TextStyle(fontSize: 12))),
+            ButtonSegment<int>(value: 3, label: Text('Associates', style: TextStyle(fontSize: 12))),
+          ],
+          selected: <int>{_selectedScopeIndex},
+          onSelectionChanged: (Set<int> newSelection) {
+            setState(() {
+              _selectedScopeIndex = newSelection.first;
+            });
+          },
+        ),
       ),
     );
   }
@@ -143,7 +146,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
       mainAxisSpacing: 16,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.3,
+      childAspectRatio: 1.4,
       children: [
         _kpiCard('Total Spend', '₹${total.toStringAsFixed(2)}', Icons.payments_rounded, accentColor),
         _kpiCard('Tax Paid (GST)', '₹${gst.toStringAsFixed(2)}', Icons.receipt_long_rounded, Colors.blue),
@@ -155,6 +158,8 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
 
   Widget _kpiCard(String label, String value, IconData icon, Color accentColor) {
     return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surfaceContainer,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -164,17 +169,22 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-                Icon(icon, size: 16, color: accentColor),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                Icon(icon, size: 18, color: accentColor),
               ],
             ),
             Text(
               value,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: value.length > 12 ? 14 : 16,
-                letterSpacing: 0.1,
-              ),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.1,
+                  ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

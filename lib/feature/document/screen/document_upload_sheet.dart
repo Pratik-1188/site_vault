@@ -209,51 +209,39 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
 
   @override
   Widget build(BuildContext context) {
-
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Padding(
-        padding: EdgeInsets.zero,
-        child: Column(
-          children: [
-            // Handlebar indicator
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+      child: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Upload Site Document',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
 
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Upload Site Document',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge?.copyWith(fontSize: 22),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-
-            // Form Content
-            Expanded(
-              child: _isUploading
-                  ? const Center(
+                if (_isUploading)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -265,116 +253,115 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                           ),
                         ],
                       ),
-                    )
-                  : Form(
-                      key: _formKey,
-                      child: ListView(
-                        padding: const EdgeInsets.all(20.0),
-                        children: [
-                          // 1. File Picker Box
-                          _pickedFileName != null
-                              ? Card(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          _getFileIcon(_pickedFileName!),
+                    ),
+                  )
+                else ...[
+                  // 1. File Picker Box
+                  _pickedFileName != null
+                      ? Card(
+                          elevation: 0,
+                          color: Theme.of(context).colorScheme.surfaceContainer,
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _getFileIcon(_pickedFileName!),
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        _pickedFileName!,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
                                         ),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                _pickedFileName!,
-                                                style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 14,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              const SizedBox(height: 4),
-                                              const Text(
-                                                'File picked & ready for upload',
-                                                style: TextStyle(
-                                                  fontSize: 11,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.delete_outline_rounded,
-                                            color: Colors.redAccent,
-                                          ),
-                                          onPressed: () {
-                                            setState(() {
-                                              _pickedFileName = null;
-                                              _pickedFileBytes = null;
-                                              _fileNameController.clear();
-                                            });
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                              : Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                  child: OutlinedButton.icon(
-                                    onPressed: _pickDocument,
-                                    icon: const Icon(Icons.cloud_upload_outlined),
-                                    label: const Text('Select Site Blueprint, PDF, or Doc'),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'File picked & ready for upload',
+                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                          const SizedBox(height: 20),
-
-                          // 2. Custom File Name field
-                          TextFormField(
-                            controller: _fileNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'File Name *',
-                              hintText:
-                                  'Enter a custom name for this document...',
-                              prefixIcon: Icon(Icons.title_rounded),
-                            ),
-                            validator: (val) {
-                              if (val == null || val.trim().isEmpty) {
-                                return 'Please enter a file name';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 3. Description field
-                          TextFormField(
-                            controller: _descriptionController,
-                            maxLines: 3,
-                            decoration: const InputDecoration(
-                              labelText: 'Document Description / Tag Details',
-                              hintText:
-                                  'Enter helpful notes explaining what this drawing, bill, or invoice covers...',
-                              prefixIcon: Icon(Icons.description_rounded),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: Colors.redAccent,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _pickedFileName = null;
+                                      _pickedFileBytes = null;
+                                      _fileNameController.clear();
+                                    });
+                                  },
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 32),
-
-                          // Upload submit action
-                          ElevatedButton(
-                            onPressed: _submitForm,
-                            child: const Text('UPLOAD SITE DOCUMENT'),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: OutlinedButton.icon(
+                            onPressed: _pickDocument,
+                            icon: const Icon(Icons.cloud_upload_outlined),
+                            label: const Text('Select Site Blueprint, PDF, or Doc'),
                           ),
-                        ],
-                      ),
+                        ),
+                  const SizedBox(height: 16),
+
+                  // 2. Custom File Name field
+                  TextFormField(
+                    controller: _fileNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'File Name *',
+                      hintText: 'Enter a custom name for this document...',
+                      prefixIcon: Icon(Icons.title_rounded),
                     ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Please enter a file name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 3. Description field
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Document Description / Tag Details',
+                      hintText: 'Enter helpful notes explaining what this drawing covers...',
+                      prefixIcon: Icon(Icons.description_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Upload submit action
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _submitForm,
+                      child: const Text('UPLOAD SITE DOCUMENT'),
+                    ),
+                  ),
+                ],
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

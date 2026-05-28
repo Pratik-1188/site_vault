@@ -43,7 +43,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      showDragHandle: true,
       builder: (_) => _VendorFormSheet(vendorToEdit: vendor),
     );
   }
@@ -53,7 +53,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      showDragHandle: true,
       builder: (_) => _CategoryFormSheet(categoryToEdit: category),
     );
   }
@@ -63,7 +63,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      showDragHandle: true,
       builder: (_) => _ProfileFormSheet(profileToEdit: profile),
     );
   }
@@ -73,7 +73,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
         title: const Text('Administrative Hub'),
@@ -121,22 +121,27 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
       child: Column(
         children: [
           // Search Field
-          TextField(
+          SearchBar(
             controller: _vendorSearchController,
-            onChanged: (val) => ref.read(adminVendorsSearchQueryProvider.notifier).update(val),
-            decoration: InputDecoration(
-              hintText: 'Search vendors by name or contact...',
-              prefixIcon: const Icon(Icons.search_rounded),
-              suffixIcon: _vendorSearchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_rounded),
-                      onPressed: () {
-                        _vendorSearchController.clear();
-                        ref.read(adminVendorsSearchQueryProvider.notifier).update("");
-                      },
-                    )
-                  : null,
-            ),
+            onChanged: (val) {
+              ref.read(adminVendorsSearchQueryProvider.notifier).update(val);
+              setState(() {});
+            },
+            hintText: 'Search vendors by name or contact...',
+            leading: const Icon(Icons.search_rounded),
+            trailing: [
+              if (_vendorSearchController.text.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.clear_rounded),
+                  onPressed: () {
+                    _vendorSearchController.clear();
+                    ref.read(adminVendorsSearchQueryProvider.notifier).update("");
+                    setState(() {});
+                  },
+                ),
+            ],
+            elevation: WidgetStateProperty.all(0),
+            backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.surfaceContainerHigh),
           ),
           const SizedBox(height: 16),
 
@@ -208,22 +213,27 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
       child: Column(
         children: [
           // Search Field
-          TextField(
+          SearchBar(
             controller: _categorySearchController,
-            onChanged: (val) => ref.read(adminCategoriesSearchQueryProvider.notifier).update(val),
-            decoration: InputDecoration(
-              hintText: 'Search categories by name...',
-              prefixIcon: const Icon(Icons.search_rounded),
-              suffixIcon: _categorySearchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_rounded),
-                      onPressed: () {
-                        _categorySearchController.clear();
-                        ref.read(adminCategoriesSearchQueryProvider.notifier).update("");
-                      },
-                    )
-                  : null,
-            ),
+            onChanged: (val) {
+              ref.read(adminCategoriesSearchQueryProvider.notifier).update(val);
+              setState(() {});
+            },
+            hintText: 'Search categories by name...',
+            leading: const Icon(Icons.search_rounded),
+            trailing: [
+              if (_categorySearchController.text.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.clear_rounded),
+                  onPressed: () {
+                    _categorySearchController.clear();
+                    ref.read(adminCategoriesSearchQueryProvider.notifier).update("");
+                    setState(() {});
+                  },
+                ),
+            ],
+            elevation: WidgetStateProperty.all(0),
+            backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.surfaceContainerHigh),
           ),
           const SizedBox(height: 16),
 
@@ -247,7 +257,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                       padding: const EdgeInsets.only(bottom: 12.0),
                       child: Card(
                         child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           leading: CircleAvatar(
                             backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                             child: Icon(Icons.category_rounded, color: Theme.of(context).colorScheme.primary),
@@ -291,22 +301,27 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
       child: Column(
         children: [
           // Search Field
-          TextField(
+          SearchBar(
             controller: _profileSearchController,
-            onChanged: (val) => ref.read(adminProfilesSearchQueryProvider.notifier).update(val),
-            decoration: InputDecoration(
-              hintText: 'Search staff profiles by name...',
-              prefixIcon: const Icon(Icons.search_rounded),
-              suffixIcon: _profileSearchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear_rounded),
-                      onPressed: () {
-                        _profileSearchController.clear();
-                        ref.read(adminProfilesSearchQueryProvider.notifier).update("");
-                      },
-                    )
-                  : null,
-            ),
+            onChanged: (val) {
+              ref.read(adminProfilesSearchQueryProvider.notifier).update(val);
+              setState(() {});
+            },
+            hintText: 'Search staff profiles by name...',
+            leading: const Icon(Icons.search_rounded),
+            trailing: [
+              if (_profileSearchController.text.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.clear_rounded),
+                  onPressed: () {
+                    _profileSearchController.clear();
+                    ref.read(adminProfilesSearchQueryProvider.notifier).update("");
+                    setState(() {});
+                  },
+                ),
+            ],
+            elevation: WidgetStateProperty.all(0),
+            backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.surfaceContainerHigh),
           ),
           const SizedBox(height: 16),
 

@@ -356,48 +356,35 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Padding(
-        padding: EdgeInsets.zero,
-        child: Column(
-          children: [
-            // Handlebar indicator
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+      child: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      widget.expenseToEdit == null ? 'Add Expense' : 'Edit Expense',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const Divider(height: 24),
 
-            // Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    widget.expenseToEdit == null
-                        ? 'Add Expense'
-                        : 'Edit Expense',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleLarge?.copyWith(fontSize: 22),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-
-            // Scrollable Form content
-            Expanded(
-              child: _isUploading
-                  ? const Center(
+                if (_isUploading)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40.0),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -409,421 +396,374 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                           ),
                         ],
                       ),
-                    )
-                  : Form(
-                      key: _formKey,
-                      child: ListView(
-                        padding: const EdgeInsets.all(20.0),
-                        children: [
-                          // 1. Title Input
-                          TextFormField(
-                            controller: _titleController,
-                            decoration: const InputDecoration(
-                              labelText: 'Expense Title *',
-                              hintText: 'e.g. Purchase of Fuses & Wires',
-                              prefixIcon: Icon(Icons.title_rounded),
+                    ),
+                  )
+                else ...[
+                  // 1. Title Input
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: const InputDecoration(
+                      labelText: 'Expense Title *',
+                      hintText: 'e.g. Purchase of Fuses & Wires',
+                      prefixIcon: Icon(Icons.title_rounded),
+                    ),
+                    textCapitalization: TextCapitalization.sentences,
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) return 'Title is required';
+                      if (val.trim().length <= 2) return 'Title must be longer than 2 characters';
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 2. Amount & GST Selector row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: TextFormField(
+                          controller: _amountController,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          decoration: const InputDecoration(
+                            labelText: 'Total Amount (INR) *',
+                            hintText: '0.00',
+                            prefixIcon: Icon(Icons.currency_rupee_rounded),
+                          ),
+                          validator: (val) {
+                            if (val == null || val.trim().isEmpty) return 'Amount required';
+                            final numVal = double.tryParse(val);
+                            if (numVal == null || numVal < 0) return 'Invalid amount';
+                            return null;
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: DropdownButtonFormField<double>(
+                          initialValue: _selectedGstPercentage,
+                          decoration: const InputDecoration(
+                            labelText: 'GST %',
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+                          ),
+                          items: _gstRates.map((double rate) {
+                            return DropdownMenuItem<double>(
+                              value: rate,
+                              child: Text(rate == 0.0 ? 'None' : '${rate.toInt()}%'),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() {
+                                _selectedGstPercentage = val;
+                              });
+                              _calculateGst();
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // GST Split breakdown Summary Card
+                  if (_amountController.text.isNotEmpty &&
+                      double.tryParse(_amountController.text) != null &&
+                      _selectedGstPercentage > 0) ...[
+                    const SizedBox(height: 12),
+                    Card(
+                      elevation: 0,
+                      color: Theme.of(context).colorScheme.surfaceContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                        child: Column(
+                          children: [
+                            _summaryLine(
+                              'Base Amount (Untaxed)',
+                              '₹${_calculatedBaseAmount.toStringAsFixed(2)}',
                             ),
-                            textCapitalization: TextCapitalization.sentences,
-                            validator: (val) {
-                              if (val == null || val.trim().isEmpty)
-                                return 'Title is required';
-                              if (val.trim().length <= 2)
-                                return 'Title must be longer than 2 characters';
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 2. Amount & GST Selector row
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: TextFormField(
-                                  controller: _amountController,
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Total Amount (INR) *',
-                                    hintText: '0.00',
-                                    prefixIcon: Icon(
-                                      Icons.currency_rupee_rounded,
-                                    ),
-                                  ),
-                                  validator: (val) {
-                                    if (val == null || val.trim().isEmpty)
-                                      return 'Amount required';
-                                    final numVal = double.tryParse(val);
-                                    if (numVal == null || numVal < 0)
-                                      return 'Invalid amount';
-                                    return null;
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                flex: 2,
-                                child: DropdownButtonFormField<double>(
-                                  initialValue: _selectedGstPercentage,
-                                  decoration: const InputDecoration(
-                                    labelText: 'GST %',
-                                    contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 15,
-                                    ),
-                                  ),
-                                  items: _gstRates.map((double rate) {
-                                    return DropdownMenuItem<double>(
-                                      value: rate,
-                                      child: Text(
-                                        rate == 0.0
-                                            ? 'None'
-                                            : '${rate.toInt()}%',
-                                      ),
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      setState(() {
-                                        _selectedGstPercentage = val;
-                                      });
-                                      _calculateGst();
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          // GST Split breakdown Summary Card
-                          if (_amountController.text.isNotEmpty &&
-                              double.tryParse(_amountController.text) != null &&
-                              _selectedGstPercentage > 0) ...[
-                            const SizedBox(height: 12),
-                            Card(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                  vertical: 12.0,
-                                ),
-                                child: Column(
-                                  children: [
-                                    _summaryLine(
-                                      'Base Amount (Untaxed)',
-                                      '₹${_calculatedBaseAmount.toStringAsFixed(2)}',
-                                    ),
-                                    const SizedBox(height: 4),
-                                    _summaryLine(
-                                      'GST Amount Extractions (${_selectedGstPercentage.toInt()}%)',
-                                      '₹${_calculatedGstAmount.toStringAsFixed(2)}',
-                                    ),
-                                    const Divider(height: 16, thickness: 0.5),
-                                    _summaryLine(
-                                      'Total Inclusive Sum',
-                                      '₹${double.parse(_amountController.text.trim()).toStringAsFixed(2)}',
-                                      isBold: true,
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            const SizedBox(height: 4),
+                            _summaryLine(
+                              'GST Amount Extractions (${_selectedGstPercentage.toInt()}%)',
+                              '₹${_calculatedGstAmount.toStringAsFixed(2)}',
+                            ),
+                            const Divider(height: 16, thickness: 0.5),
+                            _summaryLine(
+                              'Total Inclusive Sum',
+                              '₹${double.parse(_amountController.text.trim()).toStringAsFixed(2)}',
+                              isBold: true,
                             ),
                           ],
-                          const SizedBox(height: 16),
+                        ),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 16),
 
-                          // 3. User Selectors: Paid By & Created By
-                          profilesAsync.when(
-                            loading: () => const LinearProgressIndicator(),
-                            error: (e, _) => Text('Error loading profiles: $e'),
-                            data: (profiles) {
-                              // Auto-fill creators if empty and profiles exist
-                              if (profiles.isNotEmpty) {
-                                _selectedCreatedBy ??= profiles.first.id;
-                                _selectedPaidBy ??= profiles.first.id;
-                              }
+                  // 3. User Selectors: Paid By & Created By
+                  profilesAsync.when(
+                    loading: () => const LinearProgressIndicator(),
+                    error: (e, _) => Text('Error loading profiles: $e'),
+                    data: (profiles) {
+                      if (profiles.isNotEmpty) {
+                        _selectedCreatedBy ??= profiles.first.id;
+                        _selectedPaidBy ??= profiles.first.id;
+                      }
 
-                              return Row(
-                                children: [
-                                  Expanded(
-                                    child: DropdownButtonFormField<String>(
-                                      initialValue: _selectedPaidBy,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Paid By *',
-                                        prefixIcon: Icon(Icons.person_rounded),
-                                      ),
-                                      items: profiles.map((p) {
-                                        return DropdownMenuItem(
-                                          value: p.id,
-                                          child: Text(p.displayName),
-                                        );
-                                      }).toList(),
-                                      onChanged: (val) =>
-                                          setState(() => _selectedPaidBy = val),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: DropdownButtonFormField<String>(
-                                      initialValue: _selectedCreatedBy,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Created By *',
-                                        prefixIcon: Icon(
-                                          Icons.edit_note_rounded,
-                                        ),
-                                      ),
-                                      items: profiles.map((p) {
-                                        return DropdownMenuItem(
-                                          value: p.id,
-                                          child: Text(p.displayName),
-                                        );
-                                      }).toList(),
-                                      onChanged: (val) => setState(
-                                        () => _selectedCreatedBy = val,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 4. Selectors Category & Vendor
-                          Row(
-                            children: [
-                              // Categories
-                              Expanded(
-                                child: categoriesAsync.when(
-                                  loading: () => const Center(
-                                    child: SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  error: (e, _) => Text('Err: $e'),
-                                  data: (categories) {
-                                    return DropdownButtonFormField<String>(
-                                      initialValue: _selectedCategoryId,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Category',
-                                        prefixIcon: Icon(
-                                          Icons.category_rounded,
-                                        ),
-                                      ),
-                                      items: categories.map((c) {
-                                        return DropdownMenuItem(
-                                          value: c.id,
-                                          child: Text(c.name),
-                                        );
-                                      }).toList(),
-                                      onChanged: (val) => setState(
-                                        () => _selectedCategoryId = val,
-                                      ),
-                                    );
-                                  },
-                                ),
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              initialValue: _selectedPaidBy,
+                              decoration: const InputDecoration(
+                                labelText: 'Paid By *',
+                                prefixIcon: Icon(Icons.person_rounded),
                               ),
-                              const SizedBox(width: 12),
-                              // Vendors
-                              Expanded(
-                                child: vendorsAsync.when(
-                                  loading: () => const Center(
-                                    child: SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    ),
-                                  ),
-                                  error: (e, _) => Text('Err: $e'),
-                                  data: (vendors) {
-                                    return DropdownButtonFormField<String>(
-                                      initialValue: _selectedVendorId,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Vendor',
-                                        prefixIcon: Icon(Icons.store_rounded),
-                                      ),
-                                      items: vendors.map((v) {
-                                        return DropdownMenuItem(
-                                          value: v.id,
-                                          child: Text(v.name),
-                                        );
-                                      }).toList(),
-                                      onChanged: (val) => setState(
-                                        () => _selectedVendorId = val,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 5. Selectors: Payment Mode & Date Picker
-                          Row(
-                            children: [
-                              Expanded(
-                                child: DropdownButtonFormField<PaymentMode>(
-                                  initialValue: _selectedPaymentMode,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Payment Mode',
-                                    prefixIcon: Icon(Icons.payment_rounded),
-                                  ),
-                                  items: PaymentMode.values.map((mode) {
-                                    return DropdownMenuItem(
-                                      value: mode,
-                                      child: Text(mode.toDisplayLabel()),
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) {
-                                    if (val != null) {
-                                      setState(
-                                        () => _selectedPaymentMode = val,
-                                      );
-                                    }
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: TextFormField(
-                                  readOnly: true,
-                                  controller: TextEditingController(
-                                    text: _selectedDate.toReadableString(),
-                                  ),
-                                  decoration: const InputDecoration(
-                                    labelText: 'Expense Date',
-                                    prefixIcon: Icon(Icons.calendar_today_rounded),
-                                  ),
-                                  onTap: () => _selectDate(context),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // 6. Description
-                          TextFormField(
-                            controller: _descriptionController,
-                            maxLines: 2,
-                            decoration: const InputDecoration(
-                              labelText: 'Additional Description',
-                              hintText:
-                                  'Describe details of this transaction...',
-                              prefixIcon: Icon(Icons.description_rounded),
+                              items: profiles.map((p) {
+                                return DropdownMenuItem(
+                                  value: p.id,
+                                  child: Text(p.displayName),
+                                );
+                              }).toList(),
+                              onChanged: (val) => setState(() => _selectedPaidBy = val),
                             ),
                           ),
-                          const SizedBox(height: 16),
-
-                          // 7. Refundable Toggle Switch
-                          SwitchListTile(
-                            title: const Text('Refundable Expense'),
-                            secondary: const Icon(Icons.assignment_return_rounded),
-                            value: _isRefundable,
-                            onChanged: (val) => setState(() => _isRefundable = val),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // 8. Attachments Manager Section
-                          Text(
-                            'Receipt / Attachment',
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                          const SizedBox(height: 8),
-                          _pickedFileName != null
-                              ? Card(
-                                  child: ListTile(
-                                    leading: Icon(
-                                      _pickedFileName!.toLowerCase().endsWith(
-                                            '.pdf',
-                                          )
-                                          ? Icons.picture_as_pdf_rounded
-                                          : Icons.image_rounded,
-                                    ),
-                                    title: Text(
-                                      _pickedFileName!,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    subtitle: const Text(
-                                      'Ready to upload on save',
-                                      style: TextStyle(fontSize: 11),
-                                    ),
-                                    trailing: IconButton(
-                                      icon: const Icon(
-                                        Icons.delete_outline_rounded,
-                                        color: Colors.redAccent,
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          _pickedFileName = null;
-                                          _pickedFileBytes = null;
-                                        });
-                                      },
-                                    ),
-                                  ),
-                                )
-                              : Row(
-                                  children: [
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: _takePhoto,
-                                        style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 14,
-                                          ),
-                                        ),
-                                        icon: const Icon(
-                                          Icons.camera_alt_rounded,
-                                        ),
-                                        label: const Text('Camera'),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: OutlinedButton.icon(
-                                        onPressed: _pickAttachment,
-                                        style: OutlinedButton.styleFrom(
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 14,
-                                          ),
-                                        ),
-                                        icon: const Icon(
-                                          Icons.cloud_upload_rounded,
-                                        ),
-                                        label: const Text('Upload File'),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-
-                          const SizedBox(height: 32),
-
-                          // Submit Action Button
-                          ElevatedButton(
-                            onPressed: _submitForm,
-                            child: Text(
-                              widget.expenseToEdit == null
-                                  ? 'CREATE RECORD'
-                                  : 'SAVE CHANGES',
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              initialValue: _selectedCreatedBy,
+                              decoration: const InputDecoration(
+                                labelText: 'Created By *',
+                                prefixIcon: Icon(Icons.edit_note_rounded),
+                              ),
+                              items: profiles.map((p) {
+                                return DropdownMenuItem(
+                                  value: p.id,
+                                  child: Text(p.displayName),
+                                );
+                              }).toList(),
+                              onChanged: (val) => setState(() => _selectedCreatedBy = val),
                             ),
                           ),
                         ],
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 4. Selectors Category & Vendor
+                  Row(
+                    children: [
+                      Expanded(
+                        child: categoriesAsync.when(
+                          loading: () => const Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                          error: (e, _) => Text('Err: $e'),
+                          data: (categories) {
+                            return DropdownButtonFormField<String>(
+                              initialValue: _selectedCategoryId,
+                              decoration: const InputDecoration(
+                                labelText: 'Category',
+                                prefixIcon: Icon(Icons.category_rounded),
+                              ),
+                              items: categories.map((c) {
+                                return DropdownMenuItem(
+                                  value: c.id,
+                                  child: Text(c.name),
+                                );
+                              }).toList(),
+                              onChanged: (val) => setState(() => _selectedCategoryId = val),
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: vendorsAsync.when(
+                          loading: () => const Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                          error: (e, _) => Text('Err: $e'),
+                          data: (vendors) {
+                            return DropdownButtonFormField<String>(
+                              initialValue: _selectedVendorId,
+                              decoration: const InputDecoration(
+                                labelText: 'Vendor',
+                                prefixIcon: Icon(Icons.store_rounded),
+                              ),
+                              items: vendors.map((v) {
+                                return DropdownMenuItem(
+                                  value: v.id,
+                                  child: Text(v.name),
+                                );
+                              }).toList(),
+                              onChanged: (val) => setState(() => _selectedVendorId = val),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 5. Selectors: Payment Mode & Date Picker
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<PaymentMode>(
+                          initialValue: _selectedPaymentMode,
+                          decoration: const InputDecoration(
+                            labelText: 'Payment Mode',
+                            prefixIcon: Icon(Icons.payment_rounded),
+                          ),
+                          items: PaymentMode.values.map((mode) {
+                            return DropdownMenuItem(
+                              value: mode,
+                              child: Text(mode.toDisplayLabel()),
+                            );
+                          }).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() => _selectedPaymentMode = val);
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          readOnly: true,
+                          controller: TextEditingController(text: _selectedDate.toReadableString()),
+                          decoration: const InputDecoration(
+                            labelText: 'Expense Date',
+                            prefixIcon: Icon(Icons.calendar_today_rounded),
+                          ),
+                          onTap: () => _selectDate(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 6. Description
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      labelText: 'Additional Description',
+                      hintText: 'Describe details of this transaction...',
+                      prefixIcon: Icon(Icons.description_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 7. Refundable Toggle Switch
+                  SwitchListTile(
+                    title: const Text('Refundable Expense'),
+                    secondary: const Icon(Icons.assignment_return_rounded),
+                    value: _isRefundable,
+                    onChanged: (val) => setState(() => _isRefundable = val),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 8. Attachments Manager Section
+                  Text(
+                    'Receipt / Attachment',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  _pickedFileName != null
+                      ? Card(
+                          elevation: 0,
+                          color: Theme.of(context).colorScheme.surfaceContainer,
+                          child: ListTile(
+                            leading: Icon(
+                              _pickedFileName!.toLowerCase().endsWith('.pdf')
+                                  ? Icons.picture_as_pdf_rounded
+                                  : Icons.image_rounded,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            title: Text(
+                              _pickedFileName!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Ready to upload on save',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                            trailing: IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline_rounded,
+                                color: Colors.redAccent,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _pickedFileName = null;
+                                  _pickedFileBytes = null;
+                                });
+                              },
+                            ),
+                          ),
+                        )
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _takePhoto,
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                icon: const Icon(Icons.camera_alt_rounded),
+                                label: const Text('Camera'),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _pickAttachment,
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                ),
+                                icon: const Icon(Icons.cloud_upload_rounded),
+                                label: const Text('Upload File'),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                  const SizedBox(height: 24),
+
+                  // Submit Action Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: _submitForm,
+                      child: Text(
+                        widget.expenseToEdit == null ? 'CREATE RECORD' : 'SAVE CHANGES',
                       ),
                     ),
+                  ),
+                ],
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
