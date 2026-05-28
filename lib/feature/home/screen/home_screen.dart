@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:site_vault/feature/home/provider/home_provider.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
+import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 
 /// A premium, M3-styled Operations Dashboard representing the master corporate ledger overview.
@@ -61,6 +62,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => const ExpenseFormSheet(
+        siteId: '',
+        firmId: '',
+      ),
+    );
+  }
+
+  /// Opens the dynamic document upload bottom sheet in unlocked mode
+  void _openDocumentUploadSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const DocumentUploadSheet(
         siteId: '',
         firmId: '',
       ),
@@ -399,15 +413,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          // Premium placeholder SnackBar feedback
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Document uploads from dashboard will be available in a future update.'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        },
+                        onTap: () => _openDocumentUploadSheet(context),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
                           child: Column(
@@ -417,13 +423,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 radius: 20,
                                 backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
                                 child: Icon(
-                                  Icons.update_rounded,
+                                  Icons.cloud_upload_rounded,
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Add Document\n(Placeholder)',
+                                'Add Document',
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                                       fontWeight: FontWeight.bold,

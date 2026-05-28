@@ -5,6 +5,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
+import 'package:site_vault/shared/provider/firm_provider.dart';
+import 'package:site_vault/feature/site/provider/site_provider.dart';
+import 'package:site_vault/feature/site/model/site.dart';
 import '../model/document.dart';
 import '../provider/document_provider.dart';
 
@@ -35,6 +38,13 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
   late TextEditingController _fileNameController;
   late TextEditingController _descriptionController;
 
+  // Firm & Site dynamic selection state
+  String? _selectedFirmId;
+  String? _selectedSiteId;
+  List<Site>? _activeSites;
+  bool _isLoadingSites = false;
+  late bool _isContextLocked; // Locked if started from specific site details screen
+
   // File variables
   String? _pickedFileName;
   Uint8List? _pickedFileBytes;
@@ -46,6 +56,16 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
     super.initState();
     _fileNameController = TextEditingController();
     _descriptionController = TextEditingController();
+
+    // Firm & Site context selection (locked if both firmId and siteId are provided)
+    _selectedFirmId = widget.firmId.isNotEmpty ? widget.firmId : null;
+    _selectedSiteId = widget.siteId.isNotEmpty ? widget.siteId : null;
+    _isContextLocked = widget.firmId.isNotEmpty && widget.siteId.isNotEmpty;
+
+    // Fetch initial active sites if firm is selected
+    if (_selectedFirmId != null) {
+      _loadSitesForFirm(_selectedFirmId!);
+    }
   }
 
   @override
@@ -53,6 +73,44 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
     _fileNameController.dispose();
     _descriptionController.dispose();
     super.dispose();
+  }
+
+  /// Fetches active sites dynamically under the selected firm
+  Future<void> _loadSitesForFirm(String firmId) async {
+    if (!mounted) return;
+    setState(() {
+      _isLoadingSites = true;
+      _activeSites = null;
+    });
+
+    try {
+      final response = await ref.read(siteRepositoryProvider).client
+          .from('sites')
+          .select()
+          .eq('firm_id', firmId)
+          .eq('status', 'active');
+
+      if (!mounted) return;
+
+      final sitesList = (response as List).map((e) => Site.fromJson(e)).toList();
+
+      setState(() {
+        _activeSites = sitesList;
+        _isLoadingSites = false;
+
+        // Reset selected site if it is not in the newly loaded active sites list
+        if (_selectedSiteId != null && !_activeSites!.any((s) => s.id == _selectedSiteId)) {
+          _selectedSiteId = null;
+        }
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _activeSites = [];
+        _isLoadingSites = false;
+        _selectedSiteId = null;
+      });
+    }
   }
 
   /// Picks a document file via file_picker
@@ -106,6 +164,20 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       debugPrint('[DocumentUpload] Form validation failed');
       return;
     }
+
+    if (_selectedFirmId == null || _selectedSiteId == null) {
+      debugPrint('[DocumentUpload] Scope selection missing');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please select both Firm and Site.'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+      return;
+    }
+
     if (_pickedFileBytes == null || _pickedFileName == null) {
       debugPrint('[DocumentUpload] No file picked');
       if (mounted) {
@@ -145,7 +217,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       final fileUrl = await ref
           .read(storageRepositoryProvider)
           .uploadFile(
-            bucket: widget.siteId,
+            bucket: _selectedSiteId!,
             path: 'documents',
             fileBytes: _pickedFileBytes!,
             fileName: _pickedFileName!,
@@ -158,7 +230,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       // 2. Build the SiteDocument Object
       final document = SiteDocument(
         id: '',
-        siteId: widget.siteId,
+        siteId: _selectedSiteId!,
         createdBy: uploaderId,
         fileName: _fileNameController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
@@ -172,9 +244,12 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       // 3. Save DB entry using the SiteDocuments controller notifier
       debugPrint('[DocumentUpload] Inserting document record...');
       await ref
-          .read(siteDocumentsProvider(widget.siteId).notifier)
+          .read(siteDocumentsProvider(_selectedSiteId!).notifier)
           .addDocument(document);
       debugPrint('[DocumentUpload] Insert OK');
+
+      // 4. Invalidate provider to force a refresh on the site's document page
+      ref.invalidate(siteDocumentsProvider(_selectedSiteId!));
 
       if (mounted) {
         Navigator.pop(context);
@@ -209,6 +284,8 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final firmsAsync = ref.watch(firmsProvider);
+
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -256,95 +333,246 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                     ),
                   )
                 else ...[
-                  // 1. File Picker Box
-                  _pickedFileName != null
-                      ? Card(
-                          elevation: 0,
-                          color: Theme.of(context).colorScheme.surfaceContainer,
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  _getFileIcon(_pickedFileName!),
+                  // 1. Context Scope Card
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Scope',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                   color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _pickedFileName!,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'File picked & ready for upload',
-                                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
+                          ),
+                          const SizedBox(height: 16),
+                          firmsAsync.when(
+                            loading: () => const LinearProgressIndicator(),
+                            error: (err, _) => Text('Error loading firms: $err'),
+                            data: (firms) {
+                              return DropdownButtonFormField<String>(
+                                initialValue: _selectedFirmId,
+                                decoration: InputDecoration(
+                                  labelText: 'Firm',
+                                  prefixIcon: const Icon(Icons.business_rounded),
+                                  suffixIcon: _isContextLocked
+                                      ? const Icon(Icons.lock_outline_rounded)
+                                      : null,
                                 ),
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete_outline_rounded,
-                                    color: Colors.redAccent,
-                                  ),
-                                  onPressed: () {
+                                icon: _isContextLocked ? const SizedBox.shrink() : null,
+                                items: firms.map((firm) {
+                                  return DropdownMenuItem<String>(
+                                    value: firm.id,
+                                    child: Text(firm.name),
+                                  );
+                                }).toList(),
+                                onChanged: _isContextLocked
+                                    ? null
+                                    : (val) {
+                                        if (val != null) {
+                                          setState(() {
+                                            _selectedFirmId = val;
+                                            _selectedSiteId = null;
+                                          });
+                                          _loadSitesForFirm(val);
+                                        }
+                                      },
+                                validator: (val) => val == null ? 'Firm is required' : null,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            initialValue: _selectedSiteId,
+                            decoration: InputDecoration(
+                              labelText: 'Site',
+                              prefixIcon: const Icon(Icons.location_on_rounded),
+                              suffixIcon: _isContextLocked
+                                  ? const Icon(Icons.lock_outline_rounded)
+                                  : _isLoadingSites
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: Padding(
+                                            padding: EdgeInsets.all(12.0),
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          ),
+                                        )
+                                      : null,
+                            ),
+                            icon: (_isContextLocked || _isLoadingSites)
+                                ? const SizedBox.shrink()
+                                : null,
+                            items: _activeSites?.map((site) {
+                                  return DropdownMenuItem<String>(
+                                    value: site.id,
+                                    child: Text(site.name),
+                                  );
+                                }).toList() ??
+                                [],
+                            onChanged: (_isContextLocked || _selectedFirmId == null)
+                                ? null
+                                : (val) {
                                     setState(() {
-                                      _pickedFileName = null;
-                                      _pickedFileBytes = null;
-                                      _fileNameController.clear();
+                                      _selectedSiteId = val;
                                     });
                                   },
-                                ),
-                              ],
-                            ),
+                            validator: (val) => val == null ? 'Site is required' : null,
                           ),
-                        )
-                      : Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: OutlinedButton.icon(
-                            onPressed: _pickDocument,
-                            icon: const Icon(Icons.cloud_upload_outlined),
-                            label: const Text('Select Site Blueprint, PDF, or Doc'),
-                          ),
-                        ),
-                  const SizedBox(height: 16),
-
-                  // 2. Custom File Name field
-                  TextFormField(
-                    controller: _fileNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'File Name *',
-                      hintText: 'Enter a custom name for this document...',
-                      prefixIcon: Icon(Icons.title_rounded),
+                        ],
+                      ),
                     ),
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Please enter a file name';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 16),
 
-                  // 3. Description field
-                  TextFormField(
-                    controller: _descriptionController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Document Description / Tag Details',
-                      hintText: 'Enter helpful notes explaining what this drawing covers...',
-                      prefixIcon: Icon(Icons.description_rounded),
+                  // 2. Document Metadata Card
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Document Metadata',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _fileNameController,
+                            decoration: const InputDecoration(
+                              labelText: 'File Name *',
+                              hintText: 'Enter a custom name for this document...',
+                              prefixIcon: Icon(Icons.title_rounded),
+                            ),
+                            textCapitalization: TextCapitalization.sentences,
+                            validator: (val) {
+                              if (val == null || val.trim().isEmpty) {
+                                return 'Please enter a file name';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _descriptionController,
+                            maxLines: 3,
+                            decoration: const InputDecoration(
+                              labelText: 'Document Description / Tag Details',
+                              hintText: 'Enter helpful notes explaining what this drawing covers...',
+                              prefixIcon: Icon(Icons.description_rounded),
+                            ),
+                            textCapitalization: TextCapitalization.sentences,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 3. File Attachment Card
+                  Card(
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'File Attachment',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 16),
+                          _pickedFileName != null
+                              ? Card(
+                                  elevation: 0,
+                                  color: Theme.of(context).colorScheme.surfaceContainer,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          _getFileIcon(_pickedFileName!),
+                                          color: Theme.of(context).colorScheme.primary,
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                _pickedFileName!,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 14,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'File picked & ready for upload',
+                                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(
+                                            Icons.delete_outline_rounded,
+                                            color: Colors.redAccent,
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _pickedFileName = null;
+                                              _pickedFileBytes = null;
+                                              _fileNameController.clear();
+                                            });
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              : Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: OutlinedButton.icon(
+                                    onPressed: _pickDocument,
+                                    icon: const Icon(Icons.cloud_upload_outlined),
+                                    label: const Text('Select Site Blueprint, PDF, or Doc'),
+                                  ),
+                                ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 24),
