@@ -540,7 +540,7 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
                         ],
                       ),
                     ),
-                    const Divider(height: 20, indent: 24, endIndent: 24),
+                    const Divider(height: 24, indent: 24, endIndent: 24),
 
                     // Scrollable content
                     Flexible(
@@ -550,37 +550,61 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            TextFormField(
-                              controller: _nameController,
-                              textCapitalization: TextCapitalization.words,
-                              decoration: const InputDecoration(
-                                labelText: 'Vendor Business Name *',
-                                prefixIcon: Icon(Icons.store_rounded),
+                            Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.outlineVariant,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a name' : null,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Text(
+                                      'Vendor Details',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                            color: Theme.of(context).colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _nameController,
+                                      textCapitalization: TextCapitalization.words,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Vendor Business Name *',
+                                        prefixIcon: Icon(Icons.store_rounded),
+                                      ),
+                                      validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a name' : null,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _contactController,
+                                      keyboardType: TextInputType.phone,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Contact / Phone Info',
+                                        prefixIcon: Icon(Icons.phone_rounded),
+                                        hintText: 'e.g. +91 98765 43210',
+                                      ),
+                                    ),
+                                    if (widget.vendorToEdit != null) ...[
+                                      const SizedBox(height: 16),
+                                      SwitchListTile(
+                                        title: const Text('Operational Status'),
+                                        subtitle: const Text('Toggle between Active and Inactive availability'),
+                                        value: _isActive,
+                                        activeThumbColor: Theme.of(context).colorScheme.primary,
+                                        contentPadding: EdgeInsets.zero,
+                                        onChanged: (val) => setState(() => _isActive = val),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
                             ),
-                            const SizedBox(height: 16),
-
-                            TextFormField(
-                              controller: _contactController,
-                              keyboardType: TextInputType.phone,
-                              decoration: const InputDecoration(
-                                labelText: 'Contact / Phone Info',
-                                prefixIcon: Icon(Icons.phone_rounded),
-                                hintText: 'e.g. +91 98765 43210',
-                              ),
-                            ),
-                            
-                            if (widget.vendorToEdit != null) ...[
-                              const SizedBox(height: 16),
-                              SwitchListTile(
-                                title: const Text('Operational Status'),
-                                subtitle: const Text('Toggle between Active and Inactive availability'),
-                                value: _isActive,
-                                activeThumbColor: Theme.of(context).colorScheme.primary,
-                                onChanged: (val) => setState(() => _isActive = val),
-                              ),
-                            ],
                             const SizedBox(height: 24),
 
                             SizedBox(
@@ -711,7 +735,7 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
                         ],
                       ),
                     ),
-                    const Divider(height: 20, indent: 24, endIndent: 24),
+                    const Divider(height: 24, indent: 24, endIndent: 24),
 
                     // Scrollable content
                     Flexible(
@@ -721,27 +745,52 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            TextFormField(
-                              controller: _nameController,
-                              textCapitalization: TextCapitalization.words,
-                              decoration: const InputDecoration(
-                                labelText: 'Expense Category Name *',
-                                prefixIcon: Icon(Icons.category_rounded),
-                                hintText: 'e.g. Electric Cables, Concrete Foundation',
+                            Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.outlineVariant,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a category name' : null,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Text(
+                                      'Category Details',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                            color: Theme.of(context).colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _nameController,
+                                      textCapitalization: TextCapitalization.words,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Expense Category Name *',
+                                        prefixIcon: Icon(Icons.category_rounded),
+                                        hintText: 'e.g. Electric Cables, Concrete Foundation',
+                                      ),
+                                      validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a category name' : null,
+                                    ),
+                                    if (widget.categoryToEdit != null) ...[
+                                      const SizedBox(height: 16),
+                                      SwitchListTile(
+                                        title: const Text('Category Availability'),
+                                        subtitle: const Text('Toggle between Active and Inactive (hides from dropdowns)'),
+                                        value: _isActive,
+                                        activeThumbColor: Theme.of(context).colorScheme.primary,
+                                        contentPadding: EdgeInsets.zero,
+                                        onChanged: (val) => setState(() => _isActive = val),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
                             ),
-                            
-                            if (widget.categoryToEdit != null) ...[
-                              const SizedBox(height: 16),
-                              SwitchListTile(
-                                title: const Text('Category Availability'),
-                                subtitle: const Text('Toggle between Active and Inactive (hides from dropdowns)'),
-                                value: _isActive,
-                                activeThumbColor: Theme.of(context).colorScheme.primary,
-                                onChanged: (val) => setState(() => _isActive = val),
-                              ),
-                            ],
                             const SizedBox(height: 24),
 
                             SizedBox(
@@ -871,7 +920,7 @@ class _ProfileFormSheetState extends ConsumerState<_ProfileFormSheet> {
                         ],
                       ),
                     ),
-                    const Divider(height: 20, indent: 24, endIndent: 24),
+                    const Divider(height: 24, indent: 24, endIndent: 24),
 
                     // Scrollable Content
                     Flexible(
@@ -881,30 +930,56 @@ class _ProfileFormSheetState extends ConsumerState<_ProfileFormSheet> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            TextFormField(
-                              controller: _nameController,
-                              decoration: const InputDecoration(
-                                labelText: 'Staff Display Name * (NO SPACES)',
-                                prefixIcon: Icon(Icons.person_outline_rounded),
-                                hintText: 'e.g. RameshPatel (letters/numbers only)',
+                            Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.outlineVariant,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              validator: (val) {
-                                if (val == null || val.trim().isEmpty) {
-                                  return 'Please enter a display name';
-                                }
-                                if (val.trim().contains(' ')) {
-                                  return 'Spaces are NOT allowed (Database requirement)';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-
-                            SwitchListTile(
-                              title: const Text('Staff Activity'),
-                              subtitle: const Text('Toggle to enable/disable staff transaction log access'),
-                              value: _isActive,
-                              onChanged: (val) => setState(() => _isActive = val),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Text(
+                                      'Staff Profile Details',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                            color: Theme.of(context).colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _nameController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Staff Display Name * (NO SPACES)',
+                                        prefixIcon: Icon(Icons.person_outline_rounded),
+                                        hintText: 'e.g. RameshPatel (letters/numbers only)',
+                                      ),
+                                      validator: (val) {
+                                        if (val == null || val.trim().isEmpty) {
+                                          return 'Please enter a display name';
+                                        }
+                                        if (val.trim().contains(' ')) {
+                                          return 'Spaces are NOT allowed (Database requirement)';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    SwitchListTile(
+                                      title: const Text('Staff Activity'),
+                                      subtitle: const Text('Toggle to enable/disable staff transaction log access'),
+                                      value: _isActive,
+                                      activeThumbColor: Theme.of(context).colorScheme.primary,
+                                      contentPadding: EdgeInsets.zero,
+                                      onChanged: (val) => setState(() => _isActive = val),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 24),
 

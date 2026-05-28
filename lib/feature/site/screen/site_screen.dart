@@ -9,8 +9,8 @@ import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
 
-/// A consistent Material 3 screen that displays the list of sites under KK Group
-/// using standard, default Material 3 widgets.
+/// A premium, high-contrast Material 3 screen that displays the site directory under KK Group
+/// utilizing the custom visual bento structure and technical layout designed on Stitch.
 class SitesScreen extends ConsumerStatefulWidget {
   const SitesScreen({super.key});
 
@@ -40,16 +40,23 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
   }
 
   void _onStatusChanged(String? status) {
-    ref.read(selectedStatusProvider.notifier).update(status);
+    final currentStatus = ref.read(selectedStatusProvider);
+    if (currentStatus == status) {
+      ref
+          .read(selectedStatusProvider.notifier)
+          .update(null); // Clear filter on re-tap
+    } else {
+      ref.read(selectedStatusProvider.notifier).update(status);
+    }
   }
 
   void _resetAllFilters() {
     _clearSearch();
     ref.read(selectedStatusProvider.notifier).update('active');
     final fy = FinancialYear.current();
-    ref.read(startedDateRangeProvider.notifier).update(
-      DateRange(from: fy.startDate, to: fy.endDate),
-    );
+    ref
+        .read(startedDateRangeProvider.notifier)
+        .update(DateRange(from: fy.startDate, to: fy.endDate));
   }
 
   void _showDateFilterBottomSheet(BuildContext context) {
@@ -64,74 +71,91 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Select Date Range',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Select Date Range',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'FINANCIAL YEARS',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
+                  const SizedBox(height: 16),
+                  Text(
+                    'FINANCIAL YEARS',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                ...fyList.map((fy) {
-                  final isSelected = currentRange.from?.year == fy.startDate.year &&
-                      currentRange.from?.month == fy.startDate.month &&
-                      currentRange.from?.day == fy.startDate.day &&
-                      currentRange.to?.year == fy.endDate.year &&
-                      currentRange.to?.month == fy.endDate.month &&
-                      currentRange.to?.day == fy.endDate.day;
+                  const SizedBox(height: 8),
+                  ...fyList.map((fy) {
+                    final isSelected =
+                        currentRange.from?.year == fy.startDate.year &&
+                        currentRange.from?.month == fy.startDate.month &&
+                        currentRange.from?.day == fy.startDate.day &&
+                        currentRange.to?.year == fy.endDate.year &&
+                        currentRange.to?.month == fy.endDate.month &&
+                        currentRange.to?.day == fy.endDate.day;
 
-                  return ListTile(
-                     leading: Icon(
-                       Icons.calendar_today_rounded,
-                       color: isSelected ? Theme.of(context).colorScheme.primary : null,
-                     ),
-                     title: Text(
-                       fy.label,
-                       style: TextStyle(
-                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                       ),
-                     ),
-                     subtitle: Text(
-                       '${fy.startDate.toReadableString()} - ${fy.endDate.toReadableString()}',
-                     ),
-                     trailing: isSelected
-                         ? Icon(Icons.check_rounded, color: Theme.of(context).colorScheme.primary)
-                         : null,
-                     onTap: () {
-                       ref.read(startedDateRangeProvider.notifier).update(
-                         DateRange(from: fy.startDate, to: fy.endDate),
-                       );
-                       Navigator.pop(context);
-                     },
-                  );
-                }),
-                const Divider(height: 16),
-                ListTile(
-                  leading: const Icon(Icons.date_range_rounded),
-                  title: const Text('Custom Date Range...'),
-                  subtitle: const Text('Select a custom start and end date'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _selectCustomDateRange(context);
-                  },
-                ),
-              ],
+                    return ListTile(
+                      leading: Icon(
+                        Icons.calendar_today_rounded,
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                      ),
+                      title: Text(
+                        fy.label,
+                        style: TextStyle(
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '${fy.startDate.toReadableString()} - ${fy.endDate.toReadableString()}',
+                      ),
+                      trailing: isSelected
+                          ? Icon(
+                              Icons.check_rounded,
+                              color: Theme.of(context).colorScheme.primary,
+                            )
+                          : null,
+                      onTap: () {
+                        ref
+                            .read(startedDateRangeProvider.notifier)
+                            .update(
+                              DateRange(from: fy.startDate, to: fy.endDate),
+                            );
+                        Navigator.pop(context);
+                      },
+                    );
+                  }),
+                  const Divider(height: 16),
+                  ListTile(
+                    leading: const Icon(Icons.date_range_rounded),
+                    title: const Text('Custom Date Range...'),
+                    subtitle: const Text('Select a custom start and end date'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _selectCustomDateRange(context);
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -141,7 +165,8 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
 
   Future<void> _selectCustomDateRange(BuildContext context) async {
     final currentRange = ref.read(startedDateRangeProvider);
-    final initialDateRange = (currentRange.from != null && currentRange.to != null)
+    final initialDateRange =
+        (currentRange.from != null && currentRange.to != null)
         ? DateTimeRange(start: currentRange.from!, end: currentRange.to!)
         : null;
 
@@ -153,9 +178,9 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     );
 
     if (picked != null) {
-      ref.read(startedDateRangeProvider.notifier).update(
-        DateRange(from: picked.start, to: picked.end),
-      );
+      ref
+          .read(startedDateRangeProvider.notifier)
+          .update(DateRange(from: picked.start, to: picked.end));
     }
   }
 
@@ -175,18 +200,12 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     return '${dateRange.from!.toShortString()} - ${dateRange.to!.toShortString()}';
   }
 
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  /// Triggers the Sign Out process with a clean M3 warning dialog.
-  Future<void> _showSignOutDialog(BuildContext context) async {
+  /// Confirms and handles user sign out
+  Future<void> _handleSignOut() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sign Out?'),
+        title: const Text('Sign Out'),
         content: const Text(
           'Are you sure you want to sign out of KK Group Site Vault?',
         ),
@@ -197,27 +216,48 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('SIGN OUT'),
           ),
         ],
       ),
     );
 
-    if (confirmed == true && context.mounted) {
+    if (confirmed == true && mounted) {
       try {
         await ref.read(authRepositoryProvider).signOut();
       } catch (e) {
-        if (context.mounted) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error signing out: $e'),
-              backgroundColor: const Color(0xFFEF4444),
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
       }
     }
+  }
+
+  String _getCleanFirmName(String firmId) {
+    switch (firmId.toLowerCase()) {
+      case '0f140f6f-d994-4695-a838-bee13b3802f1':
+        return 'Electricals';
+      case '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3':
+        return 'Associates';
+      case '4e01a36a-87c0-4cca-9428-a2747a130c96':
+        return 'Solar';
+      default:
+        return 'Group';
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -238,188 +278,130 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     final searchQuery = ref.watch(searchQueryProvider);
 
     return Scaffold(
-      drawer: NavigationDrawer(
-        selectedIndex: -1,
-        onDestinationSelected: (index) {
-          Navigator.pop(context);
-          if (index == 0) {
-            context.push('/analytics');
-          } else if (index == 1) {
-            context.push('/admin');
-          } else if (index == 2) {
-            context.push('/admin');
-          } else if (index == 3) {
-            context.push('/admin');
-          } else if (index == 4) {
-            _showSignOutDialog(context);
-          }
-        },
-        children: [
-          const NavigationDrawerHeader(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Welcome, Operations Team",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+      appBar: AppBar(
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => context.go('/'),
+          tooltip: 'Back to Dashboard',
+        ),
+        title: Text(
+          'Site Directory',
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+        ),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.account_circle_rounded, size: 28),
+            tooltip: 'User Profile Options',
+            onSelected: (val) {
+              if (val == 'signout') {
+                _handleSignOut();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'signout',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.logout_rounded,
+                      size: 20,
+                      color: Colors.redAccent,
+                    ),
+                    SizedBox(width: 8),
+                    Text('Sign Out'),
+                  ],
                 ),
               ),
-            ),
-          ),
-          const Divider(),
-          const NavigationDrawerDestination(
-            icon: Icon(Icons.analytics_rounded),
-            label: Text("Analytics"),
-          ),
-          const NavigationDrawerDestination(
-            icon: Icon(Icons.store_rounded),
-            label: Text("Manage Vendors"),
-          ),
-          const NavigationDrawerDestination(
-            icon: Icon(Icons.category_rounded),
-            label: Text("Manage Categories"),
-          ),
-          const NavigationDrawerDestination(
-            icon: Icon(Icons.badge_rounded),
-            label: Text("Manage Users"),
-          ),
-          const Expanded(
-            child: SizedBox.shrink(),
-          ),
-          const Divider(),
-          const NavigationDrawerDestination(
-            icon: Icon(Icons.logout_rounded),
-            label: Text("Logout"),
+            ],
           ),
         ],
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            floating: true,
-            snap: true,
-            automaticallyImplyLeading: false,
-            title: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: SearchBar(
-                controller: _searchController,
-                onChanged: _onSearchChanged,
-                hintText: 'Search sites by name...',
-                leading: Builder(
-                  builder: (context) {
-                    return IconButton(
-                      icon: const Icon(Icons.menu_rounded),
-                      onPressed: () {
-                        Scaffold.of(context).openDrawer();
-                      },
-                    );
-                  },
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 1. Segmented Business Division Selector
+          _buildSegmentedButton(context, selectedFirm),
+
+          // 2. Floating Search Bar with Filter Reset Option
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 8.0,
+            ),
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLow,
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
                 ),
-                trailing: [
-                  if (searchQuery.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(Icons.clear_rounded),
-                      onPressed: _clearSearch,
-                    ),
-                ],
+                borderRadius: BorderRadius.circular(12),
               ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Business Division",
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: SegmentedButton<String>(
-                      segments: const <ButtonSegment<String>>[
-                        ButtonSegment<String>(
-                          value: '0f140f6f-d994-4695-a838-bee13b3802f1',
-                          label: Text('KK Electricals'),
-                        ),
-                        ButtonSegment<String>(
-                          value: '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3',
-                          label: Text('KK Associates'),
-                        ),
-                        ButtonSegment<String>(
-                          value: '4e01a36a-87c0-4cca-9428-a2747a130c96',
-                          label: Text('KK Solar'),
-                        ),
-                      ],
-                      selected: <String>{
-                        selectedFirm ?? '0f140f6f-d994-4695-a838-bee13b3802f1'
-                      },
-                      onSelectionChanged: (Set<String> newSelection) {
-                        _onFirmChanged(newSelection.first);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: Row(
                 children: [
-                  ChoiceChip(
-                    label: const Text("All Status"),
-                    selected: selectedStatus == null,
-                    onSelected: (_) => _onStatusChanged(null),
+                  Icon(
+                    Icons.search_rounded,
+                    color: Theme.of(context).colorScheme.outline,
                   ),
                   const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: const Text("Active"),
-                    selected: selectedStatus == 'active',
-                    onSelected: (_) => _onStatusChanged('active'),
-                  ),
-                  const SizedBox(width: 8),
-                  ChoiceChip(
-                    label: const Text("Completed"),
-                    selected: selectedStatus == 'completed',
-                    onSelected: (_) => _onStatusChanged('completed'),
-                  ),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    height: 24,
-                    child: VerticalDivider(
-                      width: 1,
-                      thickness: 1,
-                      color: Colors.grey.shade300,
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: _onSearchChanged,
+                      decoration: InputDecoration(
+                        hintText: 'Search sites, codes, or managers...',
+                        hintStyle: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+                        ),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  FilterChip(
-                    avatar: const Icon(Icons.calendar_today_rounded, size: 14),
-                    label: Text(_getDateRangeLabel(ref.watch(startedDateRangeProvider))),
-                    selected: true,
-                    onSelected: (_) => _showDateFilterBottomSheet(context),
+                  if (searchQuery.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 20),
+                      onPressed: _clearSearch,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: Icon(
+                      Icons.filter_list_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                      size: 20,
+                    ),
+                    onPressed: _resetAllFilters,
+                    tooltip: 'Reset All Filters',
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
             ),
           ),
-          sitesAsync.when(
-            loading: () => const SliverFillRemaining(
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
-            ),
-            error: (error, _) => SliverFillRemaining(
-              child: Center(
+
+          // 3. Filter Chips Row
+          _buildFilterChipsRow(context, selectedStatus),
+
+          // 4. Scrollable Ledger Content (Active Sites list)
+          Expanded(
+            child: sitesAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
@@ -440,28 +422,24 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                   ),
                 ),
               ),
-            ),
-            data: (sites) {
-              if (sites.isEmpty) {
-                return SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: _buildEmptyState(),
-                );
-              }
+              data: (sites) {
+                if (sites.isEmpty) {
+                  return _buildEmptyState();
+                }
 
-              return SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                      final site = sites[index];
-                      return _buildSiteCard(site);
-                    },
-                    childCount: sites.length,
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
                   ),
-                ),
-              );
-            },
+                  itemCount: sites.length,
+                  itemBuilder: (context, index) {
+                    final site = sites[index];
+                    return _buildSiteCard(site);
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -502,13 +480,233 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     );
   }
 
-  Widget _buildSiteCard(Site site) {
-    return Card(
-      elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceContainer,
-      margin: const EdgeInsets.only(bottom: 12.0),
+  Widget _buildSegmentedButton(BuildContext context, String? selectedFirm) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).colorScheme.primary),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Row(
+          children: [
+            _buildSegmentItem(
+              context,
+              label: 'Electricals',
+              value: '0f140f6f-d994-4695-a838-bee13b3802f1',
+              selectedValue: selectedFirm,
+            ),
+            VerticalDivider(
+              width: 1,
+              thickness: 1,
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.2),
+            ),
+            _buildSegmentItem(
+              context,
+              label: 'Associates',
+              value: '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3',
+              selectedValue: selectedFirm,
+            ),
+            VerticalDivider(
+              width: 1,
+              thickness: 1,
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.2),
+            ),
+            _buildSegmentItem(
+              context,
+              label: 'Solar',
+              value: '4e01a36a-87c0-4cca-9428-a2747a130c96',
+              selectedValue: selectedFirm,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSegmentItem(
+    BuildContext context, {
+    required String label,
+    required String value,
+    required String? selectedValue,
+  }) {
+    final isSelected =
+        selectedValue == value ||
+        (selectedValue == null &&
+            value == '0f140f6f-d994-4695-a838-bee13b3802f1');
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    return Expanded(
       child: InkWell(
-        borderRadius: BorderRadius.circular(12.0),
+        onTap: () => _onFirmChanged(value),
+        child: Container(
+          color: isSelected ? primaryColor : Colors.transparent,
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: isSelected ? Colors.white : primaryColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChipsRow(BuildContext context, String? selectedStatus) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: Row(
+        children: [
+          _buildDateFilterChip(context),
+          const SizedBox(width: 12),
+          SizedBox(
+            height: 24,
+            child: VerticalDivider(
+              width: 1,
+              thickness: 1,
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
+          ),
+          const SizedBox(width: 12),
+          _buildStatusChip(
+            context,
+            label: 'Active',
+            icon: Icons.check_circle_outline_rounded,
+            value: 'active',
+            selectedValue: selectedStatus,
+          ),
+          const SizedBox(width: 8),
+          _buildStatusChip(
+            context,
+            label: 'Completed',
+            icon: Icons.history_rounded,
+            value: 'completed',
+            selectedValue: selectedStatus,
+          ),
+          const SizedBox(width: 8),
+          _buildStatusChip(
+            context,
+            label: 'Deleted',
+            icon: Icons.delete_outline_rounded,
+            value: 'deleted',
+            selectedValue: selectedStatus,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusChip(
+    BuildContext context, {
+    required String label,
+    required IconData icon,
+    required String value,
+    required String? selectedValue,
+  }) {
+    final isSelected = selectedValue == value;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    return InkWell(
+      onTap: () => _onStatusChanged(value),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? primaryColor
+              : Theme.of(context).colorScheme.surface,
+          border: Border.all(
+            color: isSelected
+                ? primaryColor
+                : Theme.of(context).colorScheme.outlineVariant,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: isSelected
+                  ? Colors.white
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: isSelected
+                    ? Colors.white
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDateFilterChip(BuildContext context) {
+    final dateRange = ref.watch(startedDateRangeProvider);
+    return InkWell(
+      onTap: () => _showDateFilterBottomSheet(context),
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.calendar_today_rounded,
+              size: 16,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              _getDateRangeLabel(dateRange),
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSiteCard(Site site) {
+    final cleanFirmName = _getCleanFirmName(site.firmId);
+    final startedDate = site.startedOn != null
+        ? site.startedOn!.toReadableString().toUpperCase()
+        : 'NOT STARTED';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: () {
           context.push('/site/${site.id}', extra: site);
         },
@@ -517,60 +715,103 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Upper Block: Title and status chip
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(
-                      site.name,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          site.name,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          site.description ??
+                              'No description provided for this site.',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _buildStatusBadge(context, site.status),
+                  _buildSiteStatusBadge(context, site.status),
                 ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                site.description ?? 'No description provided for this site.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+
+              // Card Inner Divider (dotted/subtle border separating upper and lower blocks)
+              const SizedBox(height: 12),
+              Container(
+                height: 1,
+                color: Theme.of(
+                  context,
+                ).colorScheme.outlineVariant.withValues(alpha: 0.3),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+
+              // Lower Block: Details row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.calendar_today_rounded,
-                        size: 14,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 6),
                       Text(
-                        site.startedOn != null
-                            ? site.startedOn!.toReadableString()
-                            : 'Not started',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontSize: 12,
-                            ),
+                        'PARENT DIVISION',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          letterSpacing: 0.5,
+                        ),
                       ),
-                    ],
-                  ),
-                  Text(
-                    _getFirmName(site.firmId),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      const SizedBox(height: 4),
+                      Text(
+                        cleanFirmName.toUpperCase(),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           color: Theme.of(context).colorScheme.primary,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'START DATE',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 10,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        startedDate,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontFamily: 'monospace',
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -581,15 +822,28 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     );
   }
 
-  Widget _buildStatusBadge(BuildContext context, String status) {
-    final isActive = status.toLowerCase() == 'active';
-    final colorScheme = Theme.of(context).colorScheme;
-    final bgColor = isActive 
-        ? colorScheme.primaryContainer 
-        : colorScheme.surfaceContainerHighest;
-    final textColor = isActive 
-        ? colorScheme.onPrimaryContainer 
-        : colorScheme.onSurfaceVariant;
+  Widget _buildSiteStatusBadge(BuildContext context, String status) {
+    final statusLower = status.toLowerCase();
+    final isActive = statusLower == 'active';
+    final isCompleted = statusLower == 'completed';
+
+    final Color bgColor;
+    final Color textColor;
+    final IconData icon;
+
+    if (isActive) {
+      bgColor = Theme.of(context).colorScheme.secondaryContainer;
+      textColor = Theme.of(context).colorScheme.onSecondaryContainer;
+      icon = Icons.flash_on_rounded;
+    } else if (isCompleted) {
+      bgColor = Theme.of(context).colorScheme.surfaceContainerHighest;
+      textColor = Theme.of(context).colorScheme.onSurfaceVariant;
+      icon = Icons.done_all_rounded;
+    } else {
+      bgColor = Theme.of(context).colorScheme.errorContainer;
+      textColor = Theme.of(context).colorScheme.onErrorContainer;
+      icon = Icons.archive_outlined;
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
@@ -597,20 +851,28 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
         color: bgColor,
         borderRadius: BorderRadius.circular(8.0),
       ),
-      child: Text(
-        status.toUpperCase(),
-        style: TextStyle(
-          color: textColor,
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            status.toUpperCase(),
+            style: TextStyle(
+              color: textColor,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildEmptyState() {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Padding(
         padding: const EdgeInsets.all(32.0),
         child: Column(
@@ -620,20 +882,21 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
             Icon(
               Icons.search_off_rounded,
               size: 64,
+              color: Theme.of(context).colorScheme.outline,
             ),
             const SizedBox(height: 24),
             Text(
               'No Sites Found',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Text(
               'We couldn\'t find any sites matching your selected search criteria or filters.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.color?.withValues(alpha: 0.6),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 24),
@@ -645,39 +908,6 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
             const SizedBox(height: 48),
           ],
         ),
-      ),
-    );
-  }
-
-  String _getFirmName(String firmId) {
-    switch (firmId.toLowerCase()) {
-      case '0f140f6f-d994-4695-a838-bee13b3802f1':
-        return 'KK Electricals';
-      case '4e01a36a-87c0-4cca-9428-a2747a130c96':
-        return 'KK Solar';
-      case '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3':
-        return 'KK Associates';
-      default:
-        return 'KK Group';
-    }
-  }
-}
-
-class NavigationDrawerHeader extends StatelessWidget {
-  final Widget child;
-
-  const NavigationDrawerHeader({
-    super.key,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 96,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 16.0),
-        child: child,
       ),
     );
   }
