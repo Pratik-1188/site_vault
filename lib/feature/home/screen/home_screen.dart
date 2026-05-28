@@ -61,6 +61,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => const ExpenseFormSheet(
         siteId: '',
         firmId: '',
@@ -74,6 +75,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => const DocumentUploadSheet(
         siteId: '',
         firmId: '',

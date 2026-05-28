@@ -170,6 +170,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => ExpenseFormSheet(
         siteId: siteId,
         firmId: firmId,
@@ -188,6 +189,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => DocumentUploadSheet(siteId: siteId, firmId: firmId),
     );
   }
