@@ -57,7 +57,8 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
   String? _selectedSiteId;
   List<Site>? _activeSites;
   bool _isLoadingSites = false;
-  late bool _isContextLocked; // Locked if started from specific site details screen
+  late bool
+  _isContextLocked; // Locked if started from specific site details screen
 
   double _selectedGstPercentage = 0.0;
   bool _isCustomGst = false;
@@ -93,8 +94,10 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     _selectedPaidBy = expense?.paidBy;
 
     // Firm & Site context selection (locked if both firmId and siteId are provided)
-    _selectedFirmId = expense?.firmId ?? (widget.firmId.isNotEmpty ? widget.firmId : null);
-    _selectedSiteId = expense?.siteId ?? (widget.siteId.isNotEmpty ? widget.siteId : null);
+    _selectedFirmId =
+        expense?.firmId ?? (widget.firmId.isNotEmpty ? widget.firmId : null);
+    _selectedSiteId =
+        expense?.siteId ?? (widget.siteId.isNotEmpty ? widget.siteId : null);
     _isContextLocked = widget.firmId.isNotEmpty && widget.siteId.isNotEmpty;
 
     // GST initialization
@@ -139,7 +142,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     });
 
     try {
-      final response = await ref.read(siteRepositoryProvider).client
+      final response = await ref
+          .read(siteRepositoryProvider)
+          .client
           .from('sites')
           .select()
           .eq('firm_id', firmId)
@@ -147,14 +152,17 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
       if (!mounted) return;
 
-      final sitesList = (response as List).map((e) => Site.fromJson(e)).toList();
+      final sitesList = (response as List)
+          .map((e) => Site.fromJson(e))
+          .toList();
 
       setState(() {
         _activeSites = sitesList;
         _isLoadingSites = false;
 
         // Reset selected site if it is not in the newly loaded active sites list
-        if (_selectedSiteId != null && !_activeSites!.any((s) => s.id == _selectedSiteId)) {
+        if (_selectedSiteId != null &&
+            !_activeSites!.any((s) => s.id == _selectedSiteId)) {
           _selectedSiteId = null;
         }
       });
@@ -408,7 +416,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
         categoryId: _selectedCategoryId,
         vendorId: _selectedVendorId,
         amount: total,
-        gstPercentage: _selectedGstPercentage <= 0.0 ? null : _selectedGstPercentage,
+        gstPercentage: _selectedGstPercentage <= 0.0
+            ? null
+            : _selectedGstPercentage,
         gstAmount: _calculatedGstAmount <= 0.0 ? null : _calculatedGstAmount,
         paymentMode: _selectedPaymentMode,
         isRefundable: _isRefundable,
@@ -423,7 +433,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       } else {
         // Edit Mode
         if (_selectedSiteId == widget.siteId) {
-          await ref.read(siteExpensesProvider(widget.siteId).notifier).editExpense(expense);
+          await ref
+              .read(siteExpensesProvider(widget.siteId).notifier)
+              .editExpense(expense);
         } else {
           await ref.read(expenseRepositoryProvider).updateExpense(expense);
         }
@@ -495,8 +507,12 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      widget.expenseToEdit == null ? 'Add Expense' : 'Edit Expense',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
+                      widget.expenseToEdit == null
+                          ? 'Add Expense'
+                          : 'Edit Expense',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleLarge?.copyWith(fontSize: 20),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close_rounded),
@@ -540,7 +556,8 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                         children: [
                           Text(
                             'Scope',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
                                   color: Theme.of(context).colorScheme.primary,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -548,18 +565,23 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                           const SizedBox(height: 16),
                           firmsAsync.when(
                             loading: () => const LinearProgressIndicator(),
-                            error: (err, _) => Text('Error loading firms: $err'),
+                            error: (err, _) =>
+                                Text('Error loading firms: $err'),
                             data: (firms) {
                               return DropdownButtonFormField<String>(
                                 initialValue: _selectedFirmId,
                                 decoration: InputDecoration(
                                   labelText: 'Firm',
-                                  prefixIcon: const Icon(Icons.business_rounded),
+                                  prefixIcon: const Icon(
+                                    Icons.business_rounded,
+                                  ),
                                   suffixIcon: _isContextLocked
                                       ? const Icon(Icons.lock_outline_rounded)
                                       : null,
                                 ),
-                                icon: _isContextLocked ? const SizedBox.shrink() : null,
+                                icon: _isContextLocked
+                                    ? const SizedBox.shrink()
+                                    : null,
                                 items: firms.map((firm) {
                                   return DropdownMenuItem<String>(
                                     value: firm.id,
@@ -577,7 +599,8 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                           _loadSitesForFirm(val);
                                         }
                                       },
-                                validator: (val) => val == null ? 'Firm is required' : null,
+                                validator: (val) =>
+                                    val == null ? 'Firm is required' : null,
                               );
                             },
                           ),
@@ -590,34 +613,39 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                               suffixIcon: _isContextLocked
                                   ? const Icon(Icons.lock_outline_rounded)
                                   : _isLoadingSites
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: Padding(
-                                            padding: EdgeInsets.all(12.0),
-                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                          ),
-                                        )
-                                      : null,
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: Padding(
+                                        padding: EdgeInsets.all(12.0),
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    )
+                                  : null,
                             ),
                             icon: (_isContextLocked || _isLoadingSites)
                                 ? const SizedBox.shrink()
                                 : null,
-                            items: _activeSites?.map((site) {
+                            items:
+                                _activeSites?.map((site) {
                                   return DropdownMenuItem<String>(
                                     value: site.id,
                                     child: Text(site.name),
                                   );
                                 }).toList() ??
                                 [],
-                            onChanged: (_isContextLocked || _selectedFirmId == null)
+                            onChanged:
+                                (_isContextLocked || _selectedFirmId == null)
                                 ? null
                                 : (val) {
                                     setState(() {
                                       _selectedSiteId = val;
                                     });
                                   },
-                            validator: (val) => val == null ? 'Site is required' : null,
+                            validator: (val) =>
+                                val == null ? 'Site is required' : null,
                           ),
                         ],
                       ),
@@ -641,7 +669,8 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                         children: [
                           Text(
                             'Core Transaction Data',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
                                   color: Theme.of(context).colorScheme.primary,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -656,54 +685,81 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                             ),
                             textCapitalization: TextCapitalization.sentences,
                             validator: (val) {
-                              if (val == null || val.trim().isEmpty) return 'Title is required';
-                              if (val.trim().length <= 2) return 'Title must be longer than 2 characters';
+                              if (val == null || val.trim().isEmpty)
+                                return 'Title is required';
+                              if (val.trim().length <= 2)
+                                return 'Title must be longer than 2 characters';
                               return null;
                             },
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
                             controller: _amountController,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             decoration: const InputDecoration(
                               labelText: 'Total Amount',
                               hintText: '0.00',
                               prefixIcon: Icon(Icons.currency_rupee_rounded),
                             ),
                             validator: (val) {
-                              if (val == null || val.trim().isEmpty) return 'Amount required';
+                              if (val == null || val.trim().isEmpty)
+                                return 'Amount required';
                               final numVal = double.tryParse(val);
-                              if (numVal == null || numVal <= 0) return 'Enter a valid positive amount';
+                              if (numVal == null || numVal <= 0)
+                                return 'Enter a valid positive amount';
                               return null;
                             },
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'GST Rate',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
                           const SizedBox(height: 8),
                           SegmentedButton<double>(
                             segments: const [
-                              ButtonSegment<double>(value: 0.0, label: Text('0%')),
-                              ButtonSegment<double>(value: 5.0, label: Text('5%')),
-                              ButtonSegment<double>(value: 12.0, label: Text('12%')),
-                              ButtonSegment<double>(value: 18.0, label: Text('18%')),
-                              ButtonSegment<double>(value: 28.0, label: Text('28%')),
-                              ButtonSegment<double>(value: -1.0, label: Text('Custom')),
+                              ButtonSegment<double>(
+                                value: 5.0,
+                                label: Text('5%'),
+                              ),
+                              ButtonSegment<double>(
+                                value: 12.0,
+                                label: Text('12%'),
+                              ),
+                              ButtonSegment<double>(
+                                value: 18.0,
+                                label: Text('18%'),
+                              ),
+                              ButtonSegment<double>(
+                                value: 28.0,
+                                label: Text('28%'),
+                              ),
+                              ButtonSegment<double>(
+                                value: -1.0,
+                                label: Text('Custom'),
+                              ),
                             ],
                             selected: {
-                              _isCustomGst ? -1.0 : _selectedGstPercentage
+                              _isCustomGst ? -1.0 : _selectedGstPercentage,
                             },
                             onSelectionChanged: (Set<double> newSelection) {
                               final val = newSelection.first;
                               setState(() {
                                 if (val == -1.0) {
                                   _isCustomGst = true;
-                                  _selectedGstPercentage = double.tryParse(_customGstController.text) ?? 0.0;
+                                  _selectedGstPercentage =
+                                      double.tryParse(
+                                        _customGstController.text,
+                                      ) ??
+                                      0.0;
                                 } else {
                                   _isCustomGst = false;
                                   _selectedGstPercentage = val;
@@ -717,7 +773,10 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                             const SizedBox(height: 12),
                             TextFormField(
                               controller: _customGstController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               decoration: const InputDecoration(
                                 labelText: 'Custom GST %',
                                 hintText: 'e.g. 15.0',
@@ -726,16 +785,20 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                               ),
                               validator: (val) {
                                 if (!_isCustomGst) return null;
-                                if (val == null || val.trim().isEmpty) return 'Please enter GST %';
+                                if (val == null || val.trim().isEmpty)
+                                  return 'Please enter GST %';
                                 final numVal = double.tryParse(val);
-                                if (numVal == null || numVal < 0 || numVal > 100) {
+                                if (numVal == null ||
+                                    numVal < 0 ||
+                                    numVal > 100) {
                                   return 'Enter a valid percentage between 0 and 100';
                                 }
                                 return null;
                               },
                               onChanged: (val) {
                                 setState(() {
-                                  _selectedGstPercentage = double.tryParse(val) ?? 0.0;
+                                  _selectedGstPercentage =
+                                      double.tryParse(val) ?? 0.0;
                                   _calculateGst();
                                 });
                               },
@@ -747,9 +810,14 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                             const SizedBox(height: 16),
                             Card(
                               elevation: 0,
-                              color: Theme.of(context).colorScheme.surfaceContainer,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainer,
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                  vertical: 12.0,
+                                ),
                                 child: Column(
                                   children: [
                                     _summaryLine(
@@ -794,7 +862,8 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                         children: [
                           Text(
                             'Transaction Attributes',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
                                   color: Theme.of(context).colorScheme.primary,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -820,8 +889,10 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                     child: Text(p.displayName),
                                   );
                                 }).toList(),
-                                onChanged: (val) => setState(() => _selectedPaidBy = val),
-                                validator: (val) => val == null ? 'Paid By is required' : null,
+                                onChanged: (val) =>
+                                    setState(() => _selectedPaidBy = val),
+                                validator: (val) =>
+                                    val == null ? 'Paid By is required' : null,
                               );
                             },
                           ),
@@ -835,7 +906,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                     child: SizedBox(
                                       width: 20,
                                       height: 20,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
                                     ),
                                   ),
                                   error: (e, _) => Text('Err: $e'),
@@ -844,7 +917,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                       initialValue: _selectedCategoryId,
                                       decoration: const InputDecoration(
                                         labelText: 'Category',
-                                        prefixIcon: Icon(Icons.category_rounded),
+                                        prefixIcon: Icon(
+                                          Icons.category_rounded,
+                                        ),
                                       ),
                                       items: categories.map((c) {
                                         return DropdownMenuItem(
@@ -852,7 +927,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                           child: Text(c.name),
                                         );
                                       }).toList(),
-                                      onChanged: (val) => setState(() => _selectedCategoryId = val),
+                                      onChanged: (val) => setState(
+                                        () => _selectedCategoryId = val,
+                                      ),
                                     );
                                   },
                                 ),
@@ -873,7 +950,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                   }).toList(),
                                   onChanged: (val) {
                                     if (val != null) {
-                                      setState(() => _selectedPaymentMode = val);
+                                      setState(
+                                        () => _selectedPaymentMode = val,
+                                      );
                                     }
                                   },
                                 ),
@@ -886,7 +965,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                               child: SizedBox(
                                 width: 20,
                                 height: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               ),
                             ),
                             error: (e, _) => Text('Err: $e'),
@@ -903,14 +984,17 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                     child: Text(v.name),
                                   );
                                 }).toList(),
-                                onChanged: (val) => setState(() => _selectedVendorId = val),
+                                onChanged: (val) =>
+                                    setState(() => _selectedVendorId = val),
                               );
                             },
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
                             readOnly: true,
-                            controller: TextEditingController(text: _selectedDate.toReadableString()),
+                            controller: TextEditingController(
+                              text: _selectedDate.toReadableString(),
+                            ),
                             decoration: const InputDecoration(
                               labelText: 'Expense Date',
                               prefixIcon: Icon(Icons.calendar_today_rounded),
@@ -939,7 +1023,8 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                         children: [
                           Text(
                             'Documentation',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
                                   color: Theme.of(context).colorScheme.primary,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -948,9 +1033,12 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
                             title: const Text('Refundable Expense'),
-                            secondary: const Icon(Icons.assignment_return_rounded),
+                            secondary: const Icon(
+                              Icons.assignment_return_rounded,
+                            ),
                             value: _isRefundable,
-                            onChanged: (val) => setState(() => _isRefundable = val),
+                            onChanged: (val) =>
+                                setState(() => _isRefundable = val),
                           ),
                           const SizedBox(height: 16),
                           TextFormField(
@@ -965,8 +1053,11 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                           const SizedBox(height: 20),
                           Text(
                             'Attachment',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
@@ -974,13 +1065,19 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                           _pickedFileName != null
                               ? Card(
                                   elevation: 0,
-                                  color: Theme.of(context).colorScheme.surfaceContainer,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainer,
                                   child: ListTile(
                                     leading: Icon(
-                                      _pickedFileName!.toLowerCase().endsWith('.pdf')
+                                      _pickedFileName!.toLowerCase().endsWith(
+                                            '.pdf',
+                                          )
                                           ? Icons.picture_as_pdf_rounded
                                           : Icons.image_rounded,
-                                      color: Theme.of(context).colorScheme.primary,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                     ),
                                     title: Text(
                                       _pickedFileName!,
@@ -993,8 +1090,13 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                     ),
                                     subtitle: Text(
                                       'Ready to upload on save',
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
                                           ),
                                     ),
                                     trailing: IconButton(
@@ -1015,7 +1117,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                   elevation: 0,
                                   shape: RoundedRectangleBorder(
                                     side: BorderSide(
-                                      color: Theme.of(context).colorScheme.outlineVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.outlineVariant,
                                       style: BorderStyle.solid,
                                     ),
                                     borderRadius: BorderRadius.circular(8),
@@ -1024,26 +1128,38 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                     borderRadius: BorderRadius.circular(8),
                                     onTap: () => _showAttachmentPicker(context),
                                     child: Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 24.0),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 24.0,
+                                      ),
                                       child: Column(
                                         children: [
                                           Icon(
                                             Icons.add_a_photo_rounded,
                                             size: 32,
-                                            color: Theme.of(context).colorScheme.primary,
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
                                           ),
                                           const SizedBox(height: 8),
                                           Text(
                                             'Upload Receipt',
-                                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleSmall
+                                                ?.copyWith(
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                           ),
                                           const SizedBox(height: 4),
                                           Text(
                                             'Tap to capture or select',
-                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall
+                                                ?.copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
                                                 ),
                                           ),
                                         ],
@@ -1067,7 +1183,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                           minimumSize: const Size.fromHeight(48),
                         ),
                         child: Text(
-                          widget.expenseToEdit == null ? 'Submit Expense' : 'Save Changes',
+                          widget.expenseToEdit == null
+                              ? 'Submit Expense'
+                              : 'Save Changes',
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -1089,11 +1207,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     );
   }
 
-  Widget _summaryLine(
-    String label,
-    String value, {
-    bool isBold = false,
-  }) {
+  Widget _summaryLine(String label, String value, {bool isBold = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
