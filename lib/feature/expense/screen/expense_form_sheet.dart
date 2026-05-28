@@ -506,33 +506,38 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
             child: SafeArea(
               child: Form(
                 key: _formKey,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      widget.expenseToEdit == null
-                          ? 'Add Expense'
-                          : 'Edit Expense',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleLarge?.copyWith(fontSize: 20),
+                    // Pinned Header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            widget.expenseToEdit == null ? 'Add Expense' : 'Edit Expense',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const Divider(height: 24),
+                    const Divider(height: 24, indent: 24, endIndent: 24),
 
-                if (_isUploading)
+                    // Scrollable content
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (_isUploading)
                   const Center(
                     child: Padding(
                       padding: EdgeInsets.symmetric(vertical: 40.0),
@@ -1213,9 +1218,12 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
             ),
           ),
         ),
-      ),
+      ],
     ),
   ),
+),
+),
+),
 ),
 );
 }

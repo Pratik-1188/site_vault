@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -44,6 +45,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => _VendorFormSheet(vendorToEdit: vendor),
     );
   }
@@ -54,6 +56,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => _CategoryFormSheet(categoryToEdit: category),
     );
   }
@@ -64,6 +67,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
+      backgroundColor: Colors.transparent,
       builder: (_) => _ProfileFormSheet(profileToEdit: profile),
     );
   }
@@ -501,78 +505,102 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    widget.vendorToEdit == null ? 'Add New Vendor' : 'Edit Vendor Details',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const Divider(height: 20),
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: SafeArea(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Pinned Sticky Header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            widget.vendorToEdit == null ? 'Add New Vendor' : 'Edit Vendor Details',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 20, indent: 24, endIndent: 24),
 
-              // Inputs
-              TextFormField(
-                controller: _nameController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Vendor Business Name *',
-                  prefixIcon: Icon(Icons.store_rounded),
-                ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a name' : null,
-              ),
-              const SizedBox(height: 16),
+                    // Scrollable content
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TextFormField(
+                              controller: _nameController,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: const InputDecoration(
+                                labelText: 'Vendor Business Name *',
+                                prefixIcon: Icon(Icons.store_rounded),
+                              ),
+                              validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a name' : null,
+                            ),
+                            const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _contactController,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Contact / Phone Info',
-                  prefixIcon: Icon(Icons.phone_rounded),
-                  hintText: 'e.g. +91 98765 43210',
-                ),
-              ),
-              
-              if (widget.vendorToEdit != null) ...[
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  title: const Text('Operational Status'),
-                  subtitle: const Text('Toggle between Active and Inactive availability'),
-                  value: _isActive,
-                  activeThumbColor: Theme.of(context).colorScheme.primary,
-                  onChanged: (val) => setState(() => _isActive = val),
-                ),
-              ],
-              const SizedBox(height: 24),
+                            TextFormField(
+                              controller: _contactController,
+                              keyboardType: TextInputType.phone,
+                              decoration: const InputDecoration(
+                                labelText: 'Contact / Phone Info',
+                                prefixIcon: Icon(Icons.phone_rounded),
+                                hintText: 'e.g. +91 98765 43210',
+                              ),
+                            ),
+                            
+                            if (widget.vendorToEdit != null) ...[
+                              const SizedBox(height: 16),
+                              SwitchListTile(
+                                title: const Text('Operational Status'),
+                                subtitle: const Text('Toggle between Active and Inactive availability'),
+                                value: _isActive,
+                                activeThumbColor: Theme.of(context).colorScheme.primary,
+                                onChanged: (val) => setState(() => _isActive = val),
+                              ),
+                            ],
+                            const SizedBox(height: 24),
 
-              // Actions
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _isSaving ? null : _submit,
-                  child: _isSaving
-                      ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white))
-                      : const Text('SAVE VENDOR RECORD'),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: _isSaving ? null : _submit,
+                                child: _isSaving
+                                    ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white))
+                                    : const Text('SAVE VENDOR RECORD'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -648,68 +676,92 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    widget.categoryToEdit == null ? 'Add Expense Category' : 'Edit Category Details',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const Divider(height: 20),
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: SafeArea(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Pinned Header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            widget.categoryToEdit == null ? 'Add Expense Category' : 'Edit Category Details',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 20, indent: 24, endIndent: 24),
 
-              // Input
-              TextFormField(
-                controller: _nameController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Expense Category Name *',
-                  prefixIcon: Icon(Icons.category_rounded),
-                  hintText: 'e.g. Electric Cables, Concrete Foundation',
-                ),
-                validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a category name' : null,
-              ),
-              
-              if (widget.categoryToEdit != null) ...[
-                const SizedBox(height: 16),
-                SwitchListTile(
-                  title: const Text('Category Availability'),
-                  subtitle: const Text('Toggle between Active and Inactive (hides from dropdowns)'),
-                  value: _isActive,
-                  activeThumbColor: Theme.of(context).colorScheme.primary,
-                  onChanged: (val) => setState(() => _isActive = val),
-                ),
-              ],
-              const SizedBox(height: 24),
+                    // Scrollable content
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TextFormField(
+                              controller: _nameController,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: const InputDecoration(
+                                labelText: 'Expense Category Name *',
+                                prefixIcon: Icon(Icons.category_rounded),
+                                hintText: 'e.g. Electric Cables, Concrete Foundation',
+                              ),
+                              validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a category name' : null,
+                            ),
+                            
+                            if (widget.categoryToEdit != null) ...[
+                              const SizedBox(height: 16),
+                              SwitchListTile(
+                                title: const Text('Category Availability'),
+                                subtitle: const Text('Toggle between Active and Inactive (hides from dropdowns)'),
+                                value: _isActive,
+                                activeThumbColor: Theme.of(context).colorScheme.primary,
+                                onChanged: (val) => setState(() => _isActive = val),
+                              ),
+                            ],
+                            const SizedBox(height: 24),
 
-              // Action
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _isSaving ? null : _submit,
-                  child: _isSaving
-                      ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white))
-                      : const Text('SAVE EXPENSE CATEGORY'),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: _isSaving ? null : _submit,
+                                child: _isSaving
+                                    ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white))
+                                    : const Text('SAVE EXPENSE CATEGORY'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -784,72 +836,96 @@ class _ProfileFormSheetState extends ConsumerState<_ProfileFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Edit Staff Profile',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              const Divider(height: 20),
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: SafeArea(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Pinned Header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Edit Staff Profile',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 20, indent: 24, endIndent: 24),
 
-              // Inputs
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Staff Display Name * (NO SPACES)',
-                  prefixIcon: Icon(Icons.person_outline_rounded),
-                  hintText: 'e.g. RameshPatel (letters/numbers only)',
+                    // Scrollable Content
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Staff Display Name * (NO SPACES)',
+                                prefixIcon: Icon(Icons.person_outline_rounded),
+                                hintText: 'e.g. RameshPatel (letters/numbers only)',
+                              ),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Please enter a display name';
+                                }
+                                if (val.trim().contains(' ')) {
+                                  return 'Spaces are NOT allowed (Database requirement)';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+
+                            SwitchListTile(
+                              title: const Text('Staff Activity'),
+                              subtitle: const Text('Toggle to enable/disable staff transaction log access'),
+                              value: _isActive,
+                              onChanged: (val) => setState(() => _isActive = val),
+                            ),
+                            const SizedBox(height: 24),
+
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: _isSaving ? null : _submit,
+                                child: _isSaving
+                                    ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white))
+                                    : const Text('SAVE PROFILE DETAILS'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                validator: (val) {
-                  if (val == null || val.trim().isEmpty) {
-                    return 'Please enter a display name';
-                  }
-                  if (val.trim().contains(' ')) {
-                    return 'Spaces are NOT allowed (Database requirement)';
-                  }
-                  return null;
-                },
               ),
-              const SizedBox(height: 16),
-
-              SwitchListTile(
-                title: const Text('Staff Activity'),
-                subtitle: const Text('Toggle to enable/disable staff transaction log access'),
-                value: _isActive,
-                onChanged: (val) => setState(() => _isActive = val),
-              ),
-              const SizedBox(height: 24),
-
-              // Action
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _isSaving ? null : _submit,
-                  child: _isSaving
-                      ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white))
-                      : const Text('SAVE PROFILE DETAILS'),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
