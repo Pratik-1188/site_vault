@@ -45,10 +45,6 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
-        ),
         title: const Text('Executive Analytics'),
       ),
       body: Column(
@@ -106,6 +102,40 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                 );
               },
             ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 2,
+        onDestinationSelected: (index) {
+          if (index == 0) {
+            context.go('/');
+          } else if (index == 1) {
+            context.go('/sites');
+          } else if (index == 3) {
+            context.go('/admin');
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.location_on_outlined),
+            selectedIcon: Icon(Icons.location_on_rounded),
+            label: 'Sites',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.analytics_outlined),
+            selectedIcon: Icon(Icons.analytics_rounded),
+            label: 'Analytics',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings_rounded),
+            label: 'Admin',
           ),
         ],
       ),

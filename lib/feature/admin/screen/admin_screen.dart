@@ -72,10 +72,6 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.pop(),
-        ),
         title: const Text('Administrative Hub'),
         bottom: TabBar(
           controller: _tabController,
@@ -107,6 +103,40 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
               icon: const Icon(Icons.add_rounded),
               label: Text(_tabController.index == 0 ? 'ADD VENDOR' : 'ADD CATEGORY'),
             ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 3,
+        onDestinationSelected: (index) {
+          if (index == 0) {
+            context.go('/');
+          } else if (index == 1) {
+            context.go('/sites');
+          } else if (index == 2) {
+            context.go('/analytics');
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home_rounded),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.location_on_outlined),
+            selectedIcon: Icon(Icons.location_on_rounded),
+            label: 'Sites',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.analytics_outlined),
+            selectedIcon: Icon(Icons.analytics_rounded),
+            label: 'Analytics',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings_rounded),
+            label: 'Admin',
+          ),
+        ],
+      ),
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:site_vault/feature/home/screen/home_screen.dart';
 import 'package:site_vault/feature/site/screen/site_screen.dart';
 import 'package:site_vault/feature/site/screen/site_detail_screen.dart';
 import 'package:site_vault/feature/site/model/site.dart';
@@ -61,6 +62,11 @@ GoRouter appRouter(Ref ref) {
       ),
       GoRoute(
         path: '/',
+        name: 'home',
+        builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: '/sites',
         name: 'sites',
         builder: (context, state) => const SitesScreen(),
       ),

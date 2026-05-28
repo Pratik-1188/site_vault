@@ -1,21 +1,17 @@
 import 'package:site_vault/shared/repository/base_repository.dart';
-import 'package:site_vault/shared/utils/financial_year.dart';
 
 class HomeRepository extends BaseRepository {
   HomeRepository(super.client);
 
   Future<double> fetchCurrentMonthExpenseTotal() {
     return safeCall('HomeRepository.fetchCurrentMonthExpenseTotal', () async {
-      final currentFinancialYear = FinancialYear.current();
-
       final response = await client
-          .from('expenses')
-          .select('total:amount.sum()')
-          .gte('expense_date', _dateOnly(currentFinancialYear.startDate))
-          .lte('expense_date', _dateOnly(currentFinancialYear.endDate))
-          .isFilter('soft_deleted_at', null);
+          .from('view_homescreen_analytics')
+          .select('current_year_expense_total')
+          .single();
 
-      return _readAggregateDouble(response, 'total');
+      final val = response['current_year_expense_total'];
+      return val is num ? val.toDouble() : 0.0;
     });
   }
 
@@ -23,14 +19,13 @@ class HomeRepository extends BaseRepository {
     return safeCall(
       'HomeRepository.fetchActiveSitesForCurrentFinancialYear',
       () async {
-        final currentFinancialYear = FinancialYear.current();
+        final response = await client
+            .from('view_homescreen_analytics')
+            .select('active_sites_count')
+            .single();
 
-        return client
-            .from('sites')
-            .count()
-            .eq('status', 'active')
-            .gte('started_on', _dateOnly(currentFinancialYear.startDate))
-            .lte('started_on', _dateOnly(currentFinancialYear.endDate));
+        final val = response['active_sites_count'];
+        return val is int ? val : 0;
       },
     );
   }
@@ -39,17 +34,13 @@ class HomeRepository extends BaseRepository {
     return safeCall(
       'HomeRepository.fetchMissingBillExpensesForCurrentFinancialYear',
       () async {
-        final currentFinancialYear = FinancialYear.current();
-
         final response = await client
-            .from('expenses')
-            .select('total:amount.sum()')
-            .isFilter('attachment_path', null)
-            .gte('expense_date', _dateOnly(currentFinancialYear.startDate))
-            .lte('expense_date', _dateOnly(currentFinancialYear.endDate))
-            .isFilter('soft_deleted_at', null);
+            .from('view_homescreen_analytics')
+            .select('missing_bill_expense_total')
+            .single();
 
-        return _readAggregateDouble(response, 'total');
+        final val = response['missing_bill_expense_total'];
+        return val is num ? val.toDouble() : 0.0;
       },
     );
   }
@@ -66,22 +57,4 @@ class HomeRepository extends BaseRepository {
     });
   }
 
-  double _readAggregateDouble(Object response, String key) {
-    if (response is! List || response.isEmpty) {
-      return 0;
-    }
-
-    final row = response.first;
-    if (row is! Map<String, dynamic>) {
-      return 0;
-    }
-
-    final value = row[key];
-    return value is num ? value.toDouble() : 0;
-  }
-
-  String _dateOnly(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-'
-        '${date.day.toString().padLeft(2, '0')}';
-  }
 }
