@@ -54,6 +54,18 @@ class HomeRepository extends BaseRepository {
     );
   }
 
+  Future<List<Map<String, dynamic>>> fetchRecentAuditLogs() {
+    return safeCall('HomeRepository.fetchRecentAuditLogs', () async {
+      final response = await client
+          .from('audit_logs')
+          .select()
+          .order('created_at', ascending: false)
+          .limit(4);
+
+      return (response as List).cast<Map<String, dynamic>>();
+    });
+  }
+
   double _readAggregateDouble(Object response, String key) {
     if (response is! List || response.isEmpty) {
       return 0;
