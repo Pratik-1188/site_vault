@@ -394,6 +394,64 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                     ),
                   ),
                 ],
+                if (expense.attachmentPath != null && expense.attachmentPath!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Attachment',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Card(
+                    elevation: 0,
+                    color: theme.colorScheme.surfaceContainerLow,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppRadius.brSm,
+                      side: BorderSide(
+                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: InkWell(
+                      onTap: () {
+                        _downloadOrOpenDocument(
+                          context,
+                          expense.attachmentPath!,
+                          expense.title,
+                        );
+                      },
+                      borderRadius: AppRadius.brSm,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.description_outlined,
+                              color: theme.colorScheme.primary,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'View Attachment / Receipt',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.open_in_new_rounded,
+                              color: theme.colorScheme.primary,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1039,6 +1097,25 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
+                          if (expense.attachmentPath != null && expense.attachmentPath!.isNotEmpty) ...[
+                            IconButton(
+                              icon: Icon(
+                                Icons.description_outlined,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 20,
+                              ),
+                              tooltip: 'View Attachment',
+                              visualDensity: VisualDensity.compact,
+                              onPressed: () {
+                                _downloadOrOpenDocument(
+                                  context,
+                                  expense.attachmentPath!,
+                                  expense.title,
+                                );
+                              },
+                            ),
+                            const SizedBox(width: 4),
+                          ],
                           Text(
                             '₹${expense.amount.toStringAsFixed(2)}',
                             style: const TextStyle(
