@@ -5,6 +5,8 @@ import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
+import 'package:site_vault/shared/widget/vault_card.dart';
+import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/feature/expense/provider/expense_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
@@ -241,6 +243,160 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
       showDragHandle: true,
       backgroundColor: Colors.transparent,
       builder: (_) => DocumentUploadSheet(siteId: siteId, firmId: firmId),
+    );
+  }
+
+  /// Displays a stunning, premium detail popup dialog for a selected expense
+  void _showExpenseDetailDialog(BuildContext context, Expense expense) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        final theme = Theme.of(context);
+        
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.brMd,
+          ),
+          title: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: theme.colorScheme.primaryContainer,
+                child: Icon(
+                  _getCategoryIcon(expense.category?.name),
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      expense.title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      expense.category?.name ?? 'General',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Divider(color: theme.colorScheme.outlineVariant),
+                const SizedBox(height: 8),
+                _dialogSplitRow('Amount Spent', '₹${expense.amount.toStringAsFixed(2)}', isBold: true),
+                const SizedBox(height: 8),
+                _dialogSplitRow('Payment Mode', expense.paymentMode.toDisplayLabel()),
+                const SizedBox(height: 8),
+                _dialogSplitRow('Expense Date', expense.expenseDate.toReadableString()),
+                const SizedBox(height: 8),
+                _dialogSplitRow('Paid By', expense.paidByProfile?.displayName ?? 'Staff'),
+                const SizedBox(height: 8),
+                _dialogSplitRow('Created By', expense.createdByProfile?.displayName ?? 'Staff'),
+                const SizedBox(height: 8),
+                _dialogSplitRow('Refundable', expense.isRefundable ? 'Yes' : 'No'),
+                if (expense.vendor != null) ...[
+                  const SizedBox(height: 8),
+                  _dialogSplitRow('Vendor', expense.vendor!.name),
+                ],
+                const SizedBox(height: 12),
+                if (expense.description != null && expense.description!.isNotEmpty) ...[
+                  Text(
+                    'Description',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerLow,
+                      borderRadius: AppRadius.brSm,
+                      border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    ),
+                    child: Text(
+                      expense.description!,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (expense.gstPercentage != null) ...[
+                  Text(
+                    'GST Tax Split',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerLow,
+                      borderRadius: AppRadius.brSm,
+                      border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                    ),
+                    child: Column(
+                      children: [
+                        _dialogSplitRow(
+                          'Base Amount',
+                          '₹${(expense.amount - (expense.gstAmount ?? 0.0)).toStringAsFixed(2)}',
+                        ),
+                        const SizedBox(height: 4),
+                        _dialogSplitRow(
+                          'GST Paid (${expense.gstPercentage!.toInt()}%)',
+                          '₹${(expense.gstAmount ?? 0.0).toStringAsFixed(2)}',
+                        ),
+                        const Divider(height: 16),
+                        _dialogSplitRow(
+                          'Total Sum',
+                          '₹${expense.amount.toStringAsFixed(2)}',
+                          isBold: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('CLOSE'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _openExpenseFormSheet(
+                  context,
+                  widget.siteId,
+                  widget.site!.firmId,
+                  expense,
+                );
+              },
+              icon: const Icon(Icons.edit_rounded, size: 16),
+              label: const Text('EDIT'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -764,159 +920,145 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                   padding: EdgeInsets.zero,
                   itemBuilder: (context, index) {
                     final expense = expenses[index];
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Card(
-                        elevation: 0,
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                    return VaultCard(
+                      creatorName: expense.createdByProfile?.displayName,
+                      createdAt: expense.createdAt,
+                      onTap: () => _showExpenseDetailDialog(context, expense),
+                      leading: CircleAvatar(
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        child: Icon(
+                          _getCategoryIcon(expense.category?.name),
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      title: Text(
+                        expense.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${expense.expenseDate.toReadableString()} • ${expense.paymentMode.toDisplayLabel()}',
+                            style: const TextStyle(fontSize: 12),
                           ),
-                          leading: CircleAvatar(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primaryContainer,
-                            child: Icon(
-                              _getCategoryIcon(expense.category?.name),
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onPrimaryContainer,
+                          if (expense.gstPercentage != null) ...[
+                            const SizedBox(height: 4),
+                            GestureDetector(
+                              onTap: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('GST Split Details'),
+                                    content: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _dialogSplitRow(
+                                          'Base Amount',
+                                          '₹${(expense.amount - (expense.gstAmount ?? 0.0)).toStringAsFixed(2)}',
+                                        ),
+                                        const SizedBox(height: 4),
+                                        _dialogSplitRow(
+                                          'GST Paid (${expense.gstPercentage!.toInt()}%)',
+                                          '₹${(expense.gstAmount ?? 0.0).toStringAsFixed(2)}',
+                                        ),
+                                        const Divider(height: 16),
+                                        _dialogSplitRow(
+                                          'Total Sum',
+                                          '₹${expense.amount.toStringAsFixed(2)}',
+                                          isBold: true,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Chip(
+                                avatar: const Icon(
+                                  Icons.receipt_rounded,
+                                  size: 12,
+                                ),
+                                label: Text(
+                                  'Incl. ${expense.gstPercentage!.toInt()}% GST (₹${expense.gstAmount?.toStringAsFixed(2) ?? '0.00'})',
+                                  style: const TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                visualDensity: VisualDensity.compact,
+                              ),
                             ),
-                          ),
-                          title: Text(
-                            expense.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          ],
+                        ],
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '₹${expense.amount.toStringAsFixed(2)}',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                              fontSize: 15,
                             ),
                           ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                '${expense.expenseDate.toReadableString()} • ${expense.paymentMode.toDisplayLabel()}',
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                              if (expense.gstPercentage != null) ...[
-                                const SizedBox(height: 4),
-                                GestureDetector(
-                                  onTap: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: const Text('GST Split Details'),
-                                        content: Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            _dialogSplitRow(
-                                              'Base Amount',
-                                              '₹${(expense.amount - (expense.gstAmount ?? 0.0)).toStringAsFixed(2)}',
-                                            ),
-                                            const SizedBox(height: 4),
-                                            _dialogSplitRow(
-                                              'GST Paid (${expense.gstPercentage!.toInt()}%)',
-                                              '₹${(expense.gstAmount ?? 0.0).toStringAsFixed(2)}',
-                                            ),
-                                            const Divider(height: 16),
-                                            _dialogSplitRow(
-                                              'Total Sum',
-                                              '₹${expense.amount.toStringAsFixed(2)}',
-                                              isBold: true,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: Chip(
-                                    avatar: const Icon(
-                                      Icons.receipt_rounded,
-                                      size: 12,
-                                    ),
-                                    label: Text(
-                                      'Incl. ${expense.gstPercentage!.toInt()}% GST (₹${expense.gstAmount?.toStringAsFixed(2) ?? '0.00'})',
-                                      style: const TextStyle(
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                '₹${expense.amount.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
+                          const SizedBox(width: 8),
+                          PopupMenuButton<String>(
+                            icon: const Icon(
+                              Icons.more_vert_rounded,
+                              size: 20,
+                            ),
+                            splashRadius: 20,
+                            onSelected: (action) {
+                              if (action == 'edit') {
+                                _openExpenseFormSheet(
+                                  context,
+                                  site.id,
+                                  site.firmId,
+                                  expense,
+                                );
+                              } else if (action == 'delete') {
+                                _confirmDeleteExpense(context, expense);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit_rounded, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Edit'),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              PopupMenuButton<String>(
-                                icon: const Icon(
-                                  Icons.more_vert_rounded,
-                                  size: 20,
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete_outline_rounded,
+                                      size: 16,
+                                      color: Colors.redAccent,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Delete',
+                                      style: TextStyle(
+                                        color: Colors.redAccent,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                splashRadius: 20,
-                                onSelected: (action) {
-                                  if (action == 'edit') {
-                                    _openExpenseFormSheet(
-                                      context,
-                                      site.id,
-                                      site.firmId,
-                                      expense,
-                                    );
-                                  } else if (action == 'delete') {
-                                    _confirmDeleteExpense(context, expense);
-                                  }
-                                },
-                                itemBuilder: (context) => [
-                                  const PopupMenuItem(
-                                    value: 'edit',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.edit_rounded, size: 16),
-                                        SizedBox(width: 8),
-                                        Text('Edit'),
-                                      ],
-                                    ),
-                                  ),
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.delete_outline_rounded,
-                                          size: 16,
-                                          color: Colors.redAccent,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Delete',
-                                          style: TextStyle(
-                                            color: Colors.redAccent,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
                               ),
                             ],
                           ),
-                        ),
+                        ],
                       ),
                     );
                   },
@@ -1183,97 +1325,86 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                     final doc = documents[index];
                     final isPdf = doc.fileName.toLowerCase().endsWith('.pdf');
 
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Card(
-                        elevation: 0,
-                        color: Theme.of(context).colorScheme.surfaceContainer,
-                        child: ListTile(
-                          onTap: () => _downloadOrOpenDocument(
-                            context,
-                            doc.fileUrl,
-                            doc.fileName,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          leading: CircleAvatar(
-                            backgroundColor: Theme.of(
+                    return VaultCard(
+                      creatorName: doc.createdByProfile?.displayName,
+                      createdAt: doc.createdAt,
+                      onTap: () => _downloadOrOpenDocument(
+                        context,
+                        doc.fileUrl,
+                        doc.fileName,
+                      ),
+                      leading: CircleAvatar(
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        child: Icon(
+                          isPdf ? Icons.picture_as_pdf_rounded : Icons.description_rounded,
+                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      title: Text(
+                        doc.fileName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: doc.description != null && doc.description!.isNotEmpty
+                          ? Text(
+                              doc.description!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 11),
+                            )
+                          : null,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.file_download_rounded,
+                              size: 20,
+                            ),
+                            onPressed: () => _downloadOrOpenDocument(
                               context,
-                            ).colorScheme.primaryContainer,
-                            child: Icon(
-                              isPdf
-                                  ? Icons.picture_as_pdf_rounded
-                                  : Icons.description_rounded,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onPrimaryContainer,
+                              doc.fileUrl,
+                              doc.fileName,
                             ),
                           ),
-                          title: Text(
-                            doc.fileName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
+                          PopupMenuButton<String>(
+                            icon: const Icon(
+                              Icons.more_vert_rounded,
+                              size: 20,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Text(
-                            'Uploaded by ${doc.createdByProfile?.displayName ?? "Staff"} • ${doc.createdAt.toReadableString()}',
-                            style: const TextStyle(fontSize: 11),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.file_download_rounded,
-                                  size: 20,
-                                ),
-                                onPressed: () => _downloadOrOpenDocument(
-                                  context,
-                                  doc.fileUrl,
-                                  doc.fileName,
-                                ),
-                              ),
-                              PopupMenuButton<String>(
-                                icon: const Icon(
-                                  Icons.more_vert_rounded,
-                                  size: 20,
-                                ),
-                                splashRadius: 20,
-                                onSelected: (action) {
-                                  if (action == 'delete') {
-                                    _confirmDeleteDocument(context, doc);
-                                  }
-                                },
-                                itemBuilder: (context) => [
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.delete_outline_rounded,
-                                          size: 16,
-                                          color: Colors.redAccent,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Delete',
-                                          style: TextStyle(
-                                            color: Colors.redAccent,
-                                          ),
-                                        ),
-                                      ],
+                            splashRadius: 20,
+                            onSelected: (action) {
+                              if (action == 'delete') {
+                                _confirmDeleteDocument(context, doc);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'delete',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete_outline_rounded,
+                                      size: 16,
+                                      color: Colors.redAccent,
                                     ),
-                                  ),
-                                ],
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Delete',
+                                      style: TextStyle(
+                                        color: Colors.redAccent,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
-                        ),
+                        ],
                       ),
                     );
                   },

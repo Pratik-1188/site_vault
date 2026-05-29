@@ -7,6 +7,7 @@ import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
 import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
+import 'package:site_vault/shared/widget/vault_card.dart';
 
 /// A premium, M3-styled Operations Dashboard representing the master corporate ledger overview.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -567,46 +568,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         logSubtitle = createdAt.toReadableString();
                       }
 
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            side: BorderSide(
-                              color: Theme.of(context).colorScheme.outlineVariant,
-                            ),
+                      final changedBy = log['changed_by'] as String?;
+
+                      return VaultCard(
+                        creatorName: changedBy,
+                        createdAt: createdAt,
+                        onTap: null, // Logs can not be edited and they should not be clickable
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: logBgColor,
                             borderRadius: AppRadius.brXs,
                           ),
-                          child: ListTile(
-                            leading: Container(
-                              width: 40,
-                              height: 40,
-                              decoration: BoxDecoration(
-                                color: logBgColor,
-                                borderRadius: AppRadius.brXs,
-                              ),
-                              child: Icon(
-                                logIcon,
-                                color: logIconColor,
-                                size: 20,
-                              ),
-                            ),
-                            title: Text(
-                              logTitle,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(
-                              logSubtitle,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                            ),
+                          child: Icon(
+                            logIcon,
+                            color: logIconColor,
+                            size: 20,
                           ),
+                        ),
+                        title: Text(
+                          logTitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: Text(
+                          logSubtitle,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
                         ),
                       );
                     }).toList(),

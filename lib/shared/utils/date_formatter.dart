@@ -24,4 +24,22 @@ extension DateTimeFormatter on DateTime {
     
     return '$dayStr/$monthStr/$yearShort';
   }
+
+  /// Returns a formatted date and time string like "Jan 15, 2026 • 02:30 PM"
+  String toReadableDateTimeString() {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    
+    final dayStr = day.toString().padLeft(2, '0');
+    final monthStr = months[month - 1];
+    
+    final hourNum = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+    final hourStr = hourNum.toString().padLeft(2, '0');
+    final minuteStr = minute.toString().padLeft(2, '0');
+    final amPm = hour >= 12 ? 'PM' : 'AM';
+    
+    return '$monthStr $dayStr, $year • $hourStr:$minuteStr $amPm';
+  }
 }
