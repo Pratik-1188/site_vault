@@ -8,6 +8,7 @@ import 'package:site_vault/shared/model/profile.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
+import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 
 /// Central administration settings panel managing Vendors, Categories, and Profiles.
@@ -170,13 +171,23 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                   ],
                 ),
               ],
-              bottom: TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(icon: Icon(Icons.store_rounded, size: 20), text: 'Vendors'),
-                  Tab(icon: Icon(Icons.category_rounded, size: 20), text: 'Categories'),
-                  Tab(icon: Icon(Icons.badge_rounded, size: 20), text: 'Staff Profiles'),
-                ],
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(62),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: ButtonGroup<int>(
+                    options: const [
+                      ButtonGroupOption(value: 0, label: 'Vendors'),
+                      ButtonGroupOption(value: 1, label: 'Categories'),
+                      ButtonGroupOption(value: 2, label: 'Staff Profiles'),
+                    ],
+                    selectedValue: _tabController.index,
+                    onSelected: (index) {
+                      _tabController.animateTo(index);
+                      setState(() {});
+                    },
+                  ),
+                ),
               ),
             ),
           ];
