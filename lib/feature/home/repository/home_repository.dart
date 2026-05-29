@@ -51,10 +51,9 @@ class HomeRepository extends BaseRepository {
           .from('audit_logs')
           .select('*, changed_by_profile:profiles!changed_by(display_name)')
           .order('created_at', ascending: false)
-          .limit(4);
+          .limit(7);
 
       return (response as List).cast<Map<String, dynamic>>();
     });
   }
-
 }
