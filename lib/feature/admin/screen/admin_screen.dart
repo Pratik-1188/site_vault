@@ -8,6 +8,7 @@ import 'package:site_vault/shared/model/profile.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
+import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 
 /// Central administration settings panel managing Vendors, Categories, and Profiles.
 class AdminScreen extends ConsumerStatefulWidget {
@@ -39,6 +40,47 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
     _categorySearchController.dispose();
     _profileSearchController.dispose();
     super.dispose();
+  }
+
+  /// Confirms and handles user sign out
+  Future<void> _handleSignOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text(
+          'Are you sure you want to sign out of KK Group Site Vault?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('SIGN OUT'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await ref.read(authRepositoryProvider).signOut();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error signing out: $e'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      }
+    }
   }
 
   /// Opens the modal bottom sheet to create or edit a vendor
@@ -77,24 +119,76 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Administrative Hub'),
-        bottom: TabBar(
+      body: NestedScrollView(
+        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+          return <Widget>[
+            SliverAppBar.medium(
+              centerTitle: false,
+              elevation: 0,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              scrolledUnderElevation: 0,
+              pinned: true,
+              leading: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                onPressed: () => context.go('/'),
+                tooltip: 'Back to Dashboard',
+              ),
+              title: Text(
+                'Administrative Hub',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              actions: [
+                PopupMenuButton<String>(
+                  icon: Icon(
+                    Icons.account_circle_rounded,
+                    size: 28,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  tooltip: 'User Profile Options',
+                  onSelected: (val) {
+                    if (val == 'signout') {
+                      _handleSignOut();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'signout',
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout_rounded, size: 20, color: Colors.redAccent),
+                          SizedBox(width: 8),
+                          Text('Sign Out'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+              bottom: TabBar(
+                controller: _tabController,
+                tabs: const [
+                  Tab(icon: Icon(Icons.store_rounded, size: 20), text: 'Vendors'),
+                  Tab(icon: Icon(Icons.category_rounded, size: 20), text: 'Categories'),
+                  Tab(icon: Icon(Icons.badge_rounded, size: 20), text: 'Staff Profiles'),
+                ],
+              ),
+            ),
+          ];
+        },
+        body: TabBarView(
           controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.store_rounded, size: 20), text: 'Vendors'),
-            Tab(icon: Icon(Icons.category_rounded, size: 20), text: 'Categories'),
-            Tab(icon: Icon(Icons.badge_rounded, size: 20), text: 'Staff Profiles'),
+          children: [
+            _buildVendorsPanel(),
+            _buildCategoriesPanel(),
+            _buildProfilesPanel(),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildVendorsPanel(),
-          _buildCategoriesPanel(),
-          _buildProfilesPanel(),
-        ],
       ),
       floatingActionButton: _tabController.index == 2
           ? null // Staff are manually added via backend dashboard, admin can only edit/disable

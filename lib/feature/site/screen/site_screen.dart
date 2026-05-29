@@ -281,51 +281,67 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     final searchQuery = ref.watch(searchQueryProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () => context.go('/'),
-          tooltip: 'Back to Dashboard',
-        ),
-        title: Text(
-          'Site Directory',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.account_circle_rounded, size: 28),
-            tooltip: 'User Profile Options',
-            onSelected: (val) {
-              if (val == 'signout') {
-                _handleSignOut();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'signout',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.logout_rounded,
-                      size: 20,
-                      color: Colors.redAccent,
-                    ),
-                    SizedBox(width: 8),
-                    Text('Sign Out'),
-                  ],
+      body: NestedScrollView(
+        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+          return <Widget>[
+            SliverAppBar.medium(
+              centerTitle: false,
+              elevation: 0,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              scrolledUnderElevation: 0,
+              pinned: true,
+              leading: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                onPressed: () => context.go('/'),
+                tooltip: 'Back to Dashboard',
+              ),
+              title: Text(
+                'Site Directory',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
-            ],
-          ),
-        ],
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+              actions: [
+                PopupMenuButton<String>(
+                  icon: Icon(
+                    Icons.account_circle_rounded,
+                    size: 28,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  tooltip: 'User Profile Options',
+                  onSelected: (val) {
+                    if (val == 'signout') {
+                      _handleSignOut();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'signout',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.logout_rounded,
+                            size: 20,
+                            color: Colors.redAccent,
+                          ),
+                          SizedBox(width: 8),
+                          Text('Sign Out'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ];
+        },
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
           // 1. Segmented Business Division Selector
           _buildSegmentedButton(context, selectedFirm),
 
@@ -395,6 +411,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
           ),
         ],
       ),
+    ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: 1,
         onDestinationSelected: (index) {

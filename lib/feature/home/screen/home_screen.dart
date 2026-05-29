@@ -92,64 +92,80 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final recentLogsAsync = ref.watch(recentAuditLogsProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.factory_rounded),
-          onPressed: () {
-            // Placeholder brand feedback
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('KK Group Operations Hub v1.0'),
-                behavior: SnackBarBehavior.floating,
+      body: NestedScrollView(
+        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+          return <Widget>[
+            SliverAppBar.medium(
+              centerTitle: false,
+              elevation: 0,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              scrolledUnderElevation: 0,
+              pinned: true,
+              leading: IconButton(
+                icon: Icon(
+                  Icons.factory_rounded,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                onPressed: () {
+                  // Placeholder brand feedback
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('KK Group Operations Hub v1.0'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
-        title: Text(
-          'KK Group Ledger',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-        ),
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.account_circle_rounded, size: 28),
-            tooltip: 'User Profile Options',
-            onSelected: (val) {
-              if (val == 'signout') {
-                _handleSignOut();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'signout',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout_rounded, size: 20, color: Colors.redAccent),
-                    SizedBox(width: 8),
-                    Text('Sign Out'),
-                  ],
+              title: Text(
+                'KK Group Ledger',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
-            ],
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(currentFinancialYearExpenseTotalProvider);
-          ref.invalidate(activeSitesForCurrentFinancialYearProvider);
-          ref.invalidate(missingBillExpenseTotalForCurrentFinancialYearProvider);
-          ref.invalidate(recentAuditLogsProvider);
+              actions: [
+                PopupMenuButton<String>(
+                  icon: Icon(
+                    Icons.account_circle_rounded,
+                    size: 28,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  tooltip: 'User Profile Options',
+                  onSelected: (val) {
+                    if (val == 'signout') {
+                      _handleSignOut();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'signout',
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout_rounded, size: 20, color: Colors.redAccent),
+                          SizedBox(width: 8),
+                          Text('Sign Out'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ];
         },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+        body: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(currentFinancialYearExpenseTotalProvider);
+            ref.invalidate(activeSitesForCurrentFinancialYearProvider);
+            ref.invalidate(missingBillExpenseTotalForCurrentFinancialYearProvider);
+            ref.invalidate(recentAuditLogsProvider);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
               // 1. Bento Metric Grid Header
               Text(
                 'Current Year Overview',
@@ -602,6 +618,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ),
       ),
+    ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: 0,
         onDestinationSelected: (index) {

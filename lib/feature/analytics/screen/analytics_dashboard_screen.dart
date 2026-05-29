@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:site_vault/feature/analytics/model/analytics_models.dart';
 import 'package:site_vault/feature/analytics/provider/analytics_provider.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
+import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 
 /// Central analytics hub screen showing Group (All Firms) and Firm comparative cost statistics.
 class AnalyticsDashboardScreen extends ConsumerStatefulWidget {
@@ -45,11 +46,62 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
     final monthlySpendAsync = ref.watch(monthlySpendProvider(firmId: selectedFirmId));
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Executive Analytics'),
-      ),
-      body: Column(
-        children: [
+      body: NestedScrollView(
+        headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+          return <Widget>[
+            SliverAppBar.medium(
+              centerTitle: false,
+              elevation: 0,
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              scrolledUnderElevation: 0,
+              pinned: true,
+              leading: IconButton(
+                icon: Icon(
+                  Icons.arrow_back_rounded,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+                onPressed: () => context.go('/'),
+                tooltip: 'Back to Dashboard',
+              ),
+              title: Text(
+                'Executive Analytics',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              actions: [
+                PopupMenuButton<String>(
+                  icon: Icon(
+                    Icons.account_circle_rounded,
+                    size: 28,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  tooltip: 'User Profile Options',
+                  onSelected: (val) {
+                    if (val == 'signout') {
+                      _handleSignOut();
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'signout',
+                      child: Row(
+                        children: [
+                          Icon(Icons.logout_rounded, size: 20, color: Colors.redAccent),
+                          SizedBox(width: 8),
+                          Text('Sign Out'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ];
+        },
+        body: Column(
+          children: [
           // Scope Toggle Selector
           _buildScopeSelector(),
 
@@ -106,6 +158,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           ),
         ],
       ),
+    ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: 2,
         onDestinationSelected: (index) {
@@ -461,5 +514,46 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
   String _formatMonthDate(DateTime date) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return '${months[date.month - 1]} ${date.year}';
+  }
+
+  /// Confirms and handles user sign out
+  Future<void> _handleSignOut() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text(
+          'Are you sure you want to sign out of KK Group Site Vault?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('SIGN OUT'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      try {
+        await ref.read(authRepositoryProvider).signOut();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error signing out: $e'),
+              backgroundColor: Theme.of(context).colorScheme.error,
+            ),
+          );
+        }
+      }
+    }
   }
 }
