@@ -5,7 +5,6 @@ import 'package:site_vault/feature/home/provider/home_provider.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
 import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
-import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/vault_card.dart';
 
@@ -535,7 +534,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Color logIconColor;
                       Color logBgColor;
                       String logTitle;
-                      String logSubtitle;
+                      String? logSubtitle;
 
                       if (tableName == 'expenses') {
                         logIcon = Icons.currency_rupee_rounded;
@@ -547,7 +546,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         final amount = newData?['amount'] as num? ?? 0.0;
                         
                         logTitle = 'Expense: $expenseTitle';
-                        logSubtitle = '${createdAt.toReadableString()} • ₹${amount.toStringAsFixed(0)}';
+                        logSubtitle = 'Amount: ₹${amount.toStringAsFixed(2)}';
                       } else if (tableName == 'sites') {
                         logIcon = Icons.location_on_rounded;
                         logIconColor = const Color(0xFF2E7D32);
@@ -558,20 +557,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         final status = newData?['status'] as String? ?? 'active';
 
                         logTitle = 'Site: $siteName';
-                        logSubtitle = '${createdAt.toReadableString()} • Status: $status';
+                        logSubtitle = 'Status: ${status.toUpperCase()}';
                       } else {
                         logIcon = Icons.info_outline_rounded;
                         logIconColor = Theme.of(context).colorScheme.primary;
                         logBgColor = Theme.of(context).colorScheme.surfaceContainer;
                         
                         logTitle = '${operation.toUpperCase()} on ${tableName.toUpperCase()}';
-                        logSubtitle = createdAt.toReadableString();
+                        logSubtitle = null;
                       }
 
-                      final changedBy = log['changed_by'] as String?;
+                      final changedByProfile = log['changed_by_profile'] as Map<String, dynamic>?;
+                      final creatorName = changedByProfile?['display_name'] as String?;
 
                       return VaultCard(
-                        creatorName: changedBy,
+                        creatorName: creatorName,
                         createdAt: createdAt,
                         onTap: null, // Logs can not be edited and they should not be clickable
                         leading: Container(
@@ -596,12 +596,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        subtitle: Text(
-                          logSubtitle,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
+                        subtitle: logSubtitle != null
+                            ? Text(
+                                logSubtitle,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                              )
+                            : null,
                       );
                     }).toList(),
                   );

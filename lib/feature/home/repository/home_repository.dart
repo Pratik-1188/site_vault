@@ -49,7 +49,7 @@ class HomeRepository extends BaseRepository {
     return safeCall('HomeRepository.fetchRecentAuditLogs', () async {
       final response = await client
           .from('audit_logs')
-          .select()
+          .select('*, changed_by_profile:profiles!changed_by(display_name)')
           .order('created_at', ascending: false)
           .limit(4);
 
