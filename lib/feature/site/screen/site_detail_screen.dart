@@ -252,11 +252,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
       context: context,
       builder: (BuildContext context) {
         final theme = Theme.of(context);
-        
+
         return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.brMd,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.brMd),
           title: Row(
             children: [
               CircleAvatar(
@@ -296,23 +294,43 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
               children: [
                 Divider(color: theme.colorScheme.outlineVariant),
                 const SizedBox(height: 8),
-                _dialogSplitRow('Amount Spent', '₹${expense.amount.toStringAsFixed(2)}', isBold: true),
+                _dialogSplitRow(
+                  'Amount Spent',
+                  '₹${expense.amount.toStringAsFixed(2)}',
+                  isBold: true,
+                ),
                 const SizedBox(height: 8),
-                _dialogSplitRow('Payment Mode', expense.paymentMode.toDisplayLabel()),
+                _dialogSplitRow(
+                  'Payment Mode',
+                  expense.paymentMode.toDisplayLabel(),
+                ),
                 const SizedBox(height: 8),
-                _dialogSplitRow('Expense Date', expense.expenseDate.toReadableString()),
+                _dialogSplitRow(
+                  'Expense Date',
+                  expense.expenseDate.toReadableString(),
+                ),
                 const SizedBox(height: 8),
-                _dialogSplitRow('Paid By', expense.paidByProfile?.displayName ?? 'Staff'),
+                _dialogSplitRow(
+                  'Paid By',
+                  expense.paidByProfile?.displayName ?? 'Staff',
+                ),
                 const SizedBox(height: 8),
-                _dialogSplitRow('Created By', expense.createdByProfile?.displayName ?? 'Staff'),
+                _dialogSplitRow(
+                  'Created By',
+                  expense.createdByProfile?.displayName ?? 'Staff',
+                ),
                 const SizedBox(height: 8),
-                _dialogSplitRow('Refundable', expense.isRefundable ? 'Yes' : 'No'),
+                _dialogSplitRow(
+                  'Refundable',
+                  expense.isRefundable ? 'Yes' : 'No',
+                ),
                 if (expense.vendor != null) ...[
                   const SizedBox(height: 8),
                   _dialogSplitRow('Vendor', expense.vendor!.name),
                 ],
                 const SizedBox(height: 12),
-                if (expense.description != null && expense.description!.isNotEmpty) ...[
+                if (expense.description != null &&
+                    expense.description!.isNotEmpty) ...[
                   Text(
                     'Description',
                     style: theme.textTheme.labelMedium?.copyWith(
@@ -327,7 +345,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerLow,
                       borderRadius: AppRadius.brSm,
-                      border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
                     ),
                     child: Text(
                       expense.description!,
@@ -350,7 +372,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                     decoration: BoxDecoration(
                       color: theme.colorScheme.surfaceContainerLow,
                       borderRadius: AppRadius.brSm,
-                      border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
+                      ),
                     ),
                     child: Column(
                       children: [
@@ -556,7 +582,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                       value: 'signout',
                       child: Row(
                         children: [
-                          Icon(Icons.logout_rounded, size: 20, color: Colors.redAccent),
+                          Icon(
+                            Icons.logout_rounded,
+                            size: 20,
+                            color: Colors.redAccent,
+                          ),
                           SizedBox(width: 8),
                           Text('Sign Out'),
                         ],
@@ -691,7 +721,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                           Icon(
                             Icons.info_outline_rounded,
                             size: 20,
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.7),
                           ),
                           const SizedBox(width: 12),
                           Column(
@@ -699,16 +731,22 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                             children: [
                               Text(
                                 'Status',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
                                       fontWeight: FontWeight.bold,
-                                      color: Theme.of(context).colorScheme.onSurface,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                     ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 'Current site status',
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                               ),
                             ],
@@ -734,7 +772,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                             ),
                           ],
                         ),
-                        onPressed: () => _showStatusUpdateDialog(context, site.firmId),
+                        onPressed: () =>
+                            _showStatusUpdateDialog(context, site.firmId),
                       ),
                     ],
                   ),
@@ -925,10 +964,14 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                       createdAt: expense.createdAt,
                       onTap: () => _showExpenseDetailDialog(context, expense),
                       leading: CircleAvatar(
-                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer,
                         child: Icon(
                           _getCategoryIcon(expense.category?.name),
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
                         ),
                       ),
                       title: Text(
@@ -957,7 +1000,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                                     title: const Text('GST Split Details'),
                                     content: Column(
                                       mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         _dialogSplitRow(
                                           'Base Amount',
@@ -1009,10 +1053,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                           ),
                           const SizedBox(width: 8),
                           PopupMenuButton<String>(
-                            icon: const Icon(
-                              Icons.more_vert_rounded,
-                              size: 20,
-                            ),
+                            icon: const Icon(Icons.more_vert_rounded, size: 20),
                             splashRadius: 20,
                             onSelected: (action) {
                               if (action == 'edit') {
@@ -1049,9 +1090,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                                     SizedBox(width: 8),
                                     Text(
                                       'Delete',
-                                      style: TextStyle(
-                                        color: Colors.redAccent,
-                                      ),
+                                      style: TextStyle(color: Colors.redAccent),
                                     ),
                                   ],
                                 ),
@@ -1334,10 +1373,16 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                         doc.fileName,
                       ),
                       leading: CircleAvatar(
-                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.primaryContainer,
                         child: Icon(
-                          isPdf ? Icons.picture_as_pdf_rounded : Icons.description_rounded,
-                          color: Theme.of(context).colorScheme.onPrimaryContainer,
+                          isPdf
+                              ? Icons.picture_as_pdf_rounded
+                              : Icons.description_rounded,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
                         ),
                       ),
                       title: Text(
@@ -1349,7 +1394,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      subtitle: doc.description != null && doc.description!.isNotEmpty
+                      subtitle:
+                          doc.description != null && doc.description!.isNotEmpty
                           ? Text(
                               doc.description!,
                               maxLines: 2,
@@ -1360,22 +1406,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.file_download_rounded,
-                              size: 20,
-                            ),
-                            onPressed: () => _downloadOrOpenDocument(
-                              context,
-                              doc.fileUrl,
-                              doc.fileName,
-                            ),
-                          ),
                           PopupMenuButton<String>(
-                            icon: const Icon(
-                              Icons.more_vert_rounded,
-                              size: 20,
-                            ),
+                            icon: const Icon(Icons.more_vert_rounded, size: 20),
                             splashRadius: 20,
                             onSelected: (action) {
                               if (action == 'delete') {
@@ -1395,9 +1427,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                                     SizedBox(width: 8),
                                     Text(
                                       'Delete',
-                                      style: TextStyle(
-                                        color: Colors.redAccent,
-                                      ),
+                                      style: TextStyle(color: Colors.redAccent),
                                     ),
                                   ],
                                 ),
