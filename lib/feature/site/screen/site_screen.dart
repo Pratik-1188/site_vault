@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/financial_year.dart';
@@ -244,17 +245,11 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     }
   }
 
-  String _getCleanFirmName(String firmId) {
-    switch (firmId.toLowerCase()) {
-      case '0f140f6f-d994-4695-a838-bee13b3802f1':
-        return 'Electricals';
-      case '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3':
-        return 'Associates';
-      case '4e01a36a-87c0-4cca-9428-a2747a130c96':
-        return 'Solar';
-      default:
-        return 'Group';
+  String _cleanFirmName(String name) {
+    if (name.toLowerCase().startsWith('kk ')) {
+      return name.substring(3).trim();
     }
+    return name;
   }
 
   @override
@@ -279,6 +274,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     final selectedFirm = ref.watch(selectedFirmProvider);
     final selectedStatus = ref.watch(selectedStatusProvider);
     final searchQuery = ref.watch(searchQueryProvider);
+    final firmsAsync = ref.watch(firmsProvider);
 
     return Scaffold(
       body: NestedScrollView(
@@ -343,7 +339,20 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
           // 1. Segmented Business Division Selector
-          _buildSegmentedButton(context, selectedFirm),
+          firmsAsync.when(
+            data: (firmsList) => _buildSegmentedButton(context, selectedFirm, firmsList),
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
+            error: (err, _) => const SizedBox.shrink(),
+          ),
 
           // 2. Floating Search Bar with Filter Reset Option
           Padding(
@@ -395,6 +404,8 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                   return _buildEmptyState();
                 }
 
+                final firmsList = firmsAsync.value ?? const [];
+
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16.0,
@@ -403,7 +414,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                   itemCount: sites.length,
                   itemBuilder: (context, index) {
                     final site = sites[index];
-                    return _buildSiteCard(site);
+                    return _buildSiteCard(site, firmsList);
                   },
                 );
               },
@@ -449,25 +460,18 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     );
   }
 
-  Widget _buildSegmentedButton(BuildContext context, String? selectedFirm) {
+  Widget _buildSegmentedButton(BuildContext context, String? selectedFirm, List<Firm> firms) {
+    if (firms.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: ButtonGroup<String>(
-        options: const [
-          ButtonGroupOption<String>(
-            label: 'Electricals',
-            value: '0f140f6f-d994-4695-a838-bee13b3802f1',
-          ),
-          ButtonGroupOption<String>(
-            label: 'Associates',
-            value: '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3',
-          ),
-          ButtonGroupOption<String>(
-            label: 'Solar',
-            value: '4e01a36a-87c0-4cca-9428-a2747a130c96',
-          ),
-        ],
-        selectedValue: selectedFirm ?? '0f140f6f-d994-4695-a838-bee13b3802f1',
+        options: firms.map((firm) {
+          return ButtonGroupOption<String>(
+            label: _cleanFirmName(firm.name),
+            value: firm.id,
+          );
+        }).toList(),
+        selectedValue: selectedFirm ?? firms.first.id,
         onSelected: _onFirmChanged,
       ),
     );
@@ -605,8 +609,17 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     );
   }
 
-  Widget _buildSiteCard(Site site) {
-    final cleanFirmName = _getCleanFirmName(site.firmId);
+  Widget _buildSiteCard(Site site, List<Firm> firms) {
+    final firm = firms.firstWhere(
+      (f) => f.id.toLowerCase() == site.firmId.toLowerCase(),
+      orElse: () => Firm(
+        id: site.firmId,
+        name: 'Group',
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+    final cleanFirmName = _cleanFirmName(firm.name);
     final startedDate = site.startedOn != null
         ? site.startedOn!.toReadableString().toUpperCase()
         : 'NOT STARTED';

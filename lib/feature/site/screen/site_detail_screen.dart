@@ -441,19 +441,20 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
               onPressed: () => Navigator.pop(context),
               child: const Text('CLOSE'),
             ),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(context);
-                _openExpenseFormSheet(
-                  context,
-                  widget.siteId,
-                  widget.site!.firmId,
-                  expense,
-                );
-              },
-              icon: const Icon(Icons.edit_rounded, size: 16),
-              label: const Text('EDIT'),
-            ),
+            if (widget.site?.status == 'active')
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _openExpenseFormSheet(
+                    context,
+                    widget.siteId,
+                    widget.site!.firmId,
+                    expense,
+                  );
+                },
+                icon: const Icon(Icons.edit_rounded, size: 16),
+                label: const Text('EDIT'),
+              ),
           ],
         );
       },
@@ -655,27 +656,21 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          final tabIndex = _tabController.index;
-          if (tabIndex == 0) {
-            // Live Expense Creation Form sheet!
-            _openExpenseFormSheet(context, site.id, site.firmId);
-          } else if (tabIndex == 1) {
-            // Live Document Upload Form sheet!
-            _openDocumentUploadSheet(context, site.id, site.firmId);
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Double click on Expenses/Documents tab to add items!',
-                ),
-              ),
-            );
-          }
-        },
-        child: const Icon(Icons.add_rounded),
-      ),
+      floatingActionButton: (site.status != 'active' || _tabController.index == 2 || _tabController.index == 3)
+          ? null
+          : FloatingActionButton(
+              onPressed: () {
+                final tabIndex = _tabController.index;
+                if (tabIndex == 0) {
+                  // Live Expense Creation Form sheet!
+                  _openExpenseFormSheet(context, site.id, site.firmId);
+                } else if (tabIndex == 1) {
+                  // Live Document Upload Form sheet!
+                  _openDocumentUploadSheet(context, site.id, site.firmId);
+                }
+              },
+              child: const Icon(Icons.add_rounded),
+            ),
     );
   }
 
@@ -1139,51 +1134,52 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                             ),
                           ),
                           const SizedBox(width: 8),
-                          PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert_rounded, size: 20),
-                            splashRadius: 20,
-                            onSelected: (action) {
-                              if (action == 'edit') {
-                                _openExpenseFormSheet(
-                                  context,
-                                  site.id,
-                                  site.firmId,
-                                  expense,
-                                );
-                              } else if (action == 'delete') {
-                                _confirmDeleteExpense(context, expense);
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.edit_rounded, size: 16),
-                                    SizedBox(width: 8),
-                                    Text('Edit'),
-                                  ],
+                          if (site.status == 'active')
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert_rounded, size: 20),
+                              splashRadius: 20,
+                              onSelected: (action) {
+                                if (action == 'edit') {
+                                  _openExpenseFormSheet(
+                                    context,
+                                    site.id,
+                                    site.firmId,
+                                    expense,
+                                  );
+                                } else if (action == 'delete') {
+                                  _confirmDeleteExpense(context, expense);
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit_rounded, size: 16),
+                                      SizedBox(width: 8),
+                                      Text('Edit'),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.delete_outline_rounded,
-                                      size: 16,
-                                      color: Colors.redAccent,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Delete',
-                                      style: TextStyle(color: Colors.redAccent),
-                                    ),
-                                  ],
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.delete_outline_rounded,
+                                        size: 16,
+                                        color: Colors.redAccent,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Delete',
+                                        style: TextStyle(color: Colors.redAccent),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
                         ],
                       ),
                     );
@@ -1607,46 +1603,47 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert_rounded, size: 20),
-                            splashRadius: 20,
-                            onSelected: (action) {
-                              if (action == 'edit') {
-                                _showEditDocumentDialog(context, doc);
-                              } else if (action == 'delete') {
-                                _confirmDeleteDocument(context, doc);
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'edit',
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.edit_rounded, size: 16),
-                                    SizedBox(width: 8),
-                                    Text('Edit Details'),
-                                  ],
+                          if (site.status == 'active')
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert_rounded, size: 20),
+                              splashRadius: 20,
+                              onSelected: (action) {
+                                if (action == 'edit') {
+                                  _showEditDocumentDialog(context, doc);
+                                } else if (action == 'delete') {
+                                  _confirmDeleteDocument(context, doc);
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit_rounded, size: 16),
+                                      SizedBox(width: 8),
+                                      Text('Edit Details'),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.delete_outline_rounded,
-                                      size: 16,
-                                      color: Colors.redAccent,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Delete',
-                                      style: TextStyle(color: Colors.redAccent),
-                                    ),
-                                  ],
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.delete_outline_rounded,
+                                        size: 16,
+                                        color: Colors.redAccent,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Delete',
+                                        style: TextStyle(color: Colors.redAccent),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
                         ],
                       ),
                     );

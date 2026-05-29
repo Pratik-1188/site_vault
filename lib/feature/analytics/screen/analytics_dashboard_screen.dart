@@ -5,6 +5,8 @@ import 'package:site_vault/feature/analytics/model/analytics_models.dart';
 import 'package:site_vault/feature/analytics/provider/analytics_provider.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
+import 'package:site_vault/shared/model/firm.dart';
+import 'package:site_vault/shared/provider/firm_provider.dart';
 
 /// Central analytics hub screen showing Group (All Firms) and Firm comparative cost statistics.
 class AnalyticsDashboardScreen extends ConsumerStatefulWidget {
@@ -15,35 +17,24 @@ class AnalyticsDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScreen> {
-  int _selectedScopeIndex = 0; // 0: All Firms, 1: KK Electricals, 2: KK Solar, 3: KK Associates
+  String? _selectedFirmId; // null = All Firms
 
-  // Master Firm UUID constants matching migrations exactly
-  static const String _firmElectricals = '0f140f6f-d994-4695-a838-bee13b3802f1';
-  static const String _firmSolar = '4e01a36a-87c0-4cca-9428-a2747a130c96';
-  static const String _firmAssociates = '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3';
-
-  String? _getFirmIdForIndex(int index) {
-    switch (index) {
-      case 1:
-        return _firmElectricals;
-      case 2:
-        return _firmSolar;
-      case 3:
-        return _firmAssociates;
-      case 0:
-      default:
-        return null; // All Firms
+  String _cleanFirmName(String name) {
+    if (name.toLowerCase().startsWith('kk ')) {
+      return name.substring(3).trim();
     }
+    return name;
   }
 
   @override
   Widget build(BuildContext context) {
-    final selectedFirmId = _getFirmIdForIndex(_selectedScopeIndex);
+    final selectedFirmId = _selectedFirmId;
 
     // Watch pre-aggregated queries
     final summariesAsync = ref.watch(groupFirmSummariesProvider);
     final categorySpendAsync = ref.watch(categorySpendProvider(firmId: selectedFirmId));
     final monthlySpendAsync = ref.watch(monthlySpendProvider(firmId: selectedFirmId));
+    final firmsAsync = ref.watch(firmsProvider);
 
     return Scaffold(
       body: NestedScrollView(
@@ -103,7 +94,20 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
         body: Column(
           children: [
           // Scope Toggle Selector
-          _buildScopeSelector(),
+          firmsAsync.when(
+            data: (firmsList) => _buildScopeSelector(firmsList),
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
+            error: (err, _) => const SizedBox.shrink(),
+          ),
 
           Expanded(
             child: summariesAsync.when(
@@ -140,7 +144,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
 
                     // 2. Proportional Brand Splits (Only visible in All-Firms mode)
                     if (selectedFirmId == null) ...[
-                      _buildFirmSplitsChart(firmSummaries),
+                      _buildFirmSplitsChart(firmSummaries, firmsAsync.value ?? const []),
                       const SizedBox(height: 24),
                     ],
 
@@ -197,20 +201,23 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
   }
 
   /// Premium sliding ButtonGroup Scope selector
-  Widget _buildScopeSelector() {
+  Widget _buildScopeSelector(List<Firm> firms) {
+    final options = [
+      const ButtonGroupOption<String?>(value: null, label: 'All Firms'),
+      ...firms.map((firm) => ButtonGroupOption<String?>(
+            value: firm.id,
+            label: _cleanFirmName(firm.name),
+          )),
+    ];
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: ButtonGroup<int>(
-        options: const [
-          ButtonGroupOption<int>(value: 0, label: 'All Firms'),
-          ButtonGroupOption<int>(value: 1, label: 'Electricals'),
-          ButtonGroupOption<int>(value: 2, label: 'Solar'),
-          ButtonGroupOption<int>(value: 3, label: 'Associates'),
-        ],
-        selectedValue: _selectedScopeIndex,
-        onSelected: (int newValue) {
+      child: ButtonGroup<String?>(
+        options: options,
+        selectedValue: _selectedFirmId,
+        onSelected: (String? newValue) {
           setState(() {
-            _selectedScopeIndex = newValue;
+            _selectedFirmId = newValue;
           });
         },
       ),
@@ -276,31 +283,31 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
   }
 
   /// Proportional Spend Brand Bar Chart
-  Widget _buildFirmSplitsChart(List<FirmAnalyticsSummary> summaries) {
-    double totalElectricals = 0.0;
-    double totalSolar = 0.0;
-    double totalAssociates = 0.0;
-
-    for (final s in summaries) {
-      switch (s.firmId.toLowerCase()) {
-        case _firmElectricals:
-          totalElectricals = s.totalSpend;
-          break;
-        case _firmSolar:
-          totalSolar = s.totalSpend;
-          break;
-        case _firmAssociates:
-          totalAssociates = s.totalSpend;
-          break;
-      }
-    }
-
-    final overall = totalElectricals + totalSolar + totalAssociates;
+  Widget _buildFirmSplitsChart(List<FirmAnalyticsSummary> summaries, List<Firm> firms) {
+    final overall = summaries.fold<double>(0.0, (sum, s) => sum + s.totalSpend);
     if (overall <= 0) return const SizedBox.shrink();
 
-    final pctElec = totalElectricals / overall;
-    final pctSolar = totalSolar / overall;
-    final pctAssoc = totalAssociates / overall;
+    final splits = firms.map((firm) {
+      final summary = summaries.firstWhere(
+        (s) => s.firmId.toLowerCase() == firm.id.toLowerCase(),
+        orElse: () => FirmAnalyticsSummary(
+          firmId: firm.id,
+          totalSpend: 0.0,
+          totalGst: 0.0,
+          totalBase: 0.0,
+          expenseCount: 0,
+        ),
+      );
+      final percentage = overall > 0 ? summary.totalSpend / overall : 0.0;
+      return _FirmSplitItem(
+        name: firm.name,
+        spend: summary.totalSpend,
+        percentage: percentage,
+      );
+    }).toList();
+
+    // Sort splits by spend descending
+    splits.sort((a, b) => b.spend.compareTo(a.spend));
 
     return Card(
       child: Padding(
@@ -312,12 +319,16 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
             const SizedBox(height: 4),
             const Text('Spend proportional distribution across the divisions.', style: TextStyle(fontSize: 11, color: Colors.grey)),
             const SizedBox(height: 20),
-
-            _legendRow('KK Electricals', '₹${totalElectricals.toStringAsFixed(2)}', '${(pctElec * 100).toInt()}%', pctElec),
-            const Divider(height: 16, thickness: 0.5),
-            _legendRow('KK Solar', '₹${totalSolar.toStringAsFixed(2)}', '${(pctSolar * 100).toInt()}%', pctSolar),
-            const Divider(height: 16, thickness: 0.5),
-            _legendRow('KK Associates', '₹${totalAssociates.toStringAsFixed(2)}', '${(pctAssoc * 100).toInt()}%', pctAssoc),
+            ...splits.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final item = entry.value;
+              return Column(
+                children: [
+                  if (idx > 0) const Divider(height: 16, thickness: 0.5),
+                  _legendRow(item.name, '₹${item.spend.toStringAsFixed(2)}', '${(item.percentage * 100).toInt()}%', item.percentage),
+                ],
+              );
+            }),
           ],
         ),
       ),
@@ -556,4 +567,16 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
       }
     }
   }
+}
+
+class _FirmSplitItem {
+  final String name;
+  final double spend;
+  final double percentage;
+
+  _FirmSplitItem({
+    required this.name,
+    required this.spend,
+    required this.percentage,
+  });
 }
