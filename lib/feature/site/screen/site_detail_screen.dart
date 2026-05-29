@@ -48,6 +48,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
       TextEditingController();
   final TextEditingController _documentSearchController =
       TextEditingController();
+  TextEditingController? _nameEditController;
+  TextEditingController? _descEditController;
+  DateTime? _selectedStartDate;
+  String? _statusEditValue;
 
   @override
   void initState() {
@@ -61,6 +65,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     _tabController.dispose();
     _expenseSearchController.dispose();
     _documentSearchController.dispose();
+    _nameEditController?.dispose();
+    _descEditController?.dispose();
     super.dispose();
   }
 
@@ -105,110 +111,85 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     }
   }
 
-  String _getFirmName(String firmId) {
-    switch (firmId.toLowerCase()) {
-      case '0f140f6f-d994-4695-a838-bee13b3802f1':
-        return 'KK Electricals';
-      case '4e01a36a-87c0-4cca-9428-a2747a130c96':
-        return 'KK Solar';
-      case '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3':
-        return 'KK Associates';
-      default:
-        return 'KK Group';
+
+
+  Future<void> _selectStartDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedStartDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked != null && picked != _selectedStartDate) {
+      setState(() {
+        _selectedStartDate = picked;
+      });
     }
   }
 
-  void _showStatusUpdateDialog(BuildContext context, String firmId) {
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      builder: (BuildContext bc) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Update Site Status',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Select the operational status for this project site. This affects filters and active logs.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 24),
-                RadioListTile<String>(
-                  title: const Text('Active'),
-                  subtitle: const Text(
-                    'Site is actively running with ongoing expenses.',
-                  ),
-                  secondary: const Icon(Icons.play_arrow_rounded),
-                  value: 'active',
-                  groupValue: _currentStatus,
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() => _currentStatus = val);
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Site status set to ACTIVE'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  },
-                ),
-                RadioListTile<String>(
-                  title: const Text('Completed'),
-                  subtitle: const Text(
-                    'Project is finished. Records are sealed.',
-                  ),
-                  secondary: const Icon(Icons.check_circle_outline_rounded),
-                  value: 'completed',
-                  groupValue: _currentStatus,
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() => _currentStatus = val);
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Site status set to COMPLETED'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  },
-                ),
-                RadioListTile<String>(
-                  title: const Text('Deleted'),
-                  subtitle: const Text(
-                    'Site is deleted. Read-only review mode.',
-                  ),
-                  secondary: const Icon(Icons.archive_outlined),
-                  value: 'deleted',
-                  groupValue: _currentStatus,
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() => _currentStatus = val);
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Site status set to DELETED'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ],
-            ),
+  bool _isSaving = false;
+
+  Future<void> _saveSiteSettings(String siteId) async {
+    final name = _nameEditController?.text.trim();
+    if (name == null || name.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter a site name'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    try {
+      final description = _descEditController?.text.trim();
+      final status = _statusEditValue ?? 'active';
+      final startedOn = _selectedStartDate ?? DateTime.now();
+
+      DateTime? completedOn;
+      if (status == 'completed') {
+        completedOn = DateTime.now();
+      }
+
+      await ref.read(siteRepositoryProvider).updateSite(
+            siteId: siteId,
+            name: name,
+            description: description,
+            startedOn: startedOn,
+            status: status,
+            completedOn: completedOn,
+          );
+
+      ref.invalidate(siteDetailsProvider(siteId));
+      ref.invalidate(sitesProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Site settings updated successfully!'),
+            behavior: SnackBarBehavior.floating,
           ),
         );
-      },
-    );
+      }
+
+      // Clear lazy controllers to force re-initialization on next build
+      setState(() {
+        _nameEditController = null;
+        _descEditController = null;
+        _selectedStartDate = null;
+        _statusEditValue = null;
+      });
+    } catch (e) {
+      if (mounted) {
+        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(cleanMessage), backgroundColor: Colors.redAccent),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   /// Opens the add/edit expense form sheet
@@ -590,7 +571,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
 
   Widget _buildMainContent(BuildContext context, Site site) {
     final baseColor = Theme.of(context).colorScheme.primary;
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       body: NestedScrollView(
@@ -655,10 +635,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                 TabBar(
                   controller: _tabController,
                   tabs: const [
-                    Tab(text: 'Overview'),
                     Tab(text: 'Expenses'),
                     Tab(text: 'Documents'),
                     Tab(text: 'Analytics'),
+                    Tab(text: 'Settings'),
                   ],
                 ),
               ),
@@ -668,20 +648,20 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
         body: TabBarView(
           controller: _tabController,
           children: [
-            _buildOverviewTab(site, isDarkMode),
             _buildExpensesTab(site, baseColor),
             _buildDocumentsTab(site, baseColor),
             _buildAnalyticsTab(site, baseColor),
+            _buildSettingsTab(site, baseColor),
           ],
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           final tabIndex = _tabController.index;
-          if (tabIndex == 1) {
+          if (tabIndex == 0) {
             // Live Expense Creation Form sheet!
             _openExpenseFormSheet(context, site.id, site.firmId);
-          } else if (tabIndex == 2) {
+          } else if (tabIndex == 1) {
             // Live Document Upload Form sheet!
             _openDocumentUploadSheet(context, site.id, site.firmId);
           } else {
@@ -699,182 +679,217 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     );
   }
 
-  Widget _buildOverviewTab(Site site, bool isDarkMode) {
+  Widget _buildSettingsTab(Site site, Color baseColor) {
+    final theme = Theme.of(context);
+
+    // Initialize editing controllers lazily
+    _nameEditController ??= TextEditingController(text: site.name);
+    _descEditController ??= TextEditingController(text: site.description ?? '');
+    _selectedStartDate ??= site.startedOn ?? DateTime.now();
+    _statusEditValue ??= site.status;
+
+    final isEditable = site.status == 'active';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Project details card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          // 1. Locked Banner Alert
+          if (!isEditable) ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.errorContainer,
+                borderRadius: AppRadius.brSm,
+                border: Border.all(
+                  color: theme.colorScheme.error.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Row(
                 children: [
-                  Text(
-                    'About Project',
-                    style: Theme.of(context).textTheme.titleMedium,
+                  Icon(
+                    site.status == 'completed' ? Icons.lock_rounded : Icons.delete_forever_rounded,
+                    color: theme.colorScheme.onErrorContainer,
+                    size: 24,
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    site.description ??
-                        'No description provided for this site.',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: site.description == null ? Colors.grey : null,
-                      height: 1.5,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      site.status == 'completed'
+                          ? 'This project is marked as COMPLETED. Its settings and status are locked and cannot be modified.'
+                          : 'This project is marked as DELETED. All settings are locked in read-only archive mode.',
+                      style: TextStyle(
+                        color: theme.colorScheme.onErrorContainer,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          // Timeline and Details Grid
+            const SizedBox(height: 20),
+          ],
+
+          // 2. Main Form Card
           Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              side: BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
+              borderRadius: AppRadius.brMd,
+            ),
             child: Padding(
               padding: const EdgeInsets.all(20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Timelines & Info',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    'Site/Project Configuration',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: baseColor,
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  _infoRow(
-                    Icons.play_arrow_rounded,
-                    'Started On',
-                    site.startedOn != null
-                        ? site.startedOn!.toReadableString()
-                        : 'Not started yet',
+                  const SizedBox(height: 20),
+
+                  // Site Name Input
+                  TextFormField(
+                    controller: _nameEditController,
+                    enabled: isEditable,
+                    decoration: const InputDecoration(
+                      labelText: 'Site/Project Name *',
+                      prefixIcon: Icon(Icons.domain_rounded),
+                    ),
                   ),
-                  const Divider(height: 24, thickness: 0.5),
-                  _infoRow(
-                    Icons.check_circle_outline_rounded,
-                    'Completed On',
-                    site.completedOn != null
-                        ? site.completedOn!.toReadableString()
-                        : 'Active (In progress)',
+                  const SizedBox(height: 20),
+
+                  // Site Description Input
+                  TextFormField(
+                    controller: _descEditController,
+                    enabled: isEditable,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Site/Project Description',
+                      prefixIcon: Icon(Icons.description_rounded),
+                      alignLabelWithHint: true,
+                    ),
                   ),
-                  const Divider(height: 24, thickness: 0.5),
-                  _infoRow(
-                    Icons.domain_rounded,
-                    'Parent Firm',
-                    _getFirmName(site.firmId),
-                  ),
-                  const Divider(height: 24, thickness: 0.5),
-                  _infoRow(Icons.fingerprint_rounded, 'Site UUID', site.id),
-                  const Divider(height: 24, thickness: 0.5),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline_rounded,
-                            size: 20,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withValues(alpha: 0.7),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Status',
-                                style: Theme.of(context).textTheme.bodyMedium
-                                    ?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                    ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                'Current site status',
-                                style: Theme.of(context).textTheme.labelSmall
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                    ),
-                              ),
-                            ],
-                          ),
-                        ],
+                  const SizedBox(height: 20),
+
+                  // Site Start Date Input
+                  Container(
+                    decoration: BoxDecoration(
+                      color: isEditable
+                          ? Colors.transparent
+                          : theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.5),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant,
                       ),
-                      ActionChip(
-                        avatar: const Icon(Icons.circle, size: 8),
-                        label: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              _currentStatus.toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            const Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              size: 12,
-                            ),
-                          ],
+                      borderRadius: AppRadius.brXs,
+                    ),
+                    child: ListTile(
+                      enabled: isEditable,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      title: Text(
+                        'Project Start Date',
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.bold,
                         ),
-                        onPressed: () =>
-                            _showStatusUpdateDialog(context, site.firmId),
+                      ),
+                      subtitle: Text(
+                        _selectedStartDate!.toReadableString(),
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      leading: Icon(
+                        Icons.calendar_today_rounded,
+                        color: isEditable ? baseColor : theme.colorScheme.onSurfaceVariant,
+                      ),
+                      trailing: isEditable ? const Icon(Icons.edit_calendar_rounded) : null,
+                      onTap: isEditable ? () => _selectStartDate(context) : null,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Status Dropdown
+                  DropdownButtonFormField<String>(
+                    value: _statusEditValue,
+                    decoration: const InputDecoration(
+                      labelText: 'Operational Status',
+                      prefixIcon: Icon(Icons.info_outline_rounded),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'active',
+                        child: Text('Active (In Progress)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'completed',
+                        child: Text('Completed (Locked)'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'deleted',
+                        child: Text('Deleted (Soft-Deleted & Locked)'),
                       ),
                     ],
+                    onChanged: isEditable
+                        ? (val) {
+                            if (val != null) {
+                              setState(() {
+                                _statusEditValue = val;
+                              });
+                            }
+                          }
+                        : null,
                   ),
                 ],
               ),
             ),
           ),
+          const SizedBox(height: 24),
+
+          // 3. Save Button
+          if (isEditable)
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: _isSaving ? null : () => _saveSiteSettings(site.id),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: baseColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppRadius.brSm,
+                  ),
+                ),
+                icon: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.save_rounded),
+                iconAlignment: IconAlignment.start,
+                label: const Text(
+                  'SAVE SITE CONFIGURATION',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 
-  Widget _infoRow(IconData icon, String title, String value) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.7),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.color?.withValues(alpha: 0.5),
-                  fontSize: 12,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildExpensesTab(Site site, Color baseColor) {
     final expensesAsync = ref.watch(filteredSiteExpensesProvider(site.id));

@@ -47,4 +47,32 @@ class SiteRepository extends BaseRepository {
       return Site.fromJson(response);
     });
   }
+
+  /// Updates a site's details in Supabase.
+  Future<Site> updateSite({
+    required String siteId,
+    required String name,
+    String? description,
+    required DateTime startedOn,
+    required String status,
+    DateTime? completedOn,
+  }) {
+    return safeCall('SiteRepository.updateSite', () async {
+      final response = await client
+          .from('sites')
+          .update({
+            'name': name,
+            'description': description,
+            'started_on': '${startedOn.year}-${startedOn.month.toString().padLeft(2, '0')}-${startedOn.day.toString().padLeft(2, '0')}',
+            'status': status,
+            'completed_on': completedOn != null
+                ? '${completedOn.year}-${completedOn.month.toString().padLeft(2, '0')}-${completedOn.day.toString().padLeft(2, '0')}'
+                : null,
+          })
+          .eq('id', siteId)
+          .select()
+          .single();
+      return Site.fromJson(response);
+    });
+  }
 }
