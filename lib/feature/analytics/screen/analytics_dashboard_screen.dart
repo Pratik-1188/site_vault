@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:site_vault/feature/analytics/model/analytics_models.dart';
 import 'package:site_vault/feature/analytics/provider/analytics_provider.dart';
+import 'package:site_vault/shared/widget/button_group.dart';
 
 /// Central analytics hub screen showing Group (All Firms) and Firm comparative cost statistics.
 class AnalyticsDashboardScreen extends ConsumerStatefulWidget {
@@ -142,26 +143,23 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
     );
   }
 
-  /// Segmented Sliding Scope controller
+  /// Premium sliding ButtonGroup Scope selector
   Widget _buildScopeSelector() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: SizedBox(
-        width: double.infinity,
-        child: SegmentedButton<int>(
-          segments: const <ButtonSegment<int>>[
-            ButtonSegment<int>(value: 0, label: Text('All Firms', style: TextStyle(fontSize: 12))),
-            ButtonSegment<int>(value: 1, label: Text('Electricals', style: TextStyle(fontSize: 12))),
-            ButtonSegment<int>(value: 2, label: Text('Solar', style: TextStyle(fontSize: 12))),
-            ButtonSegment<int>(value: 3, label: Text('Associates', style: TextStyle(fontSize: 12))),
-          ],
-          selected: <int>{_selectedScopeIndex},
-          onSelectionChanged: (Set<int> newSelection) {
-            setState(() {
-              _selectedScopeIndex = newSelection.first;
-            });
-          },
-        ),
+      child: ButtonGroup<int>(
+        options: const [
+          ButtonGroupOption<int>(value: 0, label: 'All Firms'),
+          ButtonGroupOption<int>(value: 1, label: 'Electricals'),
+          ButtonGroupOption<int>(value: 2, label: 'Solar'),
+          ButtonGroupOption<int>(value: 3, label: 'Associates'),
+        ],
+        selectedValue: _selectedScopeIndex,
+        onSelected: (int newValue) {
+          setState(() {
+            _selectedScopeIndex = newValue;
+          });
+        },
       ),
     );
   }

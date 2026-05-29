@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/financial_year.dart';
+import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
@@ -483,79 +484,23 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
   Widget _buildSegmentedButton(BuildContext context, String? selectedFirm) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      child: Container(
-        height: 48,
-        decoration: BoxDecoration(
-          border: Border.all(color: Theme.of(context).colorScheme.primary),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Row(
-          children: [
-            _buildSegmentItem(
-              context,
-              label: 'Electricals',
-              value: '0f140f6f-d994-4695-a838-bee13b3802f1',
-              selectedValue: selectedFirm,
-            ),
-            VerticalDivider(
-              width: 1,
-              thickness: 1,
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.2),
-            ),
-            _buildSegmentItem(
-              context,
-              label: 'Associates',
-              value: '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3',
-              selectedValue: selectedFirm,
-            ),
-            VerticalDivider(
-              width: 1,
-              thickness: 1,
-              color: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.2),
-            ),
-            _buildSegmentItem(
-              context,
-              label: 'Solar',
-              value: '4e01a36a-87c0-4cca-9428-a2747a130c96',
-              selectedValue: selectedFirm,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSegmentItem(
-    BuildContext context, {
-    required String label,
-    required String value,
-    required String? selectedValue,
-  }) {
-    final isSelected =
-        selectedValue == value ||
-        (selectedValue == null &&
-            value == '0f140f6f-d994-4695-a838-bee13b3802f1');
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    return Expanded(
-      child: InkWell(
-        onTap: () => _onFirmChanged(value),
-        child: Container(
-          color: isSelected ? primaryColor : Colors.transparent,
-          alignment: Alignment.center,
-          child: Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: isSelected ? Colors.white : primaryColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+      child: ButtonGroup<String>(
+        options: const [
+          ButtonGroupOption<String>(
+            label: 'Electricals',
+            value: '0f140f6f-d994-4695-a838-bee13b3802f1',
           ),
-        ),
+          ButtonGroupOption<String>(
+            label: 'Associates',
+            value: '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3',
+          ),
+          ButtonGroupOption<String>(
+            label: 'Solar',
+            value: '4e01a36a-87c0-4cca-9428-a2747a130c96',
+          ),
+        ],
+        selectedValue: selectedFirm ?? '0f140f6f-d994-4695-a838-bee13b3802f1',
+        onSelected: _onFirmChanged,
       ),
     );
   }

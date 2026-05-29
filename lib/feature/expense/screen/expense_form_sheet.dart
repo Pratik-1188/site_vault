@@ -8,6 +8,7 @@ import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
+import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/feature/site/provider/site_provider.dart';
 import 'package:site_vault/feature/site/model/site.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
@@ -739,34 +740,16 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                 ),
                           ),
                           const SizedBox(height: 8),
-                          SegmentedButton<double>(
-                            segments: const [
-                              ButtonSegment<double>(
-                                value: 5.0,
-                                label: Text('5%'),
-                              ),
-                              ButtonSegment<double>(
-                                value: 12.0,
-                                label: Text('12%'),
-                              ),
-                              ButtonSegment<double>(
-                                value: 18.0,
-                                label: Text('18%'),
-                              ),
-                              ButtonSegment<double>(
-                                value: 28.0,
-                                label: Text('28%'),
-                              ),
-                              ButtonSegment<double>(
-                                value: -1.0,
-                                label: Text('Custom'),
-                              ),
+                          ButtonGroup<double>(
+                            options: const [
+                              ButtonGroupOption<double>(value: 5.0, label: '5%'),
+                              ButtonGroupOption<double>(value: 12.0, label: '12%'),
+                              ButtonGroupOption<double>(value: 18.0, label: '18%'),
+                              ButtonGroupOption<double>(value: 28.0, label: '28%'),
+                              ButtonGroupOption<double>(value: -1.0, label: 'Custom'),
                             ],
-                            selected: {
-                              _isCustomGst ? -1.0 : _selectedGstPercentage,
-                            },
-                            onSelectionChanged: (Set<double> newSelection) {
-                              final val = newSelection.first;
+                            selectedValue: _isCustomGst ? -1.0 : _selectedGstPercentage,
+                            onSelected: (double val) {
                               setState(() {
                                 if (val == -1.0) {
                                   _isCustomGst = true;
@@ -782,7 +765,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                 _calculateGst();
                               });
                             },
-                            showSelectedIcon: false,
                           ),
                           if (_isCustomGst) ...[
                             const SizedBox(height: 12),
