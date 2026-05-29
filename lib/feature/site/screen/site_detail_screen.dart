@@ -17,6 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import '../model/site.dart';
+import '../provider/site_provider.dart';
 
 /// A premium, highly polished Material 3 screen that displays comprehensive
 /// details for a specific project site.
@@ -302,12 +303,57 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   Widget build(BuildContext context) {
     final site = widget.site;
     if (site == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Loading Details...')),
-        body: const Center(child: CircularProgressIndicator()),
+      final siteAsync = ref.watch(siteDetailsProvider(widget.siteId));
+      return siteAsync.when(
+        loading: () => Scaffold(
+          appBar: AppBar(
+            centerTitle: false,
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            scrolledUnderElevation: 0,
+            leading: IconButton(
+              icon: Icon(
+                Icons.arrow_back_rounded,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              onPressed: () => context.pop(),
+              tooltip: 'Back to Dashboard',
+            ),
+            title: const Text('Loading Details...'),
+          ),
+          body: const Center(child: CircularProgressIndicator()),
+        ),
+        error: (err, stack) => Scaffold(
+          appBar: AppBar(
+            centerTitle: false,
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            scrolledUnderElevation: 0,
+            leading: IconButton(
+              icon: Icon(
+                Icons.arrow_back_rounded,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+              onPressed: () => context.pop(),
+              tooltip: 'Back to Dashboard',
+            ),
+            title: const Text('Error'),
+          ),
+          body: Center(child: Text('Error loading site details: $err')),
+        ),
+        data: (fetchedSite) {
+          if (_currentStatus != fetchedSite.status) {
+            _currentStatus = fetchedSite.status;
+          }
+          return _buildMainContent(context, fetchedSite);
+        },
       );
     }
 
+    return _buildMainContent(context, site);
+  }
+
+  Widget _buildMainContent(BuildContext context, Site site) {
     final baseColor = Theme.of(context).colorScheme.primary;
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 

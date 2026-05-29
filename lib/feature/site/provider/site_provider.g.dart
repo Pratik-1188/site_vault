@@ -327,3 +327,81 @@ final class SitesProvider
 }
 
 String _$sitesHash() => r'859dd9f367f8e7cb19e3bd229e3474d17deb02a9';
+
+/// Fetches details for a single site by its unique ID
+
+@ProviderFor(siteDetails)
+final siteDetailsProvider = SiteDetailsFamily._();
+
+/// Fetches details for a single site by its unique ID
+
+final class SiteDetailsProvider
+    extends $FunctionalProvider<AsyncValue<Site>, Site, FutureOr<Site>>
+    with $FutureModifier<Site>, $FutureProvider<Site> {
+  /// Fetches details for a single site by its unique ID
+  SiteDetailsProvider._({
+    required SiteDetailsFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'siteDetailsProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$siteDetailsHash();
+
+  @override
+  String toString() {
+    return r'siteDetailsProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $FutureProviderElement<Site> $createElement($ProviderPointer pointer) =>
+      $FutureProviderElement(pointer);
+
+  @override
+  FutureOr<Site> create(Ref ref) {
+    final argument = this.argument as String;
+    return siteDetails(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is SiteDetailsProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$siteDetailsHash() => r'e824e89c0d720f1031e71c512ecad30b36fa0996';
+
+/// Fetches details for a single site by its unique ID
+
+final class SiteDetailsFamily extends $Family
+    with $FunctionalFamilyOverride<FutureOr<Site>, String> {
+  SiteDetailsFamily._()
+    : super(
+        retry: null,
+        name: r'siteDetailsProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  /// Fetches details for a single site by its unique ID
+
+  SiteDetailsProvider call(String siteId) =>
+      SiteDetailsProvider._(argument: siteId, from: this);
+
+  @override
+  String toString() => r'siteDetailsProvider';
+}

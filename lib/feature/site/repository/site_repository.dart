@@ -38,4 +38,13 @@ class SiteRepository extends BaseRepository {
       return (response as List).map((e) => Site.fromJson(e)).toList();
     });
   }
+
+  /// Fetches a single site by its unique ID directly from Supabase.
+  Future<Site> fetchSiteById(String siteId) {
+    return safeCall('SiteRepository.fetchSiteById', () async {
+      final response =
+          await client.from('sites').select().eq('id', siteId).single();
+      return Site.fromJson(response);
+    });
+  }
 }

@@ -101,3 +101,10 @@ Future<List<Site>> sites(Ref ref) async {
     searchQuery: searchQuery.isNotEmpty ? searchQuery : null,
   );
 }
+
+/// Fetches details for a single site by its unique ID
+@riverpod
+Future<Site> siteDetails(Ref ref, String siteId) async {
+  final repo = ref.watch(siteRepositoryProvider);
+  return repo.fetchSiteById(siteId);
+}
