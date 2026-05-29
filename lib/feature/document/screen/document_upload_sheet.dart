@@ -144,8 +144,10 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
             _pickedMimeType = null;
           }
 
-          // Pre-fill the custom file name controller with the picked file's name
-          _fileNameController.text = file.name;
+          // Pre-fill the custom file name controller with the picked file's name only if it's currently empty
+          if (_fileNameController.text.trim().isEmpty) {
+            _fileNameController.text = file.name;
+          }
         });
       }
     } catch (e) {

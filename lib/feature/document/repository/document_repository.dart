@@ -47,4 +47,22 @@ class DocumentRepository extends BaseRepository {
           .eq('id', documentId);
     });
   }
+
+  /// Updates the metadata (file_name, description) of a document record.
+  Future<SiteDocument> updateDocument(SiteDocument document) {
+    return safeCall('DocumentRepository.updateDocument', () async {
+      final response = await client
+          .from('documents')
+          .update({
+            'file_name': document.fileName,
+            'description': document.description,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', document.id)
+          .select('*, profiles(*)')
+          .single();
+
+      return SiteDocument.fromJson(response);
+    });
+  }
 }

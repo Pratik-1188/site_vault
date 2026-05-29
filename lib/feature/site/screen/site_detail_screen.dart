@@ -1292,6 +1292,120 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     }
   }
 
+  /// Displays a premium dialog allowing users to edit a document's filename and description.
+  Future<void> _showEditDocumentDialog(
+    BuildContext context,
+    SiteDocument doc,
+  ) async {
+    final formKey = GlobalKey<FormState>();
+    final fileNameController = TextEditingController(text: doc.fileName);
+    final descriptionController = TextEditingController(text: doc.description ?? '');
+
+    final edited = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final theme = Theme.of(context);
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.brMd),
+          title: Text(
+            'Edit Document Details',
+            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          content: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: fileNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'File Name *',
+                      prefixIcon: Icon(Icons.title_rounded),
+                    ),
+                    textCapitalization: TextCapitalization.sentences,
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'File Name is required';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: descriptionController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Description / Details',
+                      prefixIcon: Icon(Icons.description_rounded),
+                    ),
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('CANCEL'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.pop(context, true);
+                }
+              },
+              child: const Text('SAVE'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (edited == true && context.mounted) {
+      try {
+        final updatedDoc = SiteDocument(
+          id: doc.id,
+          siteId: doc.siteId,
+          createdBy: doc.createdBy,
+          fileName: fileNameController.text.trim(),
+          description: descriptionController.text.trim().isEmpty
+              ? null
+              : descriptionController.text.trim(),
+          fileUrl: doc.fileUrl,
+          createdAt: doc.createdAt,
+          updatedAt: DateTime.now(),
+        );
+
+        await ref
+            .read(siteDocumentsProvider(widget.siteId).notifier)
+            .editDocument(updatedDoc);
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Document updated successfully'),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } catch (e) {
+        if (context.mounted) {
+          final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(cleanMessage),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   /// Confirms and deletes a document (soft-deletes)
   Future<void> _confirmDeleteDocument(
     BuildContext context,
@@ -1482,11 +1596,23 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                             icon: const Icon(Icons.more_vert_rounded, size: 20),
                             splashRadius: 20,
                             onSelected: (action) {
-                              if (action == 'delete') {
+                              if (action == 'edit') {
+                                _showEditDocumentDialog(context, doc);
+                              } else if (action == 'delete') {
                                 _confirmDeleteDocument(context, doc);
                               }
                             },
                             itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                value: 'edit',
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.edit_rounded, size: 16),
+                                    SizedBox(width: 8),
+                                    Text('Edit Details'),
+                                  ],
+                                ),
+                              ),
                               const PopupMenuItem(
                                 value: 'delete',
                                 child: Row(

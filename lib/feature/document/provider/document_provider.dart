@@ -55,6 +55,13 @@ class SiteDocuments extends _$SiteDocuments {
     await repo.softDeleteDocument(documentId);
     ref.invalidateSelf(); // Reactively refetches updated files
   }
+
+  /// Edits an existing document and reactively invalidates cache
+  Future<void> editDocument(SiteDocument document) async {
+    final repo = ref.read(documentRepositoryProvider);
+    await repo.updateDocument(document);
+    ref.invalidateSelf(); // Reactively refetches updated files
+  }
 }
 
 /// Filtered site documents selector combining raw list with active filename searches
