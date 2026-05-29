@@ -13,7 +13,7 @@ class ExpenseRepository extends BaseRepository {
     return safeCall('ExpenseRepository.fetchExpensesForSite', () async {
       final response = await client
           .from('expenses')
-          .select('*, expense_categories(*), vendors(*), created_by_profile:profiles!created_by(*), paid_by_profile:profiles!paid_by(*)')
+          .select('*, expense_categories(*), vendors(*), created_by_profile:profiles!created_by(*)')
           .eq('site_id', siteId)
           .isFilter('soft_deleted_at', null)
           .order('expense_date', ascending: false);
@@ -34,7 +34,7 @@ class ExpenseRepository extends BaseRepository {
       final response = await client
           .from('expenses')
           .insert(data)
-          .select('*, expense_categories(*), vendors(*), created_by_profile:profiles!created_by(*), paid_by_profile:profiles!paid_by(*)')
+          .select('*, expense_categories(*), vendors(*), created_by_profile:profiles!created_by(*)')
           .single();
 
       return Expense.fromJson(response);
@@ -48,7 +48,7 @@ class ExpenseRepository extends BaseRepository {
           .from('expenses')
           .update(expense.toJson())
           .eq('id', expense.id)
-          .select('*, expense_categories(*), vendors(*), created_by_profile:profiles!created_by(*), paid_by_profile:profiles!paid_by(*)')
+          .select('*, expense_categories(*), vendors(*), created_by_profile:profiles!created_by(*)')
           .single();
 
       return Expense.fromJson(response);

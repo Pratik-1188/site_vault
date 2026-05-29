@@ -59,7 +59,7 @@ This is the simple behavior map for the current Supabase database.
 
 - Each expense belongs to one site and one firm.
 - The database enforces that the site and firm match through a composite foreign key.
-- `created_by` and `paid_by` reference `profiles`.
+- `created_by` references `profiles`.
 - Deleting a site deletes related expenses.
 - `amount` must be greater than `0`.
 - `gst_percentage`, when present, must be between `0` and `100`.

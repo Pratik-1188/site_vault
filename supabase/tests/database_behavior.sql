@@ -448,10 +448,10 @@ BEGIN
     VALUES (temp_site_2, temp_firm, 'Temp Site D', CURRENT_DATE, 'active');
 
     INSERT INTO expenses (
-      id, firm_id, site_id, created_by, paid_by, title, expense_date,
+      id, firm_id, site_id, created_by, title, expense_date,
       amount, payment_mode, is_refundable
     ) VALUES (
-      temp_expense, temp_firm, temp_site_2, txn_user_id, txn_user_id,
+      temp_expense, temp_firm, temp_site_2, txn_user_id,
       'Temp Expense D', CURRENT_DATE, 100, 'cash', false
     );
 
@@ -538,9 +538,9 @@ BEGIN
   BEGIN
     BEGIN
       INSERT INTO expenses (
-        firm_id, site_id, created_by, paid_by, title, expense_date, amount, payment_mode, is_refundable
+        firm_id, site_id, created_by, title, expense_date, amount, payment_mode, is_refundable
       ) VALUES (
-        temp_firm, temp_site, txn_user_id, txn_user_id,
+        temp_firm, temp_site, txn_user_id,
         'Zero Expense', CURRENT_DATE, 0, 'cash', false
       );
       INSERT INTO test_results VALUES (seq, 'expenses', 'amount must be greater than zero', false, 'amount = 0 unexpectedly succeeded');
@@ -558,9 +558,9 @@ BEGIN
   BEGIN
     BEGIN
       INSERT INTO expenses (
-        firm_id, site_id, created_by, paid_by, title, expense_date, amount, payment_mode, is_refundable
+        firm_id, site_id, created_by, title, expense_date, amount, payment_mode, is_refundable
       ) VALUES (
-        temp_firm, temp_site, txn_user_id, txn_user_id,
+        temp_firm, temp_site, txn_user_id,
         '  a ', CURRENT_DATE, 100, 'cash', false
       );
       INSERT INTO test_results VALUES (seq, 'expenses', 'title must be longer than two trimmed characters', false, 'short title unexpectedly succeeded');
@@ -578,9 +578,9 @@ BEGIN
   BEGIN
     BEGIN
       INSERT INTO expenses (
-        firm_id, site_id, created_by, paid_by, title, expense_date, amount, gst_percentage, payment_mode, is_refundable
+        firm_id, site_id, created_by, title, expense_date, amount, gst_percentage, payment_mode, is_refundable
       ) VALUES (
-        temp_firm, temp_site, txn_user_id, txn_user_id,
+        temp_firm, temp_site, txn_user_id,
         'Bad GST', CURRENT_DATE, 100, 101, 'cash', false
       );
       INSERT INTO test_results VALUES (seq, 'expenses', 'GST percentage must stay within 0 to 100', false, 'gst_percentage > 100 unexpectedly succeeded');
@@ -598,11 +598,10 @@ BEGIN
   BEGIN
     BEGIN
       INSERT INTO expenses (
-        firm_id, site_id, created_by, paid_by, title, expense_date, amount, payment_mode, is_refundable
+        firm_id, site_id, created_by, title, expense_date, amount, payment_mode, is_refundable
       ) VALUES (
         (SELECT id FROM firms WHERE id <> temp_firm LIMIT 1),
         temp_site,
-        txn_user_id,
         txn_user_id,
         'Mismatch',
         CURRENT_DATE,
@@ -620,25 +619,25 @@ BEGIN
       INSERT INTO test_results VALUES (seq, 'expenses', 'site and firm must match through the composite foreign key', false, SQLERRM);
   END;
 
-  -- Table: expenses | Test: created_by and paid_by must reference profiles
+  -- Table: expenses | Test: created_by must reference profiles
   seq := seq + 1;
   BEGIN
     BEGIN
       INSERT INTO expenses (
-        firm_id, site_id, created_by, paid_by, title, expense_date, amount, payment_mode, is_refundable
+        firm_id, site_id, created_by, title, expense_date, amount, payment_mode, is_refundable
       ) VALUES (
         temp_firm, temp_site,
-        gen_random_uuid(), gen_random_uuid(),
+        gen_random_uuid(),
         'Bad Profiles', CURRENT_DATE, 100, 'cash', false
       );
-      INSERT INTO test_results VALUES (seq, 'expenses', 'created_by and paid_by must reference profiles', false, 'invalid profile ids unexpectedly succeeded');
+      INSERT INTO test_results VALUES (seq, 'expenses', 'created_by must reference profiles', false, 'invalid profile ids unexpectedly succeeded');
     EXCEPTION
       WHEN foreign_key_violation THEN
-        INSERT INTO test_results VALUES (seq, 'expenses', 'created_by and paid_by must reference profiles', true, NULL);
+        INSERT INTO test_results VALUES (seq, 'expenses', 'created_by must reference profiles', true, NULL);
     END;
   EXCEPTION
     WHEN others THEN
-      INSERT INTO test_results VALUES (seq, 'expenses', 'created_by and paid_by must reference profiles', false, SQLERRM);
+      INSERT INTO test_results VALUES (seq, 'expenses', 'created_by must reference profiles', false, SQLERRM);
   END;
 
   -- Table: expenses | Test: updated_at changes when an expense is updated
@@ -646,10 +645,10 @@ BEGIN
   BEGIN
     temp_expense := gen_random_uuid();
     INSERT INTO expenses (
-      id, firm_id, site_id, created_by, paid_by, title, expense_date, amount, payment_mode, is_refundable,
+      id, firm_id, site_id, created_by, title, expense_date, amount, payment_mode, is_refundable,
       created_at, updated_at
     ) VALUES (
-      temp_expense, temp_firm, temp_site, txn_user_id, txn_user_id,
+      temp_expense, temp_firm, temp_site, txn_user_id,
       'Expense Update', CURRENT_DATE, 100, 'cash', false,
       TIMESTAMPTZ '2000-01-01 00:00:00+00', TIMESTAMPTZ '2000-01-01 00:00:00+00'
     );
@@ -675,9 +674,9 @@ BEGIN
     temp_expense := gen_random_uuid();
 
     INSERT INTO expenses (
-      id, firm_id, site_id, created_by, paid_by, title, expense_date, amount, payment_mode, is_refundable, attachment_path
+      id, firm_id, site_id, created_by, title, expense_date, amount, payment_mode, is_refundable, attachment_path
     ) VALUES (
-      temp_expense, temp_firm, temp_site, txn_user_id, txn_user_id,
+      temp_expense, temp_firm, temp_site, txn_user_id,
       'Attachment Expense', CURRENT_DATE, 100, 'cash', false, 'https://example.com/file.pdf'
     );
 
@@ -820,10 +819,10 @@ BEGIN
     INSERT INTO vendors (name) VALUES (temp_vendor_name);
 
     INSERT INTO expenses (
-      firm_id, site_id, created_by, paid_by, title, expense_date,
+      firm_id, site_id, created_by, title, expense_date,
       amount, category_id, vendor_id, payment_mode, is_refundable
     ) VALUES (
-      temp_firm, temp_site, analytics_user_id, analytics_user_id,
+      temp_firm, temp_site, analytics_user_id,
       'Analytics Expense 1', CURRENT_DATE, 100,
       (SELECT id FROM expense_categories WHERE name = temp_category_name),
       (SELECT id FROM vendors WHERE name = temp_vendor_name),
@@ -849,10 +848,10 @@ BEGIN
   seq := seq + 1;
   BEGIN
     INSERT INTO expenses (
-      firm_id, site_id, created_by, paid_by, title, expense_date,
+      firm_id, site_id, created_by, title, expense_date,
       amount, category_id, vendor_id, payment_mode, is_refundable
     ) VALUES (
-      temp_firm, temp_site, analytics_user_id, analytics_user_id,
+      temp_firm, temp_site, analytics_user_id,
       'Analytics Expense 2', CURRENT_DATE, 50,
       (SELECT id FROM expense_categories WHERE name = temp_category_name),
       (SELECT id FROM vendors WHERE name = temp_vendor_name),

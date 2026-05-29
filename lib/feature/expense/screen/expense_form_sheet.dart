@@ -53,7 +53,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
   String? _selectedCategoryId;
   String? _selectedVendorId;
-  String? _selectedPaidBy;
 
   // Firm & Site dynamic selection state
   String? _selectedFirmId;
@@ -94,7 +93,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
     _selectedCategoryId = expense?.categoryId;
     _selectedVendorId = expense?.vendorId;
-    _selectedPaidBy = expense?.paidBy;
 
     // Firm & Site context selection (locked if both firmId and siteId are provided)
     _selectedFirmId =
@@ -371,16 +369,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       return;
     }
 
-    if (_selectedPaidBy == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select who Paid for the expense.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
-      return;
-    }
-
     setState(() {
       _isUploading = true;
     });
@@ -409,7 +397,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
         firmId: _selectedFirmId!,
         siteId: _selectedSiteId!,
         createdBy: currentUserId, // Bind creator user ID behind the scenes
-        paidBy: _selectedPaidBy!,
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
             ? null
@@ -490,7 +477,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     final firmsAsync = ref.watch(firmsProvider);
     final categoriesAsync = ref.watch(expenseCategoriesProvider);
     final vendorsAsync = ref.watch(vendorsProvider);
-    final profilesAsync = ref.watch(profilesProvider);
 
     return BackdropFilter(
       filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
@@ -867,34 +853,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                 ),
                           ),
                           const SizedBox(height: 16),
-                          profilesAsync.when(
-                            loading: () => const LinearProgressIndicator(),
-                            error: (e, _) => Text('Error loading profiles: $e'),
-                            data: (profiles) {
-                              if (profiles.isNotEmpty) {
-                                _selectedPaidBy ??= profiles.first.id;
-                              }
 
-                              return DropdownButtonFormField<String>(
-                                initialValue: _selectedPaidBy,
-                                decoration: const InputDecoration(
-                                  labelText: 'Paid By',
-                                  prefixIcon: Icon(Icons.person_rounded),
-                                ),
-                                items: profiles.map((p) {
-                                  return DropdownMenuItem(
-                                    value: p.id,
-                                    child: Text(p.displayName),
-                                  );
-                                }).toList(),
-                                onChanged: (val) =>
-                                    setState(() => _selectedPaidBy = val),
-                                validator: (val) =>
-                                    val == null ? 'Paid By is required' : null,
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 16),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [

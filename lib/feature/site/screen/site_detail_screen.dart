@@ -311,11 +311,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                 ),
                 const SizedBox(height: 8),
                 _dialogSplitRow(
-                  'Paid By',
-                  expense.paidByProfile?.displayName ?? 'Staff',
-                ),
-                const SizedBox(height: 8),
-                _dialogSplitRow(
                   'Created By',
                   expense.createdByProfile?.displayName ?? 'Staff',
                 ),

@@ -107,7 +107,6 @@ firm_id UUID NOT NULL,
 site_id UUID NOT NULL,
 
 created_by UUID NOT NULL REFERENCES profiles(id),
-paid_by UUID NOT NULL REFERENCES profiles(id),
 
 title TEXT NOT NULL,
 description TEXT,

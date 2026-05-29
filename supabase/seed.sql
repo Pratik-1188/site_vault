@@ -141,7 +141,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ########################################################
 
 INSERT INTO public.expenses (
-    id, firm_id, site_id, created_by, paid_by, title, description, 
+    id, firm_id, site_id, created_by, title, description, 
     expense_date, category_id, vendor_id, amount, gst_percentage, gst_amount, 
     payment_mode, is_refundable
 )
@@ -151,7 +151,6 @@ VALUES
         'e1111111-1111-1111-1111-111111111111',
         '0f140f6f-d994-4695-a838-bee13b3802f1',
         'b817c1bf-3fb8-410a-8bf8-d65239a5de62',
-        'd3b07384-d113-4ec5-a50d-8d4e9ad2c2e0',
         'd3b07384-d113-4ec5-a50d-8d4e9ad2c2e0',
         'Electrical Cable Supply',
         'Heavy-duty copper conduit cable reels for main terminal feeds',
@@ -168,7 +167,6 @@ VALUES
         'e2222222-2222-2222-2222-222222222222',
         '0f140f6f-d994-4695-a838-bee13b3802f1',
         'b817c1bf-3fb8-410a-8bf8-d65239a5de62',
-        'd3b07384-d113-4ec5-a50d-8d4e9ad2c2e0',
         'd3b07384-d113-4ec5-a50d-8d4e9ad2c2e0',
         'Site Helper Wages',
         'Daily wage distribution for helper assistance on cabling layout',
@@ -188,7 +186,6 @@ VALUES
         '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3',
         'c928d2cf-4fc9-420b-9cf9-e76340b6df73',
         'd3b07384-d113-4ec5-a50d-8d4e9ad2c2e0',
-        'd3b07384-d113-4ec5-a50d-8d4e9ad2c2e0',
         'Topographic Survey Permit',
         'Municipal planning council fee for aerial bypass survey authorization',
         '2026-03-05',
@@ -204,7 +201,6 @@ VALUES
         'e4444444-4444-4444-4444-444444444444',
         '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3',
         'c928d2cf-4fc9-420b-9cf9-e76340b6df73',
-        'd3b07384-d113-4ec5-a50d-8d4e9ad2c2e0',
         'd3b07384-d113-4ec5-a50d-8d4e9ad2c2e0',
         'Drafting Software Subscription',
         'Engineering CAD and structural modeling suite license renewals',
@@ -224,7 +220,6 @@ VALUES
         '4e01a36a-87c0-4cca-9428-a2747a130c96',
         'd039e3df-5fd0-430c-adf0-f87451c7e884',
         'd3b07384-d113-4ec5-a50d-8d4e9ad2c2e0',
-        'd3b07384-d113-4ec5-a50d-8d4e9ad2c2e0',
         'Solar Panel Mounting Rails',
         'Galvanized steel structural rails for multi-angle panel mount racks',
         '2026-03-10',
@@ -240,7 +235,6 @@ VALUES
         'e6666666-6666-6666-6666-666666666666',
         '4e01a36a-87c0-4cca-9428-a2747a130c96',
         'd039e3df-5fd0-430c-adf0-f87451c7e884',
-        'd3b07384-d113-4ec5-a50d-8d4e9ad2c2e0',
         'd3b07384-d113-4ec5-a50d-8d4e9ad2c2e0',
         'Excavator Site Rental',
         '3-day rent for trench digger assisting underground layout cabling',

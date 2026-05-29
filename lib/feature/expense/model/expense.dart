@@ -167,7 +167,6 @@ class Expense {
   final String siteId;
 
   final String createdBy;
-  final String paidBy;
 
   final String title;
   final String? description;
@@ -193,7 +192,6 @@ class Expense {
   // Joined relations (optional)
   final ExpenseCategory? category;
   final Vendor? vendor;
-  final Profile? paidByProfile;
   final Profile? createdByProfile;
 
   Expense({
@@ -201,7 +199,6 @@ class Expense {
     required this.firmId,
     required this.siteId,
     required this.createdBy,
-    required this.paidBy,
     required this.title,
     this.description,
     this.attachmentPath,
@@ -218,7 +215,6 @@ class Expense {
     required this.updatedAt,
     this.category,
     this.vendor,
-    this.paidByProfile,
     this.createdByProfile,
   });
 
@@ -228,7 +224,6 @@ class Expense {
       firmId: json['firm_id'] as String,
       siteId: json['site_id'] as String,
       createdBy: json['created_by'] as String,
-      paidBy: json['paid_by'] as String,
       title: json['title'] as String,
       description: json['description'] as String?,
       attachmentPath: json['attachment_path'] as String?,
@@ -259,9 +254,6 @@ class Expense {
       vendor: json['vendors'] != null
           ? Vendor.fromJson(json['vendors'] as Map<String, dynamic>)
           : null,
-      paidByProfile: json['paid_by_profile'] != null
-          ? Profile.fromJson(json['paid_by_profile'] as Map<String, dynamic>)
-          : null,
       createdByProfile: json['created_by_profile'] != null
           ? Profile.fromJson(json['created_by_profile'] as Map<String, dynamic>)
           : null,
@@ -274,7 +266,6 @@ class Expense {
       'firm_id': firmId,
       'site_id': siteId,
       'created_by': createdBy,
-      'paid_by': paidBy,
       'title': title,
       'description': description,
       'attachment_path': attachmentPath,
