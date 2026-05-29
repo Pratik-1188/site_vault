@@ -279,8 +279,6 @@ class Expense {
       'payment_mode': paymentMode.toDbString(),
       'is_refundable': isRefundable,
       'soft_deleted_at': softDeletedAt?.toIso8601String(),
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
     };
   }
 }

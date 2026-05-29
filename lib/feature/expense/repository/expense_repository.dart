@@ -62,7 +62,6 @@ class ExpenseRepository extends BaseRepository {
           .from('expenses')
           .update({
             'soft_deleted_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
           })
           .eq('id', expenseId);
     });

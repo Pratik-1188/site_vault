@@ -42,7 +42,6 @@ class DocumentRepository extends BaseRepository {
           .from('documents')
           .update({
             'soft_deleted_at': DateTime.now().toIso8601String(),
-            'updated_at': DateTime.now().toIso8601String(),
           })
           .eq('id', documentId);
     });
@@ -56,7 +55,6 @@ class DocumentRepository extends BaseRepository {
           .update({
             'file_name': document.fileName,
             'description': document.description,
-            'updated_at': DateTime.now().toIso8601String(),
           })
           .eq('id', document.id)
           .select('*, profiles(*)')

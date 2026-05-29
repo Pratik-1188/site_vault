@@ -80,7 +80,8 @@ CREATE TABLE expense_categories (
 id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 name TEXT NOT NULL,
 is_active BOOLEAN DEFAULT TRUE,
-created_at TIMESTAMPTZ DEFAULT NOW()
+created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE UNIQUE INDEX unique_category_name_lower
 ON expense_categories (LOWER(name));
@@ -91,7 +92,8 @@ id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 name TEXT NOT NULL,
 contact_info TEXT,
 is_active BOOLEAN DEFAULT TRUE,
-created_at TIMESTAMPTZ DEFAULT NOW()
+created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE UNIQUE INDEX unique_vendor_name_lower
 ON vendors (LOWER(name));
@@ -237,6 +239,8 @@ $$;
 CREATE TRIGGER tr_firms_update BEFORE UPDATE ON firms FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER tr_profiles_update BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER tr_sites_update BEFORE UPDATE ON sites FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER tr_expense_categories_update BEFORE UPDATE ON expense_categories FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
+CREATE TRIGGER tr_vendors_update BEFORE UPDATE ON vendors FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER tr_expenses_update BEFORE UPDATE ON expenses FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER tr_documents_update BEFORE UPDATE ON documents FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 CREATE TRIGGER tr_sites_soft_delete_expenses AFTER UPDATE OF status ON sites FOR EACH ROW WHEN (NEW.status = 'deleted' AND OLD.status IS DISTINCT FROM NEW.status) EXECUTE FUNCTION public.handle_site_deleted();
@@ -311,12 +315,15 @@ CREATE TABLE public.audit_logs (
     old_data JSONB,          -- Null on INSERT
     new_data JSONB,          -- Null on DELETE
     changed_by UUID REFERENCES public.profiles(id), -- Tracks your user profile
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Turn on standard index tracking for fast system searching later
 CREATE INDEX idx_audit_table ON public.audit_logs(table_name);
 CREATE INDEX idx_audit_user ON public.audit_logs(changed_by);
+
+CREATE TRIGGER tr_audit_logs_update BEFORE UPDATE ON public.audit_logs FOR EACH ROW EXECUTE FUNCTION handle_updated_at();
 
 CREATE OR REPLACE FUNCTION public.process_audit_log()
 RETURNS TRIGGER AS $$
