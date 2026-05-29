@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/financial_year.dart';
+import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import '../provider/site_provider.dart';
@@ -77,7 +78,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
         return Container(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            borderRadius: AppRadius.verticalMd,
           ),
           child: SafeArea(
             child: Padding(
@@ -340,7 +341,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                 border: Border.all(
                   color: Theme.of(context).colorScheme.outlineVariant,
                 ),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: AppRadius.brSm,
               ),
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: Row(
@@ -561,7 +562,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     final primaryColor = Theme.of(context).colorScheme.primary;
     return InkWell(
       onTap: () => _onStatusChanged(value),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.brSm,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -573,7 +574,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                 ? primaryColor
                 : Theme.of(context).colorScheme.outlineVariant,
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.brSm,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -605,7 +606,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     final dateRange = ref.watch(startedDateRangeProvider);
     return InkWell(
       onTap: () => _showDateFilterBottomSheet(context),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.brSm,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
@@ -613,7 +614,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
           border: Border.all(
             color: Theme.of(context).colorScheme.outlineVariant,
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: AppRadius.brSm,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -648,10 +649,10 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.brSm,
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.brSm,
         onTap: () {
           context.push('/site/${site.id}', extra: site);
         },
@@ -794,7 +795,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
       decoration: BoxDecoration(
         color: bgColor,
-        borderRadius: BorderRadius.circular(8.0),
+        borderRadius: AppRadius.brXs,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

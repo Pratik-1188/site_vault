@@ -6,6 +6,7 @@ import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
 import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
+import 'package:site_vault/shared/theme/app_radius.dart';
 
 /// A premium, M3-styled Operations Dashboard representing the master corporate ledger overview.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -238,7 +239,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         side: BorderSide(
                           color: Theme.of(context).colorScheme.outlineVariant,
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: AppRadius.brSm,
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -296,7 +297,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         side: const BorderSide(
                           color: Color(0xFFFFE082),
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: AppRadius.brSm,
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -369,10 +370,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         side: BorderSide(
                           color: Theme.of(context).colorScheme.outlineVariant,
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: AppRadius.brSm,
                       ),
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: AppRadius.brSm,
                         onTap: () => _openExpenseFormSheet(context),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
@@ -411,10 +412,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         side: BorderSide(
                           color: Theme.of(context).colorScheme.outlineVariant,
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: AppRadius.brSm,
                       ),
                       child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: AppRadius.brSm,
                         onTap: () => _openDocumentUploadSheet(context),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
@@ -490,7 +491,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         side: BorderSide(
                           color: Theme.of(context).colorScheme.outlineVariant,
                         ),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: AppRadius.brXs,
                       ),
                       child: const Padding(
                         padding: EdgeInsets.all(24.0),
@@ -558,7 +559,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             side: BorderSide(
                               color: Theme.of(context).colorScheme.outlineVariant,
                             ),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: AppRadius.brXs,
                           ),
                           child: ListTile(
                             leading: Container(
@@ -566,7 +567,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               height: 40,
                               decoration: BoxDecoration(
                                 color: logBgColor,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: AppRadius.brXs,
                               ),
                               child: Icon(
                                 logIcon,

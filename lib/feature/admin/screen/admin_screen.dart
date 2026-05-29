@@ -6,6 +6,7 @@ import 'package:site_vault/feature/admin/provider/admin_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/shared/model/profile.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
+import 'package:site_vault/shared/theme/app_radius.dart';
 
 /// Central administration settings panel managing Vendors, Categories, and Profiles.
 class AdminScreen extends ConsumerStatefulWidget {
@@ -513,7 +514,7 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
         ),
         child: Material(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: AppRadius.verticalMd,
           child: Padding(
             padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
             child: SafeArea(
@@ -556,7 +557,7 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
                                 side: BorderSide(
                                   color: Theme.of(context).colorScheme.outlineVariant,
                                 ),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: AppRadius.brXs,
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(16.0),
@@ -708,7 +709,7 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
         ),
         child: Material(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: AppRadius.verticalMd,
           child: Padding(
             padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
             child: SafeArea(
@@ -751,7 +752,7 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
                                 side: BorderSide(
                                   color: Theme.of(context).colorScheme.outlineVariant,
                                 ),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: AppRadius.brXs,
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(16.0),
@@ -893,7 +894,7 @@ class _ProfileFormSheetState extends ConsumerState<_ProfileFormSheet> {
         ),
         child: Material(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: AppRadius.verticalMd,
           child: Padding(
             padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
             child: SafeArea(
@@ -936,7 +937,7 @@ class _ProfileFormSheetState extends ConsumerState<_ProfileFormSheet> {
                                 side: BorderSide(
                                   color: Theme.of(context).colorScheme.outlineVariant,
                                 ),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: AppRadius.brXs,
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(16.0),

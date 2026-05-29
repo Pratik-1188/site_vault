@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:site_vault/shared/utils/date_formatter.dart';
+import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/feature/expense/provider/expense_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
@@ -96,7 +97,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                 const SizedBox(height: 24),
                 RadioListTile<String>(
                   title: const Text('Active'),
-                  subtitle: const Text('Site is actively running with ongoing expenses.'),
+                  subtitle: const Text(
+                    'Site is actively running with ongoing expenses.',
+                  ),
                   secondary: const Icon(Icons.play_arrow_rounded),
                   value: 'active',
                   groupValue: _currentStatus,
@@ -115,7 +118,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                 ),
                 RadioListTile<String>(
                   title: const Text('Completed'),
-                  subtitle: const Text('Project is finished. Records are sealed.'),
+                  subtitle: const Text(
+                    'Project is finished. Records are sealed.',
+                  ),
                   secondary: const Icon(Icons.check_circle_outline_rounded),
                   value: 'completed',
                   groupValue: _currentStatus,
@@ -134,7 +139,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                 ),
                 RadioListTile<String>(
                   title: const Text('Deleted'),
-                  subtitle: const Text('Site is deleted. Read-only review mode.'),
+                  subtitle: const Text(
+                    'Site is deleted. Read-only review mode.',
+                  ),
                   secondary: const Icon(Icons.archive_outlined),
                   value: 'deleted',
                   groupValue: _currentStatus,
@@ -299,17 +306,24 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0,
+                              vertical: 4.0,
+                            ),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primaryContainer,
-                              borderRadius: BorderRadius.circular(8.0),
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primaryContainer,
+                              borderRadius: AppRadius.brXs,
                             ),
                             child: Text(
                               _getFirmName(site.firmId).toUpperCase(),
                               style: TextStyle(
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
-                                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onPrimaryContainer,
                               ),
                             ),
                           ),
@@ -326,7 +340,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                                 site.startedOn != null
                                     ? site.startedOn!.toReadableString()
                                     : 'Not started',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 12),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodyMedium?.copyWith(fontSize: 12),
                               ),
                             ],
                           ),
@@ -345,10 +361,14 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                               ),
                             ),
                             const SizedBox(width: 4),
-                            const Icon(Icons.keyboard_arrow_down_rounded, size: 12),
+                            const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 12,
+                            ),
                           ],
                         ),
-                        onPressed: () => _showStatusUpdateDialog(context, site.firmId),
+                        onPressed: () =>
+                            _showStatusUpdateDialog(context, site.firmId),
                       ),
                     ],
                   ),
@@ -538,13 +558,19 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
             data: (total) {
               return Card(
                 child: ListTile(
-                  leading: const Icon(Icons.account_balance_wallet_rounded, size: 36),
-                  title: const Text('Total Expenses Spent', style: TextStyle(fontSize: 12)),
+                  leading: const Icon(
+                    Icons.account_balance_wallet_rounded,
+                    size: 36,
+                  ),
+                  title: const Text(
+                    'Total Expenses Spent',
+                    style: TextStyle(fontSize: 12),
+                  ),
                   subtitle: Text(
                     '₹${total.toStringAsFixed(2)}',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.w900,
-                        ),
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
               );
@@ -573,7 +599,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                 ),
             ],
             elevation: WidgetStateProperty.all(0),
-            backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.surfaceContainerHigh),
+            backgroundColor: WidgetStateProperty.all(
+              Theme.of(context).colorScheme.surfaceContainerHigh,
+            ),
           ),
           const SizedBox(height: 12),
 
@@ -667,10 +695,14 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                             vertical: 8,
                           ),
                           leading: CircleAvatar(
-                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primaryContainer,
                             child: Icon(
                               _getCategoryIcon(expense.category?.name),
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimaryContainer,
                             ),
                           ),
                           title: Text(
@@ -723,7 +755,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                                     );
                                   },
                                   child: Chip(
-                                    avatar: const Icon(Icons.receipt_rounded, size: 12),
+                                    avatar: const Icon(
+                                      Icons.receipt_rounded,
+                                      size: 12,
+                                    ),
                                     label: Text(
                                       'Incl. ${expense.gstPercentage!.toInt()}% GST (₹${expense.gstAmount?.toStringAsFixed(2) ?? '0.00'})',
                                       style: const TextStyle(
@@ -1006,7 +1041,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                 ),
             ],
             elevation: WidgetStateProperty.all(0),
-            backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.surfaceContainerHigh),
+            backgroundColor: WidgetStateProperty.all(
+              Theme.of(context).colorScheme.surfaceContainerHigh,
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -1024,9 +1061,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                   ),
                   Text(
                     '${documents.length} ${documents.length == 1 ? "File" : "Files"}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                 ],
               );
@@ -1093,12 +1128,16 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                             vertical: 8,
                           ),
                           leading: CircleAvatar(
-                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primaryContainer,
                             child: Icon(
                               isPdf
                                   ? Icons.picture_as_pdf_rounded
                                   : Icons.description_rounded,
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimaryContainer,
                             ),
                           ),
                           title: Text(
@@ -1354,7 +1393,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   const SizedBox.shrink(),
                                   Text(
@@ -1456,11 +1496,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     );
   }
 
-  Widget _analyticsProgressBar(
-    String label,
-    String value,
-    double percentage,
-  ) {
+  Widget _analyticsProgressBar(String label, String value, double percentage) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1473,10 +1509,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
             ),
             Text(
               value,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
           ],
         ),

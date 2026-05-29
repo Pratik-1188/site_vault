@@ -7,6 +7,7 @@ import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
+import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/feature/site/provider/site_provider.dart';
 import 'package:site_vault/feature/site/model/site.dart';
 import '../model/document.dart';
@@ -295,7 +296,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
         ),
         child: Material(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: AppRadius.verticalMd,
           child: Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -359,7 +360,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                                   side: BorderSide(
                                     color: Theme.of(context).colorScheme.outlineVariant,
                                   ),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: AppRadius.brXs,
                                 ),
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
@@ -460,7 +461,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                                   side: BorderSide(
                                     color: Theme.of(context).colorScheme.outlineVariant,
                                   ),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: AppRadius.brXs,
                                 ),
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
@@ -514,7 +515,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                                   side: BorderSide(
                                     color: Theme.of(context).colorScheme.outlineVariant,
                                   ),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: AppRadius.brXs,
                                 ),
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),

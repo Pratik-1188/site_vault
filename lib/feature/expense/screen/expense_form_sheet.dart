@@ -8,6 +8,7 @@ import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
+import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/feature/site/provider/site_provider.dart';
 import 'package:site_vault/feature/site/model/site.dart';
@@ -499,7 +500,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
         ),
         child: Material(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: AppRadius.verticalMd,
           child: Padding(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -563,7 +564,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                       side: BorderSide(
                         color: Theme.of(context).colorScheme.outlineVariant,
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: AppRadius.brXs,
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -676,7 +677,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                       side: BorderSide(
                         color: Theme.of(context).colorScheme.outlineVariant,
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: AppRadius.brXs,
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -850,7 +851,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                       side: BorderSide(
                         color: Theme.of(context).colorScheme.outlineVariant,
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: AppRadius.brXs,
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -1011,7 +1012,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                       side: BorderSide(
                         color: Theme.of(context).colorScheme.outlineVariant,
                       ),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: AppRadius.brXs,
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -1119,10 +1120,10 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                       ).colorScheme.outlineVariant,
                                       style: BorderStyle.solid,
                                     ),
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: AppRadius.brXs,
                                   ),
                                   child: InkWell(
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: AppRadius.brXs,
                                     onTap: () => _showAttachmentPicker(context),
                                     child: Padding(
                                       padding: const EdgeInsets.symmetric(

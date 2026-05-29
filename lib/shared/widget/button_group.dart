@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:site_vault/shared/theme/app_radius.dart';
 
 /// A single option configuration for the [ButtonGroup].
 class ButtonGroupOption<T> {
@@ -45,7 +46,7 @@ class ButtonGroup<T> extends StatelessWidget {
       height: height,
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.brSm,
         border: Border.all(
           color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
         ),
@@ -65,7 +66,7 @@ class ButtonGroup<T> extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     color: theme.colorScheme.primary,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: AppRadius.brXs,
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.08),
