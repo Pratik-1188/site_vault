@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
+import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/feature/expense/provider/expense_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
@@ -579,29 +580,19 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
           const SizedBox(height: 16),
 
           // 2. Search Field inside expenses tab
-          SearchBar(
+          CustomSearchBar(
             controller: _expenseSearchController,
             onChanged: (val) {
               ref.read(expenseSearchQueryProvider.notifier).update(val);
               setState(() {});
             },
             hintText: 'Search expenses by title...',
-            leading: const Icon(Icons.search_rounded),
-            trailing: [
-              if (_expenseSearchController.text.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.clear_rounded),
-                  onPressed: () {
-                    _expenseSearchController.clear();
-                    ref.read(expenseSearchQueryProvider.notifier).update("");
-                    setState(() {});
-                  },
-                ),
-            ],
-            elevation: WidgetStateProperty.all(0),
-            backgroundColor: WidgetStateProperty.all(
-              Theme.of(context).colorScheme.surfaceContainerHigh,
-            ),
+            showClearButton: _expenseSearchController.text.isNotEmpty,
+            onClear: () {
+              _expenseSearchController.clear();
+              ref.read(expenseSearchQueryProvider.notifier).update("");
+              setState(() {});
+            },
           ),
           const SizedBox(height: 12),
 
@@ -1021,29 +1012,19 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Search Bar for Documents
-          SearchBar(
+          CustomSearchBar(
             controller: _documentSearchController,
             onChanged: (val) {
               ref.read(documentSearchQueryProvider.notifier).update(val);
               setState(() {});
             },
             hintText: 'Search documents by filename...',
-            leading: const Icon(Icons.search_rounded),
-            trailing: [
-              if (_documentSearchController.text.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.clear_rounded),
-                  onPressed: () {
-                    _documentSearchController.clear();
-                    ref.read(documentSearchQueryProvider.notifier).update("");
-                    setState(() {});
-                  },
-                ),
-            ],
-            elevation: WidgetStateProperty.all(0),
-            backgroundColor: WidgetStateProperty.all(
-              Theme.of(context).colorScheme.surfaceContainerHigh,
-            ),
+            showClearButton: _documentSearchController.text.isNotEmpty,
+            onClear: () {
+              _documentSearchController.clear();
+              ref.read(documentSearchQueryProvider.notifier).update("");
+              setState(() {});
+            },
           ),
           const SizedBox(height: 16),
 

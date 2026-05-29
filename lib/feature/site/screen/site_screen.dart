@@ -7,6 +7,7 @@ import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/financial_year.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
+import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
@@ -334,65 +335,14 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
               horizontal: 16.0,
               vertical: 8.0,
             ),
-            child: Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerLow,
-                border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                ),
-                borderRadius: AppRadius.brSm,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12.0),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.search_rounded,
-                    color: Theme.of(context).colorScheme.outline,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: _onSearchChanged,
-                      decoration: InputDecoration(
-                        hintText: 'Search sites, codes, or managers...',
-                        hintStyle: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
-                        ),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  if (searchQuery.isNotEmpty)
-                    IconButton(
-                      icon: const Icon(Icons.clear_rounded, size: 20),
-                      onPressed: _clearSearch,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    icon: Icon(
-                      Icons.filter_list_rounded,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 20,
-                    ),
-                    onPressed: _resetAllFilters,
-                    tooltip: 'Reset All Filters',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
+            child: CustomSearchBar(
+              controller: _searchController,
+              onChanged: _onSearchChanged,
+              hintText: 'Search sites, codes, or managers...',
+              showClearButton: searchQuery.isNotEmpty,
+              onClear: _clearSearch,
+              onFilterPressed: _resetAllFilters,
+              filterTooltip: 'Reset All Filters',
             ),
           ),
 

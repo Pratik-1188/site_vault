@@ -7,6 +7,7 @@ import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/shared/model/profile.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
+import 'package:site_vault/shared/widget/custom_search_bar.dart';
 
 /// Central administration settings panel managing Vendors, Categories, and Profiles.
 class AdminScreen extends ConsumerStatefulWidget {
@@ -156,27 +157,19 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
       child: Column(
         children: [
           // Search Field
-          SearchBar(
+          CustomSearchBar(
             controller: _vendorSearchController,
             onChanged: (val) {
               ref.read(adminVendorsSearchQueryProvider.notifier).update(val);
               setState(() {});
             },
             hintText: 'Search vendors by name or contact...',
-            leading: const Icon(Icons.search_rounded),
-            trailing: [
-              if (_vendorSearchController.text.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.clear_rounded),
-                  onPressed: () {
-                    _vendorSearchController.clear();
-                    ref.read(adminVendorsSearchQueryProvider.notifier).update("");
-                    setState(() {});
-                  },
-                ),
-            ],
-            elevation: WidgetStateProperty.all(0),
-            backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.surfaceContainerHigh),
+            showClearButton: _vendorSearchController.text.isNotEmpty,
+            onClear: () {
+              _vendorSearchController.clear();
+              ref.read(adminVendorsSearchQueryProvider.notifier).update("");
+              setState(() {});
+            },
           ),
           const SizedBox(height: 16),
 
@@ -248,27 +241,19 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
       child: Column(
         children: [
           // Search Field
-          SearchBar(
+          CustomSearchBar(
             controller: _categorySearchController,
             onChanged: (val) {
               ref.read(adminCategoriesSearchQueryProvider.notifier).update(val);
               setState(() {});
             },
             hintText: 'Search categories by name...',
-            leading: const Icon(Icons.search_rounded),
-            trailing: [
-              if (_categorySearchController.text.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.clear_rounded),
-                  onPressed: () {
-                    _categorySearchController.clear();
-                    ref.read(adminCategoriesSearchQueryProvider.notifier).update("");
-                    setState(() {});
-                  },
-                ),
-            ],
-            elevation: WidgetStateProperty.all(0),
-            backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.surfaceContainerHigh),
+            showClearButton: _categorySearchController.text.isNotEmpty,
+            onClear: () {
+              _categorySearchController.clear();
+              ref.read(adminCategoriesSearchQueryProvider.notifier).update("");
+              setState(() {});
+            },
           ),
           const SizedBox(height: 16),
 
@@ -336,27 +321,19 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
       child: Column(
         children: [
           // Search Field
-          SearchBar(
+          CustomSearchBar(
             controller: _profileSearchController,
             onChanged: (val) {
               ref.read(adminProfilesSearchQueryProvider.notifier).update(val);
               setState(() {});
             },
             hintText: 'Search staff profiles by name...',
-            leading: const Icon(Icons.search_rounded),
-            trailing: [
-              if (_profileSearchController.text.isNotEmpty)
-                IconButton(
-                  icon: const Icon(Icons.clear_rounded),
-                  onPressed: () {
-                    _profileSearchController.clear();
-                    ref.read(adminProfilesSearchQueryProvider.notifier).update("");
-                    setState(() {});
-                  },
-                ),
-            ],
-            elevation: WidgetStateProperty.all(0),
-            backgroundColor: WidgetStateProperty.all(Theme.of(context).colorScheme.surfaceContainerHigh),
+            showClearButton: _profileSearchController.text.isNotEmpty,
+            onClear: () {
+              _profileSearchController.clear();
+              ref.read(adminProfilesSearchQueryProvider.notifier).update("");
+              setState(() {});
+            },
           ),
           const SizedBox(height: 16),
 
