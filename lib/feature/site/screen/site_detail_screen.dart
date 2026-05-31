@@ -229,6 +229,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
 
   /// Displays a stunning, premium detail popup dialog for a selected expense
   void _showExpenseDetailDialog(BuildContext context, Expense expense) {
+    final siteAsync = ref.read(siteDetailsProvider(widget.siteId));
+    final site = siteAsync.value ?? widget.site;
+    final isEditable = site?.status == 'active';
+    final firmId = site?.firmId ?? expense.firmId;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -441,14 +446,14 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
               onPressed: () => Navigator.pop(context),
               child: const Text('CLOSE'),
             ),
-            if (widget.site?.status == 'active')
+            if (isEditable)
               ElevatedButton.icon(
                 onPressed: () {
                   Navigator.pop(context);
                   _openExpenseFormSheet(
                     context,
                     widget.siteId,
-                    widget.site!.firmId,
+                    firmId,
                     expense,
                   );
                 },
@@ -518,9 +523,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final site = widget.site;
+    final siteAsync = ref.watch(siteDetailsProvider(widget.siteId));
+    final site = siteAsync.value ?? widget.site;
+
     if (site == null) {
-      final siteAsync = ref.watch(siteDetailsProvider(widget.siteId));
       return siteAsync.when(
         loading: () => Scaffold(
           appBar: AppBar(
@@ -565,6 +571,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
           return _buildMainContent(context, fetchedSite);
         },
       );
+    }
+
+    if (_currentStatus != site.status) {
+      _currentStatus = site.status;
     }
 
     return _buildMainContent(context, site);
