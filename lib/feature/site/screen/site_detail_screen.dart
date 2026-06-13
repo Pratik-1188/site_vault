@@ -44,6 +44,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late String _currentStatus;
+  String? _statusOverride;
   final TextEditingController _expenseSearchController =
       TextEditingController();
   final TextEditingController _documentSearchController =
@@ -51,13 +52,13 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   TextEditingController? _nameEditController;
   TextEditingController? _descEditController;
   DateTime? _selectedStartDate;
-  String? _statusEditValue;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _currentStatus = widget.site?.status ?? 'active';
+    _statusOverride = widget.site?.status;
   }
 
   @override
@@ -111,7 +112,42 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     }
   }
 
+  Future<bool> _confirmStatusChange({
+    required String fromStatus,
+    required String toStatus,
+  }) async {
+    if (fromStatus == toStatus) return true;
 
+    final normalizedFrom = fromStatus.toLowerCase();
+    final normalizedTo = toStatus.toLowerCase();
+    final destructive = normalizedTo == 'deleted';
+    final title = destructive ? 'Delete Site?' : 'Change Site Status?';
+    final message = destructive
+        ? 'This will mark the site as DELETED and soft-delete related expenses. Documents will remain attached.'
+        : 'This will mark the site as COMPLETED and lock the site in read-only mode.';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(
+          '$message\n\nCurrent status: ${normalizedFrom.toUpperCase()}\nNew status: ${normalizedTo.toUpperCase()}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('CONFIRM'),
+          ),
+        ],
+      ),
+    );
+
+    return confirmed == true;
+  }
 
   Future<void> _selectStartDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -129,7 +165,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
 
   bool _isSaving = false;
 
-  Future<void> _saveSiteSettings(String siteId) async {
+  Future<void> _saveSiteSettings(
+    String siteId, {
+    String? status,
+  }) async {
     final name = _nameEditController?.text.trim();
     if (name == null || name.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -144,22 +183,39 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     setState(() => _isSaving = true);
     try {
       final description = _descEditController?.text.trim();
-      final status = _statusEditValue ?? 'active';
+      final targetStatus = status ?? _currentStatus;
+      final previousStatus = _currentStatus;
+
+      if (targetStatus != previousStatus) {
+        final confirmed = await _confirmStatusChange(
+          fromStatus: previousStatus,
+          toStatus: targetStatus,
+        );
+        if (!confirmed) {
+          return;
+        }
+      }
+
       final startedOn = _selectedStartDate ?? DateTime.now();
 
       DateTime? completedOn;
-      if (status == 'completed') {
+      if (targetStatus == 'completed') {
         completedOn = DateTime.now();
       }
 
-      await ref.read(siteRepositoryProvider).updateSite(
+      await ref
+          .read(siteRepositoryProvider)
+          .updateSite(
             siteId: siteId,
             name: name,
             description: description,
             startedOn: startedOn,
-            status: status,
+            status: targetStatus,
             completedOn: completedOn,
           );
+
+      _currentStatus = targetStatus;
+      _statusOverride = targetStatus;
 
       ref.invalidate(siteDetailsProvider(siteId));
       ref.invalidate(sitesProvider);
@@ -178,18 +234,27 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
         _nameEditController = null;
         _descEditController = null;
         _selectedStartDate = null;
-        _statusEditValue = null;
       });
     } catch (e) {
       if (mounted) {
         final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(cleanMessage), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text(cleanMessage),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  Future<void> _applyStatusAction(
+    String siteId,
+    String nextStatus,
+  ) async {
+    await _saveSiteSettings(siteId, status: nextStatus);
   }
 
   /// Opens the add/edit expense form sheet
@@ -231,7 +296,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   void _showExpenseDetailDialog(BuildContext context, Expense expense) {
     final siteAsync = ref.read(siteDetailsProvider(widget.siteId));
     final site = siteAsync.value ?? widget.site;
-    final isEditable = site?.status == 'active';
+    final isEditable = _currentStatus == 'active';
     final firmId = site?.firmId ?? expense.firmId;
 
     showDialog(
@@ -380,7 +445,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                     ),
                   ),
                 ],
-                if (expense.attachmentPath != null && expense.attachmentPath!.isNotEmpty) ...[
+                if (expense.attachmentPath != null &&
+                    expense.attachmentPath!.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   Text(
                     'Attachment',
@@ -396,7 +462,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                     shape: RoundedRectangleBorder(
                       borderRadius: AppRadius.brSm,
                       side: BorderSide(
-                        color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                        color: theme.colorScheme.outlineVariant.withValues(
+                          alpha: 0.5,
+                        ),
                       ),
                     ),
                     child: InkWell(
@@ -409,7 +477,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                       },
                       borderRadius: AppRadius.brSm,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12.0,
+                          horizontal: 16.0,
+                        ),
                         child: Row(
                           children: [
                             Icon(
@@ -526,6 +597,19 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     final siteAsync = ref.watch(siteDetailsProvider(widget.siteId));
     final site = siteAsync.value ?? widget.site;
 
+    if (site != null) {
+      if (_statusOverride != null) {
+        if (_statusOverride == site.status) {
+          _currentStatus = site.status;
+          _statusOverride = null;
+        } else {
+          _currentStatus = _statusOverride!;
+        }
+      } else if (_currentStatus != site.status) {
+        _currentStatus = site.status;
+      }
+    }
+
     if (site == null) {
       return siteAsync.when(
         loading: () => Scaffold(
@@ -565,16 +649,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
           body: Center(child: Text('Error loading site details: $err')),
         ),
         data: (fetchedSite) {
-          if (_currentStatus != fetchedSite.status) {
-            _currentStatus = fetchedSite.status;
-          }
           return _buildMainContent(context, fetchedSite);
         },
       );
-    }
-
-    if (_currentStatus != site.status) {
-      _currentStatus = site.status;
     }
 
     return _buildMainContent(context, site);
@@ -666,7 +743,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
           ],
         ),
       ),
-      floatingActionButton: (site.status != 'active' || _tabController.index == 2 || _tabController.index == 3)
+      floatingActionButton:
+          (_currentStatus != 'active' ||
+              _tabController.index == 2 ||
+              _tabController.index == 3)
           ? null
           : FloatingActionButton(
               onPressed: () {
@@ -684,6 +764,89 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     );
   }
 
+  Widget _buildStatusActionCard({
+    required BuildContext context,
+    required String title,
+    required String description,
+    required IconData icon,
+    required Color accent,
+    required VoidCallback? onPressed,
+    bool destructive = false,
+  }) {
+    final theme = Theme.of(context);
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        side: BorderSide(
+          color: destructive
+              ? theme.colorScheme.error.withValues(alpha: 0.28)
+              : accent.withValues(alpha: 0.24),
+        ),
+        borderRadius: AppRadius.brMd,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: destructive
+                    ? theme.colorScheme.errorContainer
+                    : accent.withValues(alpha: 0.12),
+                borderRadius: AppRadius.brSm,
+              ),
+              child: Icon(
+                icon,
+                color: destructive
+                    ? theme.colorScheme.onErrorContainer
+                    : accent,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilledButton(
+              onPressed: onPressed,
+              style: FilledButton.styleFrom(
+                backgroundColor: destructive ? theme.colorScheme.error : accent,
+                foregroundColor: destructive
+                    ? theme.colorScheme.onError
+                    : theme.colorScheme.onPrimary,
+              ),
+              child: Text(
+                destructive ? 'DELETE' : 'COMPLETE',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSettingsTab(Site site, Color baseColor) {
     final theme = Theme.of(context);
 
@@ -691,9 +854,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     _nameEditController ??= TextEditingController(text: site.name);
     _descEditController ??= TextEditingController(text: site.description ?? '');
     _selectedStartDate ??= site.startedOn ?? DateTime.now();
-    _statusEditValue ??= site.status;
 
-    final isEditable = site.status == 'active';
+    final isEditable = _currentStatus == 'active';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
@@ -714,14 +876,16 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
               child: Row(
                 children: [
                   Icon(
-                    site.status == 'completed' ? Icons.lock_rounded : Icons.delete_forever_rounded,
+                    _currentStatus == 'completed'
+                        ? Icons.lock_rounded
+                        : Icons.delete_forever_rounded,
                     color: theme.colorScheme.onErrorContainer,
                     size: 24,
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      site.status == 'completed'
+                      _currentStatus == 'completed'
                           ? 'This project is marked as COMPLETED. Its settings and status are locked and cannot be modified.'
                           : 'This project is marked as DELETED. All settings are locked in read-only archive mode.',
                       style: TextStyle(
@@ -790,7 +954,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                     decoration: BoxDecoration(
                       color: isEditable
                           ? Colors.transparent
-                          : theme.colorScheme.surfaceContainerLow.withValues(alpha: 0.5),
+                          : theme.colorScheme.surfaceContainerLow.withValues(
+                              alpha: 0.5,
+                            ),
                       border: Border.all(
                         color: theme.colorScheme.outlineVariant,
                       ),
@@ -798,7 +964,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                     ),
                     child: ListTile(
                       enabled: isEditable,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
                       title: Text(
                         'Project Start Date',
                         style: theme.textTheme.labelMedium?.copyWith(
@@ -814,45 +983,55 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                       ),
                       leading: Icon(
                         Icons.calendar_today_rounded,
-                        color: isEditable ? baseColor : theme.colorScheme.onSurfaceVariant,
+                        color: isEditable
+                            ? baseColor
+                            : theme.colorScheme.onSurfaceVariant,
                       ),
-                      trailing: isEditable ? const Icon(Icons.edit_calendar_rounded) : null,
-                      onTap: isEditable ? () => _selectStartDate(context) : null,
+                      trailing: isEditable
+                          ? const Icon(Icons.edit_calendar_rounded)
+                          : null,
+                      onTap: isEditable
+                          ? () => _selectStartDate(context)
+                          : null,
                     ),
                   ),
                   const SizedBox(height: 20),
 
-                  // Status Dropdown
-                  DropdownButtonFormField<String>(
-                    value: _statusEditValue,
-                    decoration: const InputDecoration(
-                      labelText: 'Operational Status',
-                      prefixIcon: Icon(Icons.info_outline_rounded),
+                  if (isEditable) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'Status Actions',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
                     ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'active',
-                        child: Text('Active (In Progress)'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'completed',
-                        child: Text('Completed (Locked)'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'deleted',
-                        child: Text('Deleted (Soft-Deleted & Locked)'),
-                      ),
-                    ],
-                    onChanged: isEditable
-                        ? (val) {
-                            if (val != null) {
-                              setState(() {
-                                _statusEditValue = val;
-                              });
-                            }
-                          }
-                        : null,
-                  ),
+                    const SizedBox(height: 12),
+                    _buildStatusActionCard(
+                      context: context,
+                      title: 'Mark Site as Completed',
+                      description:
+                          'Lock the site, keep the record, and stop further edits.',
+                      icon: Icons.lock_rounded,
+                      accent: baseColor,
+                      onPressed: _isSaving
+                          ? null
+                          : () => _applyStatusAction(site.id, 'completed'),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildStatusActionCard(
+                      context: context,
+                      title: 'Delete This Item',
+                      description:
+                          'Archive the site and soft-delete related expenses.',
+                      icon: Icons.delete_forever_rounded,
+                      accent: theme.colorScheme.error,
+                      destructive: true,
+                      onPressed: _isSaving
+                          ? null
+                          : () => _applyStatusAction(site.id, 'deleted'),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -869,9 +1048,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: baseColor,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: AppRadius.brSm,
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: AppRadius.brSm),
                 ),
                 icon: _isSaving
                     ? const SizedBox(
@@ -894,7 +1071,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
       ),
     );
   }
-
 
   Widget _buildExpensesTab(Site site, Color baseColor) {
     final expensesAsync = ref.watch(filteredSiteExpensesProvider(site.id));
@@ -1117,7 +1293,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (expense.attachmentPath != null && expense.attachmentPath!.isNotEmpty) ...[
+                          if (expense.attachmentPath != null &&
+                              expense.attachmentPath!.isNotEmpty) ...[
                             IconButton(
                               icon: Icon(
                                 Icons.description_outlined,
@@ -1144,9 +1321,12 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                             ),
                           ),
                           const SizedBox(width: 8),
-                          if (site.status == 'active')
+                          if (_currentStatus == 'active')
                             PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert_rounded, size: 20),
+                              icon: const Icon(
+                                Icons.more_vert_rounded,
+                                size: 20,
+                              ),
                               splashRadius: 20,
                               onSelected: (action) {
                                 if (action == 'edit') {
@@ -1183,7 +1363,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                                       SizedBox(width: 8),
                                       Text(
                                         'Delete',
-                                        style: TextStyle(color: Colors.redAccent),
+                                        style: TextStyle(
+                                          color: Colors.redAccent,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -1320,7 +1502,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   ) async {
     final formKey = GlobalKey<FormState>();
     final fileNameController = TextEditingController(text: doc.fileName);
-    final descriptionController = TextEditingController(text: doc.description ?? '');
+    final descriptionController = TextEditingController(
+      text: doc.description ?? '',
+    );
 
     final edited = await showDialog<bool>(
       context: context,
@@ -1330,7 +1514,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
           shape: RoundedRectangleBorder(borderRadius: AppRadius.brMd),
           title: Text(
             'Edit Document Details',
-            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
           content: Form(
             key: formKey,
@@ -1613,9 +1799,12 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (site.status == 'active')
+                          if (_currentStatus == 'active')
                             PopupMenuButton<String>(
-                              icon: const Icon(Icons.more_vert_rounded, size: 20),
+                              icon: const Icon(
+                                Icons.more_vert_rounded,
+                                size: 20,
+                              ),
                               splashRadius: 20,
                               onSelected: (action) {
                                 if (action == 'edit') {
@@ -1647,7 +1836,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                                       SizedBox(width: 8),
                                       Text(
                                         'Delete',
-                                        style: TextStyle(color: Colors.redAccent),
+                                        style: TextStyle(
+                                          color: Colors.redAccent,
+                                        ),
                                       ),
                                     ],
                                   ),
