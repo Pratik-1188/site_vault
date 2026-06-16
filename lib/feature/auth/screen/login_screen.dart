@@ -37,7 +37,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
 
-      await ref.read(authRepositoryProvider).signIn(
+      await ref.read(authActionsProvider).signIn(
             email: email,
             password: password,
           );

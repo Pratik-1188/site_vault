@@ -22,7 +22,7 @@ class SupabaseErrorInterceptor {
           msg.contains('invalid claim') ||
           msg.contains('user not found')) {
         // Kick the user out globally
-        ref.read(authRepositoryProvider).signOut();
+        ref.read(authActionsProvider).signOut();
         return "Session expired or invalid. Please log in again.";
       }
 
@@ -41,7 +41,7 @@ class SupabaseErrorInterceptor {
 
     if (error is AuthException) {
       // Any session validation or refresh failure means the session is dead
-      ref.read(authRepositoryProvider).signOut();
+      ref.read(authActionsProvider).signOut();
       return error.message;
     }
 
@@ -60,10 +60,10 @@ class SupabaseErrorInterceptor {
           msg.contains('unauthorized') || 
           msg.contains('invalid claim') ||
           msg.contains('user not found')) {
-        container.read(authRepositoryProvider).signOut();
+        container.read(authActionsProvider).signOut();
       }
     } else if (error is AuthException) {
-      container.read(authRepositoryProvider).signOut();
+      container.read(authActionsProvider).signOut();
     }
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:site_vault/feature/document/model/document.dart';
 import 'package:site_vault/feature/document/repository/document_repository.dart';
@@ -63,6 +64,34 @@ class SiteDocuments extends _$SiteDocuments {
     ref.invalidateSelf(); // Reactively refetches updated files
   }
 }
+
+/// Document write actions exposed through Riverpod.
+class DocumentActions {
+  DocumentActions(this.ref);
+  final Ref ref;
+
+  Future<void> addDocument(SiteDocument document) async {
+    final repo = ref.read(documentRepositoryProvider);
+    await repo.createDocument(document);
+    ref.invalidate(siteDocumentsProvider(document.siteId));
+  }
+
+  Future<void> deleteDocument(SiteDocument document) async {
+    final repo = ref.read(documentRepositoryProvider);
+    await repo.softDeleteDocument(document.id);
+    ref.invalidate(siteDocumentsProvider(document.siteId));
+  }
+
+  Future<void> editDocument(SiteDocument document) async {
+    final repo = ref.read(documentRepositoryProvider);
+    await repo.updateDocument(document);
+    ref.invalidate(siteDocumentsProvider(document.siteId));
+  }
+}
+
+final documentActionsProvider = Provider<DocumentActions>(
+  (ref) => DocumentActions(ref),
+);
 
 /// Filtered site documents selector combining raw list with active filename searches
 @riverpod

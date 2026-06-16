@@ -338,7 +338,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final currentUserId = ref.read(authRepositoryProvider).currentUser?.id;
+    final currentUserId = ref.read(currentAuthUserProvider)?.id;
     if (currentUserId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -369,7 +369,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       // 1. Upload receipt to storage if picked or captured
       if (_pickedFileBytes != null && _pickedFileName != null) {
         fileUrl = await ref
-            .read(storageRepositoryProvider)
+            .read(storageActionsProvider)
             .uploadFile(
               bucket: _selectedSiteId!, // Site's unique UUID bucket
               path: 'expenses',
@@ -409,24 +409,20 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       // 3. Database Write operations
       if (widget.expenseToEdit == null) {
         // Create Mode
-        await ref.read(expenseRepositoryProvider).createExpense(expense);
+        await ref.read(expenseActionsProvider).createExpense(expense);
       } else {
         // Edit Mode
         if (_selectedSiteId == widget.siteId) {
-          await ref
-              .read(siteExpensesProvider(widget.siteId).notifier)
-              .editExpense(expense);
+          await ref.read(expenseActionsProvider).updateExpense(
+                expense,
+                previousSiteId: widget.siteId,
+              );
         } else {
-          await ref.read(expenseRepositoryProvider).updateExpense(expense);
+          await ref.read(expenseActionsProvider).updateExpense(
+                expense,
+                previousSiteId: widget.siteId,
+              );
         }
-      }
-
-      // 4. Invalidate providers to force live updates
-      ref.invalidate(siteExpensesProvider(widget.siteId));
-      ref.invalidate(siteTotalExpensesProvider(widget.siteId));
-      if (_selectedSiteId != widget.siteId) {
-        ref.invalidate(siteExpensesProvider(_selectedSiteId!));
-        ref.invalidate(siteTotalExpensesProvider(_selectedSiteId!));
       }
 
       if (mounted) {

@@ -231,7 +231,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
 
     if (confirmed == true && mounted) {
       try {
-        await ref.read(authRepositoryProvider).signOut();
+        await ref.read(authActionsProvider).signOut();
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

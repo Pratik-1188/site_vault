@@ -83,7 +83,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
 
     if (confirmed == true && mounted) {
       try {
-        await ref.read(authRepositoryProvider).signOut();
+        await ref.read(authActionsProvider).signOut();
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -176,7 +176,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
       }
 
       await ref
-          .read(siteRepositoryProvider)
+          .read(siteActionsProvider)
           .updateSite(
             siteId: siteId,
             name: name.trim(),
@@ -808,7 +808,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
 
     try {
       final signedUrl = await ref
-          .read(storageRepositoryProvider)
+          .read(storageActionsProvider)
           .getSignedUrl(absolutePath: path);
 
       if (context.mounted) {

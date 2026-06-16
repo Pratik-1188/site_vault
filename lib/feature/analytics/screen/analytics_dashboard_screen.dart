@@ -554,7 +554,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
 
     if (confirmed == true && mounted) {
       try {
-        await ref.read(authRepositoryProvider).signOut();
+        await ref.read(authActionsProvider).signOut();
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

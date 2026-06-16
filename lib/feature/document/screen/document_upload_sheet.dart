@@ -189,7 +189,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       return;
     }
 
-    final user = ref.read(authRepositoryProvider).currentUser;
+    final user = ref.read(currentAuthUserProvider);
     if (user == null) {
       debugPrint('[DocumentUpload] No active user session');
       if (mounted) {
@@ -213,7 +213,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       // 1. Upload file binary to the site's auto-created bucket
       debugPrint('[DocumentUpload] Uploading file to storage...');
       final fileUrl = await ref
-          .read(storageRepositoryProvider)
+          .read(storageActionsProvider)
           .uploadFile(
             bucket: _selectedSiteId!,
             path: 'documents',
@@ -242,12 +242,9 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       // 3. Save DB entry using the SiteDocuments controller notifier
       debugPrint('[DocumentUpload] Inserting document record...');
       await ref
-          .read(siteDocumentsProvider(_selectedSiteId!).notifier)
+          .read(documentActionsProvider)
           .addDocument(document);
       debugPrint('[DocumentUpload] Insert OK');
-
-      // 4. Invalidate provider to force a refresh on the site's document page
-      ref.invalidate(siteDocumentsProvider(_selectedSiteId!));
 
       if (mounted) {
         Navigator.pop(context);

@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart' show FutureProvider;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:site_vault/feature/site/model/site.dart';
@@ -109,6 +109,38 @@ Future<Site> siteDetails(Ref ref, String siteId) async {
   final repo = ref.watch(siteRepositoryProvider);
   return repo.fetchSiteById(siteId);
 }
+
+/// Site write actions exposed through Riverpod so UI never touches the repository directly.
+class SiteActions {
+  SiteActions(this.ref);
+  final Ref ref;
+
+  Future<Site> updateSite({
+    required String siteId,
+    required String name,
+    String? description,
+    required DateTime startedOn,
+    required String status,
+    DateTime? completedOn,
+  }) async {
+    final repo = ref.read(siteRepositoryProvider);
+    final updated = await repo.updateSite(
+      siteId: siteId,
+      name: name,
+      description: description,
+      startedOn: startedOn,
+      status: status,
+      completedOn: completedOn,
+    );
+
+    ref.invalidate(siteDetailsProvider(siteId));
+    ref.invalidate(sitesProvider);
+
+    return updated;
+  }
+}
+
+final siteActionsProvider = Provider<SiteActions>((ref) => SiteActions(ref));
 
 /// Fetches active sites for a specific firm to populate scoped dropdowns.
 final activeSitesByFirmProvider = FutureProvider.family<List<Site>, String>(

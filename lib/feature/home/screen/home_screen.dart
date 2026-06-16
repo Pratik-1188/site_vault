@@ -42,7 +42,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (confirmed == true && mounted) {
       try {
-        await ref.read(authRepositoryProvider).signOut();
+        await ref.read(authActionsProvider).signOut();
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

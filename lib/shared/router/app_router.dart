@@ -30,6 +30,10 @@ class GoRouterRefreshStream extends ChangeNotifier {
   }
 }
 
+class _RouterRefresh extends ChangeNotifier {
+  void refresh() => notifyListeners();
+}
+
 /// A reactive, Riverpod-generated GoRouter provider for the application.
 ///
 /// Automatically guards routes:
@@ -37,13 +41,16 @@ class GoRouterRefreshStream extends ChangeNotifier {
 /// - Redirects authenticated users away from `/login` to `/`
 @riverpod
 GoRouter appRouter(Ref ref) {
-  final authRepo = ref.watch(authRepositoryProvider);
+  final currentUser = ref.watch(currentAuthUserProvider);
+  final refreshNotifier = _RouterRefresh();
+  ref.onDispose(refreshNotifier.dispose);
+  ref.listen(authStateProvider, (previous, next) => refreshNotifier.refresh());
 
   return GoRouter(
     initialLocation: '/',
-    refreshListenable: GoRouterRefreshStream(authRepo.authStateStream),
+    refreshListenable: refreshNotifier,
     redirect: (context, state) {
-      final isLoggedIn = authRepo.currentUser != null;
+      final isLoggedIn = currentUser != null;
       final isLoggingIn = state.matchedLocation == '/login';
 
       if (!isLoggedIn && !isLoggingIn) {

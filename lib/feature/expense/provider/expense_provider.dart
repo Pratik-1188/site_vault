@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/feature/expense/repository/expense_repository.dart';
@@ -103,6 +104,52 @@ class SiteExpenses extends _$SiteExpenses {
     ref.invalidateSelf(); // Reactively refetches updated entries
   }
 }
+
+/// Expense write actions exposed through Riverpod.
+class ExpenseActions {
+  ExpenseActions(this.ref);
+  final Ref ref;
+
+  Future<Expense> createExpense(Expense expense) async {
+    final repo = ref.read(expenseRepositoryProvider);
+    final created = await repo.createExpense(expense);
+    ref.invalidate(siteExpensesProvider(expense.siteId));
+    ref.invalidate(siteTotalExpensesProvider(expense.siteId));
+    return created;
+  }
+
+  Future<Expense> updateExpense(
+    Expense expense, {
+    String? previousSiteId,
+  }) async {
+    final repo = ref.read(expenseRepositoryProvider);
+    final updated = await repo.updateExpense(expense);
+
+    ref.invalidate(siteExpensesProvider(expense.siteId));
+    ref.invalidate(siteTotalExpensesProvider(expense.siteId));
+
+    if (previousSiteId != null && previousSiteId != expense.siteId) {
+      ref.invalidate(siteExpensesProvider(previousSiteId));
+      ref.invalidate(siteTotalExpensesProvider(previousSiteId));
+    }
+
+    return updated;
+  }
+
+  Future<void> deleteExpense({
+    required String siteId,
+    required String expenseId,
+  }) async {
+    final repo = ref.read(expenseRepositoryProvider);
+    await repo.softDeleteExpense(expenseId);
+    ref.invalidate(siteExpensesProvider(siteId));
+    ref.invalidate(siteTotalExpensesProvider(siteId));
+  }
+}
+
+final expenseActionsProvider = Provider<ExpenseActions>(
+  (ref) => ExpenseActions(ref),
+);
 
 /// Filtered expenses selector combining data lists with active searches and tags
 @riverpod
