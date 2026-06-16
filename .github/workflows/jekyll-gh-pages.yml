@@ -1,0 +1,40 @@
+name: Deploy Flutter Web to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # Triggers the build every time you push to the 'main' branch
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout your code
+      - uses: actions/checkout@v4
+
+      # 2. Setup the Java environment (needed for Flutter tools)
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # 3. Setup Flutter on the cloud server
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # 4. Get your app dependencies
+      - run: flutter pub get
+
+      # 5. Build the web files automatically (Replace 'YOUR_REPO_NAME' with your actual repo name)
+      - run: flutter build web --release --base-href "site_vault"
+
+      # 6. Deploy the build output to the gh-pages branch
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
