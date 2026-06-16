@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:site_vault/feature/home/screen/home_screen.dart';
-import 'package:site_vault/feature/site/screen/site_screen.dart';
+import 'package:site_vault/feature/site/screen/site_search_screen.dart';
 import 'package:site_vault/feature/site/screen/site_detail_screen.dart';
 import 'package:site_vault/feature/site/model/site.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
