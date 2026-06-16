@@ -48,6 +48,20 @@ class SiteRepository extends BaseRepository {
     });
   }
 
+  /// Fetches active sites for a specific firm for dropdown selectors and scoped forms.
+  Future<List<Site>> fetchActiveSitesByFirm(String firmId) {
+    return safeCall('SiteRepository.fetchActiveSitesByFirm', () async {
+      final response = await client
+          .from('sites')
+          .select()
+          .eq('firm_id', firmId)
+          .eq('status', 'active')
+          .order('created_at', ascending: false);
+
+      return (response as List).map((e) => Site.fromJson(e)).toList();
+    });
+  }
+
   /// Updates a site's details in Supabase.
   Future<Site> updateSite({
     required String siteId,

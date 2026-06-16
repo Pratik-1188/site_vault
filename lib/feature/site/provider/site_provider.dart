@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart' show FutureProvider;
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:site_vault/feature/site/model/site.dart';
@@ -108,3 +109,11 @@ Future<Site> siteDetails(Ref ref, String siteId) async {
   final repo = ref.watch(siteRepositoryProvider);
   return repo.fetchSiteById(siteId);
 }
+
+/// Fetches active sites for a specific firm to populate scoped dropdowns.
+final activeSitesByFirmProvider = FutureProvider.family<List<Site>, String>(
+  (ref, firmId) async {
+    final repo = ref.watch(siteRepositoryProvider);
+    return repo.fetchActiveSitesByFirm(firmId);
+  },
+);
