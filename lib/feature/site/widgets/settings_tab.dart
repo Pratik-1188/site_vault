@@ -184,58 +184,12 @@ class _SettingsTabState extends State<SettingsTab> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  if (isEditable) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'Status Actions',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildStatusActionCard(
-                      context: context,
-                      title: 'Mark Site as Completed',
-                      description:
-                          'Lock the site, keep the record, and stop further edits.',
-                      icon: Icons.lock_rounded,
-                      accent: widget.baseColor,
-                      onPressed: widget.isSaving
-                          ? null
-                          : () => widget.onSaveSiteSettings(
-                              widget.site.id,
-                              _nameEditController!.text.trim(),
-                              _descEditController!.text.trim(),
-                              _selectedStartDate ?? DateTime.now(),
-                              status: 'completed',
-                            ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildStatusActionCard(
-                      context: context,
-                      title: 'Delete This Item',
-                      description:
-                          'Archive the site and soft-delete related expenses.',
-                      icon: Icons.delete_forever_rounded,
-                      accent: theme.colorScheme.error,
-                      destructive: true,
-                      onPressed: widget.isSaving
-                          ? null
-                          : () => widget.onSaveSiteSettings(
-                              widget.site.id,
-                              _nameEditController!.text.trim(),
-                              _descEditController!.text.trim(),
-                              _selectedStartDate ?? DateTime.now(),
-                              status: 'deleted',
-                            ),
-                    ),
-                  ],
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          if (isEditable)
+            const SizedBox(height: 24),
           if (isEditable)
             SizedBox(
               width: double.infinity,
@@ -271,6 +225,53 @@ class _SettingsTabState extends State<SettingsTab> {
                 ),
               ),
             ),
+          if (isEditable) ...[
+            const SizedBox(height: 24),
+            Text(
+              'Status Actions',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: theme.colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildStatusActionCard(
+              context: context,
+              title: 'Mark Site as Completed',
+              description:
+                  'Lock the site, keep the record, and stop further edits.',
+              icon: Icons.lock_rounded,
+              accent: widget.baseColor,
+              onPressed: widget.isSaving
+                  ? null
+                  : () => widget.onSaveSiteSettings(
+                      widget.site.id,
+                      _nameEditController!.text.trim(),
+                      _descEditController!.text.trim(),
+                      _selectedStartDate ?? DateTime.now(),
+                      status: 'completed',
+                    ),
+            ),
+            const SizedBox(height: 12),
+            _buildStatusActionCard(
+              context: context,
+              title: 'Delete This Item',
+              description:
+                  'Archive the site and soft-delete related expenses.',
+              icon: Icons.delete_forever_rounded,
+              accent: theme.colorScheme.error,
+              destructive: true,
+              onPressed: widget.isSaving
+                  ? null
+                  : () => widget.onSaveSiteSettings(
+                      widget.site.id,
+                      _nameEditController!.text.trim(),
+                      _descEditController!.text.trim(),
+                      _selectedStartDate ?? DateTime.now(),
+                      status: 'deleted',
+                    ),
+            ),
+          ],
         ],
       ),
     );
