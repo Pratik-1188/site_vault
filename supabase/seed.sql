@@ -136,7 +136,7 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.expenses (
     id, firm_id, site_id, created_by, title, description, 
-    expense_date, category_id, vendor_id, amount, gst_percentage, gst_amount, 
+    expense_date, category_id, vendor_id, amount, is_gst, 
     payment_mode, is_refundable
 )
 VALUES
@@ -152,8 +152,7 @@ VALUES
         'a1111111-1111-1111-1111-111111111111', -- Materials
         '81111111-1111-1111-1111-111111111111', -- Apex Electrical Supplies
         15000.00,
-        18.00,
-        2700.00,
+        TRUE,
         'upi',
         FALSE
     ),
@@ -168,8 +167,7 @@ VALUES
         'a2222222-2222-2222-2222-222222222222', -- Labor & Wages
         NULL,
         4500.00,
-        NULL,
-        NULL,
+        FALSE,
         'cash',
         FALSE
     ),
@@ -186,8 +184,7 @@ VALUES
         'a4444444-4444-4444-4444-444444444444', -- Permits & Fees
         NULL,
         1200.00,
-        NULL,
-        NULL,
+        FALSE,
         'other',
         FALSE
     ),
@@ -202,8 +199,7 @@ VALUES
         'a1111111-1111-1111-1111-111111111111', -- Materials (Software)
         '83333333-3333-3333-3333-333333333333', -- KK Contracting Services
         8500.00,
-        18.00,
-        1530.00,
+        TRUE,
         'card',
         FALSE
     ),
@@ -220,8 +216,7 @@ VALUES
         'a1111111-1111-1111-1111-111111111111', -- Materials
         '82222222-2222-2222-2222-222222222222', -- Solar Tech Manufacturing
         28000.00,
-        12.00,
-        3360.00,
+        TRUE,
         'rtgs',
         FALSE
     ),
@@ -236,8 +231,7 @@ VALUES
         'a3333333-3333-3333-3333-333333333333', -- Equipment Rental
         '84444444-4444-4444-4444-444444444444', -- Global Heavy Machinery
         12500.00,
-        18.00,
-        2250.00,
+        TRUE,
         'neft',
         FALSE
     )

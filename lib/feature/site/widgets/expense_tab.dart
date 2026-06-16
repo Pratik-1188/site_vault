@@ -213,53 +213,21 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                             '${expense.expenseDate.toReadableString()} • ${expense.paymentMode.toDisplayLabel()}',
                             style: const TextStyle(fontSize: 12),
                           ),
-                          if (expense.gstPercentage != null) ...[
+                          if (expense.isGst) ...[
                             const SizedBox(height: 4),
-                            GestureDetector(
-                              onTap: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('GST Split Details'),
-                                    content: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        _dialogSplitRow(
-                                          'Base Amount',
-                                          '\u20B9${(expense.amount - (expense.gstAmount ?? 0.0)).toStringAsFixed(2)}',
-                                        ),
-                                        const SizedBox(height: 4),
-                                        _dialogSplitRow(
-                                          'GST Paid (${expense.gstPercentage!.toInt()}%)',
-                                          '\u20B9${(expense.gstAmount ?? 0.0).toStringAsFixed(2)}',
-                                        ),
-                                        const Divider(height: 16),
-                                        _dialogSplitRow(
-                                          'Total Sum',
-                                          '\u20B9${expense.amount.toStringAsFixed(2)}',
-                                          isBold: true,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Chip(
-                                avatar: const Icon(
-                                  Icons.receipt_rounded,
-                                  size: 12,
-                                ),
-                                label: Text(
-                                  'Incl. ${expense.gstPercentage!.toInt()}% GST (\u20B9${expense.gstAmount?.toStringAsFixed(2) ?? '0.00'})',
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                visualDensity: VisualDensity.compact,
+                            const Chip(
+                              avatar: Icon(
+                                Icons.receipt_rounded,
+                                size: 12,
                               ),
+                              label: Text(
+                                'GST Bill',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              visualDensity: VisualDensity.compact,
                             ),
                           ],
                         ],
@@ -362,25 +330,5 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
     );
   }
 
-  Widget _dialogSplitRow(String label, String value, {bool isBold = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-          ),
-        ),
-      ],
-    );
-  }
+
 }

@@ -9,7 +9,7 @@ import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
-import 'package:site_vault/shared/widget/button_group.dart';
+
 import 'package:site_vault/feature/site/provider/site_provider.dart';
 import 'package:site_vault/feature/site/model/site.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
@@ -45,7 +45,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
   late TextEditingController _titleController;
   late TextEditingController _amountController;
   late TextEditingController _descriptionController;
-  late TextEditingController _customGstController;
 
   late DateTime _selectedDate;
   late PaymentMode _selectedPaymentMode;
@@ -62,10 +61,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
   late bool
   _isContextLocked; // Locked if started from specific site details screen
 
-  double _selectedGstPercentage = 0.0;
-  bool _isCustomGst = false;
-  double _calculatedBaseAmount = 0.0;
-  double _calculatedGstAmount = 0.0;
+  bool _isGst = false;
 
   // File Attachment variables
   String? _pickedFileName;
@@ -85,7 +81,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     _descriptionController = TextEditingController(
       text: expense?.description ?? '',
     );
-    _customGstController = TextEditingController();
 
     _selectedDate = expense?.expenseDate ?? DateTime.now();
     _selectedPaymentMode = expense?.paymentMode ?? PaymentMode.cash;
@@ -101,22 +96,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
         expense?.siteId ?? (widget.siteId.isNotEmpty ? widget.siteId : null);
     _isContextLocked = widget.firmId.isNotEmpty && widget.siteId.isNotEmpty;
 
-    // GST initialization
-    final gstVal = expense?.gstPercentage ?? 0.0;
-    final standardRates = [0.0, 5.0, 12.0, 18.0, 28.0];
-    if (gstVal > 0.0 && !standardRates.contains(gstVal)) {
-      _isCustomGst = true;
-      _selectedGstPercentage = gstVal;
-      _customGstController.text = gstVal.toString();
-    } else {
-      _isCustomGst = false;
-      _selectedGstPercentage = gstVal;
-    }
-
-    // Trigger initial calculation
-    _calculateGst();
-
-    _amountController.addListener(_calculateGst);
+    _isGst = expense?.isGst ?? false;
 
     // Fetch initial active sites if firm is selected
     if (_selectedFirmId != null) {
@@ -126,11 +106,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
   @override
   void dispose() {
-    _amountController.removeListener(_calculateGst);
     _titleController.dispose();
     _amountController.dispose();
     _descriptionController.dispose();
-    _customGstController.dispose();
     super.dispose();
   }
 
@@ -167,42 +145,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     }
   }
 
-  /// Extracts the Base Amount and GST Amount dynamically from the Total Amount
-  void _calculateGst() {
-    final amountText = _amountController.text.trim();
-    if (amountText.isEmpty) {
-      setState(() {
-        _calculatedBaseAmount = 0.0;
-        _calculatedGstAmount = 0.0;
-      });
-      return;
-    }
 
-    final total = double.tryParse(amountText) ?? 0.0;
-    if (total <= 0.0) {
-      setState(() {
-        _calculatedBaseAmount = 0.0;
-        _calculatedGstAmount = 0.0;
-      });
-      return;
-    }
-
-    final percentage = _selectedGstPercentage;
-    if (percentage <= 0.0) {
-      setState(() {
-        _calculatedBaseAmount = total;
-        _calculatedGstAmount = 0.0;
-      });
-    } else {
-      // GST Amount = Total * (Percentage / (100 + Percentage))
-      final gst = total * (percentage / (100.0 + percentage));
-      final base = total - gst;
-      setState(() {
-        _calculatedBaseAmount = base;
-        _calculatedGstAmount = gst;
-      });
-    }
-  }
 
   /// Select Date calendar picker
   Future<void> _selectDate(BuildContext context) async {
@@ -396,10 +339,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
         categoryId: _selectedCategoryId,
         vendorId: _selectedVendorId,
         amount: total,
-        gstPercentage: _selectedGstPercentage <= 0.0
-            ? null
-            : _selectedGstPercentage,
-        gstAmount: _calculatedGstAmount <= 0.0 ? null : _calculatedGstAmount,
+        isGst: _isGst,
         paymentMode: _selectedPaymentMode,
         isRefundable: _isRefundable,
         createdAt: widget.expenseToEdit?.createdAt ?? DateTime.now(),
@@ -702,114 +642,14 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                             },
                           ),
                           const SizedBox(height: 16),
-                          Text(
-                            'GST Rate',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('GST Bill'),
+                            subtitle: const Text('Tax invoice with GST details'),
+                            secondary: const Icon(Icons.receipt_long_rounded),
+                            value: _isGst,
+                            onChanged: (val) => setState(() => _isGst = val),
                           ),
-                          const SizedBox(height: 8),
-                          ButtonGroup<double>(
-                            options: const [
-                              ButtonGroupOption<double>(value: 5.0, label: '5%'),
-                              ButtonGroupOption<double>(value: 12.0, label: '12%'),
-                              ButtonGroupOption<double>(value: 18.0, label: '18%'),
-                              ButtonGroupOption<double>(value: 28.0, label: '28%'),
-                              ButtonGroupOption<double>(value: -1.0, label: 'Custom'),
-                            ],
-                            selectedValue: _isCustomGst ? -1.0 : _selectedGstPercentage,
-                            onSelected: (double val) {
-                              setState(() {
-                                if (val == -1.0) {
-                                  _isCustomGst = true;
-                                  _selectedGstPercentage =
-                                      double.tryParse(
-                                        _customGstController.text,
-                                      ) ??
-                                      0.0;
-                                } else {
-                                  _isCustomGst = false;
-                                  _selectedGstPercentage = val;
-                                }
-                                _calculateGst();
-                              });
-                            },
-                          ),
-                          if (_isCustomGst) ...[
-                            const SizedBox(height: 12),
-                            TextFormField(
-                              controller: _customGstController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              decoration: const InputDecoration(
-                                labelText: 'Custom GST %',
-                                hintText: 'e.g. 15.0',
-                                suffixText: '%',
-                                prefixIcon: Icon(Icons.percent_rounded),
-                              ),
-                              validator: (val) {
-                                if (!_isCustomGst) return null;
-                                if (val == null || val.trim().isEmpty)
-                                  return 'Please enter GST %';
-                                final numVal = double.tryParse(val);
-                                if (numVal == null ||
-                                    numVal < 0 ||
-                                    numVal > 100) {
-                                  return 'Enter a valid percentage between 0 and 100';
-                                }
-                                return null;
-                              },
-                              onChanged: (val) {
-                                setState(() {
-                                  _selectedGstPercentage =
-                                      double.tryParse(val) ?? 0.0;
-                                  _calculateGst();
-                                });
-                              },
-                            ),
-                          ],
-                          if (_amountController.text.isNotEmpty &&
-                              double.tryParse(_amountController.text) != null &&
-                              _selectedGstPercentage > 0) ...[
-                            const SizedBox(height: 16),
-                            Card(
-                              elevation: 0,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainer,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                  vertical: 12.0,
-                                ),
-                                child: Column(
-                                  children: [
-                                    _summaryLine(
-                                      'Base Amount (Untaxed)',
-                                      '₹${_calculatedBaseAmount.toStringAsFixed(2)}',
-                                    ),
-                                    const SizedBox(height: 4),
-                                    _summaryLine(
-                                      'GST Amount Extractions (${_selectedGstPercentage.toStringAsFixed(_selectedGstPercentage % 1 == 0 ? 0 : 2)}%)',
-                                      '₹${_calculatedGstAmount.toStringAsFixed(2)}',
-                                    ),
-                                    const Divider(height: 16, thickness: 0.5),
-                                    _summaryLine(
-                                      'Total Inclusive Sum',
-                                      '₹${double.parse(_amountController.text.trim()).toStringAsFixed(2)}',
-                                      isBold: true,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
@@ -1156,29 +996,5 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 );
 }
 
-  Widget _summaryLine(String label, String value, {bool isBold = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
-            color: isBold
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-      ],
-    );
-  }
+
 }

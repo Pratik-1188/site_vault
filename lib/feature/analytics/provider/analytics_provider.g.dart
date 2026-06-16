@@ -108,12 +108,12 @@ final class GroupFirmSummariesProvider
 String _$groupFirmSummariesHash() =>
     r'2c3cf4a56908ebfc300d1b93a5d2da0f5fd77f9a';
 
-/// Provides a single pre-aggregated site summary (total spent, GST split, etc.).
+/// Provides a single pre-aggregated site summary (total spent, expense count, etc.).
 
 @ProviderFor(siteSummary)
 final siteSummaryProvider = SiteSummaryFamily._();
 
-/// Provides a single pre-aggregated site summary (total spent, GST split, etc.).
+/// Provides a single pre-aggregated site summary (total spent, expense count, etc.).
 
 final class SiteSummaryProvider
     extends
@@ -125,7 +125,7 @@ final class SiteSummaryProvider
     with
         $FutureModifier<SiteAnalyticsSummary?>,
         $FutureProvider<SiteAnalyticsSummary?> {
-  /// Provides a single pre-aggregated site summary (total spent, GST split, etc.).
+  /// Provides a single pre-aggregated site summary (total spent, expense count, etc.).
   SiteSummaryProvider._({
     required SiteSummaryFamily super.from,
     required String super.argument,
@@ -172,7 +172,7 @@ final class SiteSummaryProvider
 
 String _$siteSummaryHash() => r'f48aa78ef03e816350389e0b8423243002b049c0';
 
-/// Provides a single pre-aggregated site summary (total spent, GST split, etc.).
+/// Provides a single pre-aggregated site summary (total spent, expense count, etc.).
 
 final class SiteSummaryFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<SiteAnalyticsSummary?>, String> {
@@ -185,7 +185,7 @@ final class SiteSummaryFamily extends $Family
         isAutoDispose: true,
       );
 
-  /// Provides a single pre-aggregated site summary (total spent, GST split, etc.).
+  /// Provides a single pre-aggregated site summary (total spent, expense count, etc.).
 
   SiteSummaryProvider call(String siteId) =>
       SiteSummaryProvider._(argument: siteId, from: this);

@@ -119,30 +119,24 @@ expense_date DATE NOT NULL,
 category_id UUID REFERENCES expense_categories(id),
 vendor_id UUID REFERENCES vendors(id),
 
-amount NUMERIC(15, 2) NOT NULL CHECK (amount > 0),
+    amount NUMERIC(15, 2) NOT NULL CHECK (amount > 0),
 
-gst_percentage NUMERIC(5,2),
-gst_amount NUMERIC(15,2),
+    is_gst BOOLEAN NOT NULL DEFAULT FALSE,
 
-payment_mode payment_mode NOT NULL DEFAULT 'cash',
+    payment_mode payment_mode NOT NULL DEFAULT 'cash',
 
-is_refundable BOOLEAN NOT NULL DEFAULT FALSE,
+    is_refundable BOOLEAN NOT NULL DEFAULT FALSE,
 
--- Soft delete
-soft_deleted_at TIMESTAMPTZ,
-created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    -- Soft delete
+    soft_deleted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 
--- Validate GST %
-CONSTRAINT chk_gst_percentage CHECK (
-    gst_percentage IS NULL OR 
-    (gst_percentage >= 0 AND gst_percentage <= 100)
-),
+    -- Prevent empty titles
+    CONSTRAINT chk_title_length CHECK (
+        length(trim(title)) > 2
+    )
 
--- Prevent empty titles
-CONSTRAINT chk_title_length CHECK (
-    length(trim(title)) > 2
-)
 );
 
 -- Enforce site belongs to firm

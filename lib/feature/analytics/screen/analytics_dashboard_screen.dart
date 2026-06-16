@@ -124,14 +124,10 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                 }
 
                 double totalSpend = 0.0;
-                double totalGst = 0.0;
-                double totalBase = 0.0;
                 int totalCount = 0;
 
                 for (final sum in activeSummaries) {
                   totalSpend += sum.totalSpend;
-                  totalGst += sum.totalGst;
-                  totalBase += sum.totalBase;
                   totalCount += sum.expenseCount;
                 }
 
@@ -139,7 +135,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
                   children: [
                     // 1. KPI Cards Grid
-                    _buildKPIGrid(totalSpend, totalGst, totalBase, totalCount),
+                    _buildKPIGrid(totalSpend, totalCount),
                     const SizedBox(height: 24),
 
                     // 2. Proportional Brand Splits (Only visible in All-Firms mode)
@@ -225,7 +221,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
   }
 
   /// Grid displaying computed aggregated totals
-  Widget _buildKPIGrid(double total, double gst, double base, int count) {
+  Widget _buildKPIGrid(double total, int count) {
     final accentColor = Theme.of(context).colorScheme.primary;
 
     return GridView.count(
@@ -237,8 +233,6 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
       childAspectRatio: 1.4,
       children: [
         _kpiCard('Total Spend', '₹${total.toStringAsFixed(2)}', Icons.payments_rounded, accentColor),
-        _kpiCard('Tax Paid (GST)', '₹${gst.toStringAsFixed(2)}', Icons.receipt_long_rounded, Colors.blue),
-        _kpiCard('Base Cost', '₹${base.toStringAsFixed(2)}', Icons.analytics_rounded, Colors.teal),
         _kpiCard('Transactions', '$count logs', Icons.inventory_2_outlined, Colors.purple),
       ],
     );
@@ -293,8 +287,6 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
         orElse: () => FirmAnalyticsSummary(
           firmId: firm.id,
           totalSpend: 0.0,
-          totalGst: 0.0,
-          totalBase: 0.0,
           expenseCount: 0,
         ),
       );

@@ -327,6 +327,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                   'Refundable',
                   expense.isRefundable ? 'Yes' : 'No',
                 ),
+                const SizedBox(height: 8),
+                _dialogSplitRow(
+                  'GST Bill',
+                  expense.isGst ? 'Yes' : 'No',
+                ),
                 if (expense.vendor != null) ...[
                   const SizedBox(height: 8),
                   _dialogSplitRow('Vendor', expense.vendor!.name),
@@ -361,47 +366,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                   ),
                   const SizedBox(height: 16),
                 ],
-                if (expense.gstPercentage != null) ...[
-                  Text(
-                    'GST Tax Split',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerLow,
-                      borderRadius: AppRadius.brSm,
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant.withValues(
-                          alpha: 0.5,
-                        ),
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        _dialogSplitRow(
-                          'Base Amount',
-                          '₹${(expense.amount - (expense.gstAmount ?? 0.0)).toStringAsFixed(2)}',
-                        ),
-                        const SizedBox(height: 4),
-                        _dialogSplitRow(
-                          'GST Paid (${expense.gstPercentage!.toInt()}%)',
-                          '₹${(expense.gstAmount ?? 0.0).toStringAsFixed(2)}',
-                        ),
-                        const Divider(height: 16),
-                        _dialogSplitRow(
-                          'Total Sum',
-                          '₹${expense.amount.toStringAsFixed(2)}',
-                          isBold: true,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+
                 if (expense.attachmentPath != null &&
                     expense.attachmentPath!.isNotEmpty) ...[
                   const SizedBox(height: 16),

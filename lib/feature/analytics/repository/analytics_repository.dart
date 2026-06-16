@@ -13,7 +13,7 @@ class AnalyticsRepository extends BaseRepository {
     });
   }
 
-  /// Fetch single site summary (site total spent, GST split, count)
+  /// Fetch single site summary (site total spent, count)
   Future<SiteAnalyticsSummary?> fetchSiteSummary(String siteId) {
     return safeCall('AnalyticsRepository.fetchSiteSummary', () async {
       final response = await client

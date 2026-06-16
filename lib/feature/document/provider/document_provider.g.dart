@@ -174,7 +174,7 @@ final class SiteDocumentsProvider
   }
 }
 
-String _$siteDocumentsHash() => r'188a127c0439940ab400efe84bcefa3430fec549';
+String _$siteDocumentsHash() => r'99daf4af69d0fc48596f29ac15fa245773f0f4f7';
 
 /// Async controller for managing all active site-specific document records.
 ///

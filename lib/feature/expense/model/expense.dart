@@ -179,8 +179,7 @@ class Expense {
   /// Total amount spent (includes GST)
   final double amount;
 
-  final double? gstPercentage;
-  final double? gstAmount;
+  final bool isGst;
 
   final PaymentMode paymentMode;
   final bool isRefundable;
@@ -206,8 +205,7 @@ class Expense {
     this.categoryId,
     this.vendorId,
     required this.amount,
-    this.gstPercentage,
-    this.gstAmount,
+    required this.isGst,
     required this.paymentMode,
     required this.isRefundable,
     this.softDeletedAt,
@@ -231,12 +229,7 @@ class Expense {
       categoryId: json['category_id'] as String?,
       vendorId: json['vendor_id'] as String?,
       amount: (json['amount'] as num).toDouble(),
-      gstPercentage: json['gst_percentage'] != null
-          ? (json['gst_percentage'] as num).toDouble()
-          : null,
-      gstAmount: json['gst_amount'] != null
-          ? (json['gst_amount'] as num).toDouble()
-          : null,
+      isGst: json['is_gst'] as bool? ?? false,
       paymentMode: PaymentMode.fromString(json['payment_mode'] as String),
       isRefundable: json['is_refundable'] as bool? ?? false,
       softDeletedAt: json['soft_deleted_at'] != null
@@ -274,8 +267,7 @@ class Expense {
       'category_id': categoryId,
       'vendor_id': vendorId,
       'amount': amount,
-      'gst_percentage': gstPercentage,
-      'gst_amount': gstAmount,
+      'is_gst': isGst,
       'payment_mode': paymentMode.toDbString(),
       'is_refundable': isRefundable,
       'soft_deleted_at': softDeletedAt?.toIso8601String(),

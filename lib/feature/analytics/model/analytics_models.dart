@@ -2,15 +2,11 @@
 class FirmAnalyticsSummary {
   final String firmId;
   final double totalSpend;
-  final double totalGst;
-  final double totalBase;
   final int expenseCount;
 
   FirmAnalyticsSummary({
     required this.firmId,
     required this.totalSpend,
-    required this.totalGst,
-    required this.totalBase,
     required this.expenseCount,
   });
 
@@ -18,8 +14,6 @@ class FirmAnalyticsSummary {
     return FirmAnalyticsSummary(
       firmId: json['firm_id'] as String,
       totalSpend: (json['total_spend'] as num).toDouble(),
-      totalGst: (json['total_gst'] as num).toDouble(),
-      totalBase: (json['total_base'] as num).toDouble(),
       expenseCount: json['expense_count'] as int,
     );
   }
@@ -30,16 +24,12 @@ class SiteAnalyticsSummary {
   final String siteId;
   final String firmId;
   final double totalSpend;
-  final double totalGst;
-  final double totalBase;
   final int expenseCount;
 
   SiteAnalyticsSummary({
     required this.siteId,
     required this.firmId,
     required this.totalSpend,
-    required this.totalGst,
-    required this.totalBase,
     required this.expenseCount,
   });
 
@@ -48,8 +38,6 @@ class SiteAnalyticsSummary {
       siteId: json['site_id'] as String,
       firmId: json['firm_id'] as String,
       totalSpend: (json['total_spend'] as num).toDouble(),
-      totalGst: (json['total_gst'] as num).toDouble(),
-      totalBase: (json['total_base'] as num).toDouble(),
       expenseCount: json['expense_count'] as int,
     );
   }

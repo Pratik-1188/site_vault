@@ -62,7 +62,7 @@ This is the simple behavior map for the current Supabase database.
 - `created_by` references `profiles`.
 - Deleting a site deletes related expenses.
 - `amount` must be greater than `0`.
-- `gst_percentage`, when present, must be between `0` and `100`.
+- `is_gst` is a simple boolean flag, defaulting to false.
 - `title` must be longer than 2 trimmed characters.
 - `payment_mode` uses the `payment_mode` enum.
 - `soft_deleted_at` marks the row as deleted for app queries and analytics.

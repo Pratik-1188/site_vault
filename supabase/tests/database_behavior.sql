@@ -573,24 +573,48 @@ BEGIN
       INSERT INTO test_results VALUES (seq, 'expenses', 'title must be longer than two trimmed characters', false, SQLERRM);
   END;
 
-  -- Table: expenses | Test: GST percentage must stay within 0 to 100
+  -- Table: expenses | Test: is_gst defaults to false
   seq := seq + 1;
   BEGIN
     BEGIN
       INSERT INTO expenses (
-        firm_id, site_id, created_by, title, expense_date, amount, gst_percentage, payment_mode, is_refundable
+        firm_id, site_id, created_by, title, expense_date, amount, payment_mode, is_refundable
       ) VALUES (
         temp_firm, temp_site, txn_user_id,
-        'Bad GST', CURRENT_DATE, 100, 101, 'cash', false
-      );
-      INSERT INTO test_results VALUES (seq, 'expenses', 'GST percentage must stay within 0 to 100', false, 'gst_percentage > 100 unexpectedly succeeded');
-    EXCEPTION
-      WHEN check_violation THEN
-        INSERT INTO test_results VALUES (seq, 'expenses', 'GST percentage must stay within 0 to 100', true, NULL);
+        'Test GST Default', CURRENT_DATE, 100, 'cash', false
+      ) RETURNING is_gst INTO profile_active;
+      
+      IF profile_active = false THEN
+        INSERT INTO test_results VALUES (seq, 'expenses', 'is_gst defaults to false', true, NULL);
+      ELSE
+        INSERT INTO test_results VALUES (seq, 'expenses', 'is_gst defaults to false', false, 'is_gst did not default to false');
+      END IF;
     END;
   EXCEPTION
     WHEN others THEN
-      INSERT INTO test_results VALUES (seq, 'expenses', 'GST percentage must stay within 0 to 100', false, SQLERRM);
+      INSERT INTO test_results VALUES (seq, 'expenses', 'is_gst defaults to false', false, SQLERRM);
+  END;
+
+  -- Table: expenses | Test: is_gst = true can be stored and read back
+  seq := seq + 1;
+  BEGIN
+    BEGIN
+      INSERT INTO expenses (
+        firm_id, site_id, created_by, title, expense_date, amount, is_gst, payment_mode, is_refundable
+      ) VALUES (
+        temp_firm, temp_site, txn_user_id,
+        'Test GST True', CURRENT_DATE, 100, true, 'cash', false
+      ) RETURNING is_gst INTO profile_active;
+      
+      IF profile_active = true THEN
+        INSERT INTO test_results VALUES (seq, 'expenses', 'is_gst = true can be stored and read back', true, NULL);
+      ELSE
+        INSERT INTO test_results VALUES (seq, 'expenses', 'is_gst = true can be stored and read back', false, 'is_gst was not stored as true');
+      END IF;
+    END;
+  EXCEPTION
+    WHEN others THEN
+      INSERT INTO test_results VALUES (seq, 'expenses', 'is_gst = true can be stored and read back', false, SQLERRM);
   END;
 
   -- Table: expenses | Test: site and firm must match through the composite foreign key

@@ -1,15 +1,13 @@
 -- ########################################################
 -- 1. view_firm_analytics
 -- RESULTSET: Group-wide aggregated metrics grouped by firm_id.
---   Provides total spending, total GST paid, total base costs, and transaction count
+--   Provides total spending and transaction count
 --   for executive top-level dashboards.
 -- ########################################################
 CREATE OR REPLACE VIEW view_firm_analytics AS
 SELECT 
     firm_id,
     COALESCE(SUM(amount), 0) as total_spend,
-    COALESCE(SUM(gst_amount), 0) as total_gst,
-    COALESCE(SUM(amount - COALESCE(gst_amount, 0)), 0) as total_base,
     COUNT(id) as expense_count
 FROM expenses
 WHERE soft_deleted_at IS NULL
@@ -18,7 +16,7 @@ GROUP BY firm_id;
 -- ########################################################
 -- 2. view_site_analytics
 -- RESULTSET: Site-specific aggregated metrics grouped by site_id and firm_id.
---   Provides total spending, total GST paid, total base costs, and transaction count
+--   Provides total spending and transaction count
 --   for project detail dashboards.
 -- ########################################################
 CREATE OR REPLACE VIEW view_site_analytics AS
@@ -26,8 +24,6 @@ SELECT
     site_id,
     firm_id,
     COALESCE(SUM(amount), 0) as total_spend,
-    COALESCE(SUM(gst_amount), 0) as total_gst,
-    COALESCE(SUM(amount - COALESCE(gst_amount, 0)), 0) as total_base,
     COUNT(id) as expense_count
 FROM expenses
 WHERE soft_deleted_at IS NULL

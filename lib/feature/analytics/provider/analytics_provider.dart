@@ -19,7 +19,7 @@ Future<List<FirmAnalyticsSummary>> groupFirmSummaries(Ref ref) async {
   return repo.fetchFirmSummaries();
 }
 
-/// Provides a single pre-aggregated site summary (total spent, GST split, etc.).
+/// Provides a single pre-aggregated site summary (total spent, expense count, etc.).
 @riverpod
 Future<SiteAnalyticsSummary?> siteSummary(Ref ref, String siteId) async {
   final repo = ref.watch(analyticsRepositoryProvider);
