@@ -86,16 +86,10 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
     });
 
     try {
-      final response = await ref.read(siteRepositoryProvider).client
-          .from('sites')
-          .select()
-          .eq('firm_id', firmId)
-          .eq('status', 'active');
+      final sitesList =
+          await ref.read(activeSitesByFirmProvider(firmId).future);
 
       if (!mounted) return;
-
-      final sitesList = (response as List).map((e) => Site.fromJson(e)).toList();
-
       setState(() {
         _activeSites = sitesList;
         _isLoadingSites = false;
