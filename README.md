@@ -10,6 +10,11 @@ Run the Flutter app against the local Supabase environment:
 flutter run --dart-define-from-file=config/local.json
 ```
 
+Run as a server
+```powershell
+flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080 --dart-define-from-file=config/local.json
+```
+
 If you are running the app on Android and Supabase is exposed locally, forward the API port:
 
 ```powershell

@@ -10,7 +10,6 @@ import '../model/site.dart';
 
 class DocumentsTab extends ConsumerStatefulWidget {
   final Site site;
-  final String currentStatus;
   final void Function(BuildContext context, String path, String title)
   onOpenDocument;
   final void Function(BuildContext context, SiteDocument doc) onEditDocument;
@@ -19,7 +18,6 @@ class DocumentsTab extends ConsumerStatefulWidget {
   const DocumentsTab({
     super.key,
     required this.site,
-    required this.currentStatus,
     required this.onOpenDocument,
     required this.onEditDocument,
     required this.onDeleteDocument,
@@ -169,7 +167,7 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (widget.currentStatus == 'active')
+                          if (widget.site.status == 'active')
                             PopupMenuButton<String>(
                               icon: const Icon(
                                 Icons.more_vert_rounded,

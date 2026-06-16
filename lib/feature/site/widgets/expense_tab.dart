@@ -11,7 +11,6 @@ import '../model/site.dart';
 
 class ExpenseTab extends ConsumerStatefulWidget {
   final Site site;
-  final String currentStatus;
   final void Function(
     BuildContext context,
     String siteId,
@@ -30,7 +29,6 @@ class ExpenseTab extends ConsumerStatefulWidget {
   const ExpenseTab({
     super.key,
     required this.site,
-    required this.currentStatus,
     required this.onOpenExpenseFormSheet,
     required this.onShowExpenseDetail,
     required this.onDownloadOrOpenDocument,
@@ -297,7 +295,7 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          if (widget.currentStatus == 'active')
+                          if (widget.site.status == 'active')
                             PopupMenuButton<String>(
                               icon: const Icon(
                                 Icons.more_vert_rounded,

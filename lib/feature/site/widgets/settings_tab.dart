@@ -7,7 +7,6 @@ import '../model/site.dart';
 
 class SettingsTab extends StatefulWidget {
   final Site site;
-  final String currentStatus;
   final Color baseColor;
   final bool isSaving;
   final Future<void> Function(
@@ -22,7 +21,6 @@ class SettingsTab extends StatefulWidget {
   const SettingsTab({
     super.key,
     required this.site,
-    required this.currentStatus,
     required this.baseColor,
     required this.isSaving,
     required this.onSaveSiteSettings,
@@ -54,7 +52,7 @@ class _SettingsTabState extends State<SettingsTab> {
     );
     _selectedStartDate ??= widget.site.startedOn ?? DateTime.now();
 
-    final isEditable = widget.currentStatus == 'active';
+    final isEditable = widget.site.status == 'active';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
@@ -74,7 +72,7 @@ class _SettingsTabState extends State<SettingsTab> {
               child: Row(
                 children: [
                   Icon(
-                    widget.currentStatus == 'completed'
+                    widget.site.status == 'completed'
                         ? Icons.lock_rounded
                         : Icons.delete_forever_rounded,
                     color: theme.colorScheme.onErrorContainer,
@@ -83,7 +81,7 @@ class _SettingsTabState extends State<SettingsTab> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      widget.currentStatus == 'completed'
+                      widget.site.status == 'completed'
                           ? 'This project is marked as COMPLETED. Its settings and status are locked and cannot be modified.'
                           : 'This project is marked as DELETED. All settings are locked in read-only archive mode.',
                       style: TextStyle(

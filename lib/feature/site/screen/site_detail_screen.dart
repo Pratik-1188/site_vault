@@ -43,15 +43,11 @@ class SiteDetailScreen extends ConsumerStatefulWidget {
 class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  late String _currentStatus;
-  String? _statusOverride;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _currentStatus = widget.site?.status ?? 'active';
-    _statusOverride = widget.site?.status;
   }
 
   @override
@@ -159,8 +155,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
 
     setState(() => _isSaving = true);
     try {
-      final targetStatus = status ?? _currentStatus;
-      final previousStatus = _currentStatus;
+      final currentSite =
+          ref.read(siteDetailsProvider(siteId)).asData?.value ?? widget.site;
+      final previousStatus = currentSite?.status ?? 'active';
+      final targetStatus = status ?? previousStatus;
 
       if (targetStatus != previousStatus) {
         final confirmed = await _confirmStatusChange(
@@ -187,9 +185,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
             status: targetStatus,
             completedOn: completedOn,
           );
-
-      _currentStatus = targetStatus;
-      _statusOverride = targetStatus;
 
       ref.invalidate(siteDetailsProvider(siteId));
       ref.invalidate(sitesProvider);
@@ -258,7 +253,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   void _showExpenseDetailDialog(BuildContext context, Expense expense) {
     final siteAsync = ref.read(siteDetailsProvider(widget.siteId));
     final site = siteAsync.value ?? widget.site;
-    final isEditable = _currentStatus == 'active';
+    final isEditable = (site?.status ?? 'active') == 'active';
     final firmId = site?.firmId ?? expense.firmId;
 
     showDialog(
@@ -559,19 +554,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     final siteAsync = ref.watch(siteDetailsProvider(widget.siteId));
     final site = siteAsync.value ?? widget.site;
 
-    if (site != null) {
-      if (_statusOverride != null) {
-        if (_statusOverride == site.status) {
-          _currentStatus = site.status;
-          _statusOverride = null;
-        } else {
-          _currentStatus = _statusOverride!;
-        }
-      } else if (_currentStatus != site.status) {
-        _currentStatus = site.status;
-      }
-    }
-
     if (site == null) {
       return siteAsync.when(
         loading: () => Scaffold(
@@ -700,7 +682,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
           children: [
             ExpenseTab(
               site: site,
-              currentStatus: _currentStatus,
               onOpenExpenseFormSheet: _openExpenseFormSheet,
               onShowExpenseDetail: _showExpenseDetailDialog,
               onDownloadOrOpenDocument: _downloadOrOpenDocument,
@@ -709,7 +690,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
             ),
             DocumentsTab(
               site: site,
-              currentStatus: _currentStatus,
               onOpenDocument: _downloadOrOpenDocument,
               onEditDocument: _showEditDocumentDialog,
               onDeleteDocument: _confirmDeleteDocument,
@@ -717,7 +697,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
             AnalyticsTab(site: site, baseColor: baseColor),
             SettingsTab(
               site: site,
-              currentStatus: _currentStatus,
               baseColor: baseColor,
               isSaving: _isSaving,
               onSaveSiteSettings: _saveSiteSettings,
@@ -726,7 +705,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
         ),
       ),
       floatingActionButton:
-          (_currentStatus != 'active' ||
+          ((site.status != 'active') ||
               _tabController.index == 2 ||
               _tabController.index == 3)
           ? null
