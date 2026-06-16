@@ -416,46 +416,46 @@ ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Simple full access (small trusted team)
 CREATE POLICY "Team Full Access" ON firms
-FOR ALL TO authenticated, anon
+FOR ALL TO authenticated
 USING (true)
 WITH CHECK (true);
 
 CREATE POLICY "Team Full Access" ON profiles
-FOR ALL TO authenticated, anon
+FOR ALL TO authenticated
 USING (true)
 WITH CHECK (true);
 
 CREATE POLICY "Team Full Access" ON sites
-FOR ALL TO authenticated, anon
+FOR ALL TO authenticated
 USING (true)
 WITH CHECK (true);
 
 CREATE POLICY "Team Full Access" ON expenses
-FOR ALL TO authenticated, anon
+FOR ALL TO authenticated
 USING (true)
 WITH CHECK (true);
 
 CREATE POLICY "Team Full Access" ON documents
-FOR ALL TO authenticated, anon
+FOR ALL TO authenticated
 USING (true)
 WITH CHECK (true);
 
 CREATE POLICY "Team Full Access" ON expense_categories
-FOR ALL TO authenticated, anon
+FOR ALL TO authenticated
 USING (true)
 WITH CHECK (true);
 
 CREATE POLICY "Team Full Access" ON vendors
-FOR ALL TO authenticated, anon
+FOR ALL TO authenticated
 USING (true)
 WITH CHECK (true);
 
 CREATE POLICY "Team Full Access" ON storage.objects
-FOR ALL TO authenticated, anon
+FOR ALL TO authenticated
 USING (true)
 WITH CHECK (true);
 
 CREATE POLICY "Team Full Access" ON audit_logs
-FOR ALL TO authenticated, anon
+FOR ALL TO authenticated
 USING (true)
 WITH CHECK (true);
