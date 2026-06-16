@@ -11,13 +11,13 @@ import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
 import 'package:site_vault/feature/document/provider/document_provider.dart';
 import 'package:site_vault/feature/document/model/document.dart';
 import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
-import 'package:site_vault/feature/analytics/provider/analytics_provider.dart';
-import 'package:site_vault/feature/analytics/model/analytics_models.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import '../widgets/expense_tab.dart';
 import '../widgets/documents_tab.dart';
+import '../widgets/analytics_tab.dart';
+import '../widgets/settings_tab.dart';
 import '../model/site.dart';
 import '../provider/site_provider.dart';
 
@@ -45,9 +45,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   late TabController _tabController;
   late String _currentStatus;
   String? _statusOverride;
-  TextEditingController? _nameEditController;
-  TextEditingController? _descEditController;
-  DateTime? _selectedStartDate;
 
   @override
   void initState() {
@@ -60,8 +57,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   @override
   void dispose() {
     _tabController.dispose();
-    _nameEditController?.dispose();
-    _descEditController?.dispose();
     super.dispose();
   }
 
@@ -143,25 +138,16 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     return confirmed == true;
   }
 
-  Future<void> _selectStartDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedStartDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null && picked != _selectedStartDate) {
-      setState(() {
-        _selectedStartDate = picked;
-      });
-    }
-  }
-
   bool _isSaving = false;
 
-  Future<void> _saveSiteSettings(String siteId, {String? status}) async {
-    final name = _nameEditController?.text.trim();
-    if (name == null || name.isEmpty) {
+  Future<void> _saveSiteSettings(
+    String siteId,
+    String name,
+    String description,
+    DateTime startedOn, {
+    String? status,
+  }) async {
+    if (name.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a site name'),
@@ -173,7 +159,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
 
     setState(() => _isSaving = true);
     try {
-      final description = _descEditController?.text.trim();
       final targetStatus = status ?? _currentStatus;
       final previousStatus = _currentStatus;
 
@@ -187,8 +172,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
         }
       }
 
-      final startedOn = _selectedStartDate ?? DateTime.now();
-
       DateTime? completedOn;
       if (targetStatus == 'completed') {
         completedOn = DateTime.now();
@@ -198,8 +181,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
           .read(siteRepositoryProvider)
           .updateSite(
             siteId: siteId,
-            name: name,
-            description: description,
+            name: name.trim(),
+            description: description.trim().isEmpty ? null : description.trim(),
             startedOn: startedOn,
             status: targetStatus,
             completedOn: completedOn,
@@ -221,11 +204,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
       }
 
       // Clear lazy controllers to force re-initialization on next build
-      setState(() {
-        _nameEditController = null;
-        _descEditController = null;
-        _selectedStartDate = null;
-      });
     } catch (e) {
       if (mounted) {
         final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
@@ -239,10 +217,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
-  }
-
-  Future<void> _applyStatusAction(String siteId, String nextStatus) async {
-    await _saveSiteSettings(siteId, status: nextStatus);
   }
 
   /// Opens the add/edit expense form sheet
@@ -740,8 +714,14 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
               onEditDocument: _showEditDocumentDialog,
               onDeleteDocument: _confirmDeleteDocument,
             ),
-            _buildAnalyticsTab(site, baseColor),
-            _buildSettingsTab(site, baseColor),
+            AnalyticsTab(site: site, baseColor: baseColor),
+            SettingsTab(
+              site: site,
+              currentStatus: _currentStatus,
+              baseColor: baseColor,
+              isSaving: _isSaving,
+              onSaveSiteSettings: _saveSiteSettings,
+            ),
           ],
         ),
       ),
@@ -763,314 +743,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
               },
               child: const Icon(Icons.add_rounded),
             ),
-    );
-  }
-
-  Widget _buildStatusActionCard({
-    required BuildContext context,
-    required String title,
-    required String description,
-    required IconData icon,
-    required Color accent,
-    required VoidCallback? onPressed,
-    bool destructive = false,
-  }) {
-    final theme = Theme.of(context);
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        side: BorderSide(
-          color: destructive
-              ? theme.colorScheme.error.withValues(alpha: 0.28)
-              : accent.withValues(alpha: 0.24),
-        ),
-        borderRadius: AppRadius.brMd,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: destructive
-                    ? theme.colorScheme.errorContainer
-                    : accent.withValues(alpha: 0.12),
-                borderRadius: AppRadius.brSm,
-              ),
-              child: Icon(
-                icon,
-                color: destructive
-                    ? theme.colorScheme.onErrorContainer
-                    : accent,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            FilledButton(
-              onPressed: onPressed,
-              style: FilledButton.styleFrom(
-                backgroundColor: destructive ? theme.colorScheme.error : accent,
-                foregroundColor: destructive
-                    ? theme.colorScheme.onError
-                    : theme.colorScheme.onPrimary,
-              ),
-              child: Text(
-                destructive ? 'DELETE' : 'COMPLETE',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSettingsTab(Site site, Color baseColor) {
-    final theme = Theme.of(context);
-
-    // Initialize editing controllers lazily
-    _nameEditController ??= TextEditingController(text: site.name);
-    _descEditController ??= TextEditingController(text: site.description ?? '');
-    _selectedStartDate ??= site.startedOn ?? DateTime.now();
-
-    final isEditable = _currentStatus == 'active';
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 1. Locked Banner Alert
-          if (!isEditable) ...[
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.errorContainer,
-                borderRadius: AppRadius.brSm,
-                border: Border.all(
-                  color: theme.colorScheme.error.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _currentStatus == 'completed'
-                        ? Icons.lock_rounded
-                        : Icons.delete_forever_rounded,
-                    color: theme.colorScheme.onErrorContainer,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      _currentStatus == 'completed'
-                          ? 'This project is marked as COMPLETED. Its settings and status are locked and cannot be modified.'
-                          : 'This project is marked as DELETED. All settings are locked in read-only archive mode.',
-                      style: TextStyle(
-                        color: theme.colorScheme.onErrorContainer,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                        height: 1.4,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-
-          // 2. Main Form Card
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              side: BorderSide(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-              ),
-              borderRadius: AppRadius.brMd,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Site/Project Configuration',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: baseColor,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Site Name Input
-                  TextFormField(
-                    controller: _nameEditController,
-                    enabled: isEditable,
-                    decoration: const InputDecoration(
-                      labelText: 'Site/Project Name *',
-                      prefixIcon: Icon(Icons.domain_rounded),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Site Description Input
-                  TextFormField(
-                    controller: _descEditController,
-                    enabled: isEditable,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Site/Project Description',
-                      prefixIcon: Icon(Icons.description_rounded),
-                      alignLabelWithHint: true,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Site Start Date Input
-                  Container(
-                    decoration: BoxDecoration(
-                      color: isEditable
-                          ? Colors.transparent
-                          : theme.colorScheme.surfaceContainerLow.withValues(
-                              alpha: 0.5,
-                            ),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant,
-                      ),
-                      borderRadius: AppRadius.brXs,
-                    ),
-                    child: ListTile(
-                      enabled: isEditable,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 4,
-                      ),
-                      title: Text(
-                        'Project Start Date',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: Text(
-                        _selectedStartDate!.toReadableString(),
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      leading: Icon(
-                        Icons.calendar_today_rounded,
-                        color: isEditable
-                            ? baseColor
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                      trailing: isEditable
-                          ? const Icon(Icons.edit_calendar_rounded)
-                          : null,
-                      onTap: isEditable
-                          ? () => _selectStartDate(context)
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  if (isEditable) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'Status Actions',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildStatusActionCard(
-                      context: context,
-                      title: 'Mark Site as Completed',
-                      description:
-                          'Lock the site, keep the record, and stop further edits.',
-                      icon: Icons.lock_rounded,
-                      accent: baseColor,
-                      onPressed: _isSaving
-                          ? null
-                          : () => _applyStatusAction(site.id, 'completed'),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildStatusActionCard(
-                      context: context,
-                      title: 'Delete This Item',
-                      description:
-                          'Archive the site and soft-delete related expenses.',
-                      icon: Icons.delete_forever_rounded,
-                      accent: theme.colorScheme.error,
-                      destructive: true,
-                      onPressed: _isSaving
-                          ? null
-                          : () => _applyStatusAction(site.id, 'deleted'),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // 3. Save Button
-          if (isEditable)
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: _isSaving ? null : () => _saveSiteSettings(site.id),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: baseColor,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: AppRadius.brSm),
-                ),
-                icon: _isSaving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.save_rounded),
-                iconAlignment: IconAlignment.start,
-                label: const Text(
-                  'SAVE SITE CONFIGURATION',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                ),
-              ),
-            ),
-        ],
-      ),
     );
   }
 
@@ -1354,340 +1026,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
         }
       }
     }
-  }
-
-  Widget _buildAnalyticsTab(Site site, Color baseColor) {
-    // Watch lightweight pre-aggregated server-side views
-    final categorySpendAsync = ref.watch(
-      categorySpendProvider(siteId: site.id),
-    );
-    final monthlySpendAsync = ref.watch(monthlySpendProvider(siteId: site.id));
-    final vendorSpendAsync = ref.watch(siteVendorSpendProvider(site.id));
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. Expense Categories Splits Section
-          Text(
-            'Expense Distribution',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Cost breakdown by business expense categories for this site.',
-            style: TextStyle(fontSize: 11, color: Colors.grey),
-          ),
-          const SizedBox(height: 16),
-
-          categorySpendAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text('Error loading category splits: $e'),
-            data: (categories) {
-              if (categories.isEmpty) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20.0),
-                    child: Text(
-                      'No category splits recorded.',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  ),
-                );
-              }
-
-              double total = 0.0;
-              for (final c in categories) {
-                total += c.totalSpend;
-              }
-
-              final sorted = List<CategorySpendSummary>.from(categories)
-                ..sort((a, b) => b.totalSpend.compareTo(a.totalSpend));
-
-              return Column(
-                children: [
-                  ...sorted.map((c) {
-                    final percentage = total > 0 ? c.totalSpend / total : 0.0;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: _analyticsProgressBar(
-                        c.categoryName,
-                        '₹${c.totalSpend.toStringAsFixed(2)}',
-                        percentage,
-                      ),
-                    );
-                  }),
-
-                  const SizedBox(height: 12),
-                  // Spending Insight Card
-                  if (sorted.isNotEmpty)
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.insights_rounded,
-                              color: baseColor,
-                              size: 24,
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Spending Insight',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '"${sorted.first.categoryName}" represents the largest cost factor at ${((sorted.first.totalSpend / total) * 100).toInt()}% of total expenses on this site.',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(fontSize: 12),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              );
-            },
-          ),
-
-          const Divider(height: 40, thickness: 0.5),
-
-          // 2. Month-over-Month Cashflow Timelines Section
-          Text(
-            'Monthly Spending Trends',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Timeline history of site spending aggregates.',
-            style: TextStyle(fontSize: 11, color: Colors.grey),
-          ),
-          const SizedBox(height: 16),
-
-          monthlySpendAsync.when(
-            loading: () => const Center(child: LinearProgressIndicator()),
-            error: (e, _) => Text('Error loading monthly trend: $e'),
-            data: (trends) {
-              if (trends.isEmpty) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20.0),
-                    child: Text(
-                      'No historical timelines found.',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  ),
-                );
-              }
-
-              double maxVal = 0.0;
-              for (final t in trends) {
-                if (t.totalSpend > maxVal) {
-                  maxVal = t.totalSpend;
-                }
-              }
-
-              final sortedMonths = List<MonthlySpendTrend>.from(trends)
-                ..sort(
-                  (a, b) => b.monthDate.compareTo(a.monthDate),
-                ); // Newest first
-
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: sortedMonths.length,
-                itemBuilder: (context, index) {
-                  final item = sortedMonths[index];
-                  final dateStr = _formatAnalyticsMonth(item.monthDate);
-                  final ratio = maxVal > 0 ? item.totalSpend / maxVal : 0.0;
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 80,
-                          child: Text(
-                            dateStr,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const SizedBox.shrink(),
-                                  Text(
-                                    '₹${item.totalSpend.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 10,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              LinearProgressIndicator(value: ratio),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-
-          const Divider(height: 40, thickness: 0.5),
-
-          // 3. Top Suppliers Section
-          Text(
-            'Top Suppliers Tally',
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Ranked vendor splits representing top funding receivers on this site.',
-            style: TextStyle(fontSize: 11, color: Colors.grey),
-          ),
-          const SizedBox(height: 16),
-
-          vendorSpendAsync.when(
-            loading: () => const Center(child: LinearProgressIndicator()),
-            error: (e, _) => Text('Error loading vendor spend: $e'),
-            data: (vendors) {
-              if (vendors.isEmpty) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20.0),
-                    child: Text(
-                      'No suppliers recorded for this site.',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
-                    ),
-                  ),
-                );
-              }
-
-              // Show top 3 vendors
-              final topVendors = vendors.take(3).toList();
-
-              return Column(
-                children: topVendors.asMap().entries.map((entry) {
-                  final rank = entry.key + 1;
-                  final v = entry.value;
-
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12.0),
-                    child: Card(
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          child: Text(
-                            '#$rank',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                        title: Text(
-                          v.vendorName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                        trailing: Text(
-                          '₹${v.totalSpend.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _analyticsProgressBar(String label, String value, double percentage) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-            ),
-            Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        LinearProgressIndicator(value: percentage),
-        const SizedBox(height: 4),
-        Align(
-          alignment: Alignment.bottomRight,
-          child: Text(
-            '${(percentage * 100).toInt()}%',
-            style: const TextStyle(
-              fontSize: 10,
-              color: Colors.grey,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  String _formatAnalyticsMonth(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${months[date.month - 1]} ${date.year}';
   }
 
   // Status colors removed
