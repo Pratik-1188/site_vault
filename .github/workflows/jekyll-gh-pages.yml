@@ -1,40 +1,66 @@
-name: Deploy Flutter Web to GitHub Pages
+name: Build and Deploy Flutter Web to GitHub Pages
 
 on:
   push:
     branches:
-      - main # Triggers the build every time you push to the 'main' branch
+      - main # Change this to 'master' if your default branch uses master
 
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    steps:
-      # 1. Checkout your code
-      - uses: actions/checkout@v4
 
-      # 2. Setup the Java environment (needed for Flutter tools)
-      - uses: actions/setup-java@v3
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java (Required for some Flutter tasks)
+        uses: actions/setup-java@v3
         with:
-          distribution: 'zulu'
+          distribution: 'oracle'
           java-version: '17'
 
-      # 3. Setup Flutter on the cloud server
-      - uses: subosito/flutter-action@v2
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
+          cache: true # Speeds up subsequent pipeline builds
 
-      # 4. Get your app dependencies
-      - run: flutter pub get
+      - name: Install Dependencies
+        run: flutter pub get
 
-      # 5. Build the web files automatically (Replace 'YOUR_REPO_NAME' with your actual repo name)
-      - run: flutter build web --release --base-href "site_vault"
+      - name: Inject Production Configurations Dynamically
+        run: |
+          mkdir -p config
+          echo '${{ secrets.PROD_CONFIG }}' > config/prod.json
 
-      # 6. Deploy the build output to the gh-pages branch
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      - name: Build Flutter Web
+        # The --base-href flag must match your GitHub pages project subpath: /site_vault/
+        run: |
+          flutter build web --release --base-href "/site_vault/" --dart-define-from-file=config/prod.json
+
+      - name: Upload Build Artifact to GitHub Pages
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/web
+          path: build/web
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
