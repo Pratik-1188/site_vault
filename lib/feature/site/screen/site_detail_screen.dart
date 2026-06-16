@@ -20,6 +20,7 @@ import '../widgets/analytics_tab.dart';
 import '../widgets/settings_tab.dart';
 import '../model/site.dart';
 import '../provider/site_provider.dart';
+import 'package:site_vault/shared/provider/firm_provider.dart';
 
 /// A premium, highly polished Material 3 screen that displays comprehensive
 /// details for a specific project site.
@@ -43,17 +44,28 @@ class SiteDetailScreen extends ConsumerStatefulWidget {
 class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  int _currentTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(_handleTabChange);
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_handleTabChange);
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _handleTabChange() {
+    if (_tabController.index != _currentTabIndex) {
+      setState(() {
+        _currentTabIndex = _tabController.index;
+      });
+    }
   }
 
   /// Confirms and handles user sign out
@@ -568,6 +580,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
 
   Widget _buildMainContent(BuildContext context, Site site) {
     final baseColor = Theme.of(context).colorScheme.primary;
+    final firmsAsync = ref.watch(firmsProvider);
+    final firmName = firmsAsync.asData?.value
+        .where((f) => f.id == site.firmId)
+        .firstOrNull
+        ?.name;
 
     return Scaffold(
       body: NestedScrollView(
@@ -587,12 +604,29 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                 onPressed: () => context.pop(),
                 tooltip: 'Back to Dashboard',
               ),
-              title: Text(
-                site.name,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    site.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  if (firmName != null && firmName.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      firmName,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                          ),
+                    ),
+                  ],
+                ],
               ),
               actions: [
                 PopupMenuButton<String>(
@@ -671,16 +705,15 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
       ),
       floatingActionButton:
           ((site.status != 'active') ||
-              _tabController.index == 2 ||
-              _tabController.index == 3)
+              _currentTabIndex == 2 ||
+              _currentTabIndex == 3)
           ? null
           : FloatingActionButton(
               onPressed: () {
-                final tabIndex = _tabController.index;
-                if (tabIndex == 0) {
+                if (_currentTabIndex == 0) {
                   // Live Expense Creation Form sheet!
                   _openExpenseFormSheet(context, site.id, site.firmId);
-                } else if (tabIndex == 1) {
+                } else if (_currentTabIndex == 1) {
                   // Live Document Upload Form sheet!
                   _openDocumentUploadSheet(context, site.id, site.firmId);
                 }
