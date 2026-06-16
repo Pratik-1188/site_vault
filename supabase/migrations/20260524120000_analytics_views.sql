@@ -4,7 +4,7 @@
 --   Provides total spending and transaction count
 --   for executive top-level dashboards.
 -- ########################################################
-CREATE OR REPLACE VIEW view_firm_analytics AS
+CREATE OR REPLACE VIEW view_firm_analytics WITH (security_invoker = true) AS
 SELECT 
     firm_id,
     COALESCE(SUM(amount), 0) as total_spend,
@@ -19,7 +19,7 @@ GROUP BY firm_id;
 --   Provides total spending and transaction count
 --   for project detail dashboards.
 -- ########################################################
-CREATE OR REPLACE VIEW view_site_analytics AS
+CREATE OR REPLACE VIEW view_site_analytics WITH (security_invoker = true) AS
 SELECT 
     site_id,
     firm_id,
@@ -35,7 +35,7 @@ GROUP BY site_id, firm_id;
 --   Provides the spending breakdown by operational business categories, allowing
 --   queries to retrieve splits globally, by firm, or for a single site.
 -- ########################################################
-CREATE OR REPLACE VIEW view_category_analytics AS
+CREATE OR REPLACE VIEW view_category_analytics WITH (security_invoker = true) AS
 SELECT 
     site_id,
     firm_id,
@@ -53,7 +53,7 @@ GROUP BY site_id, firm_id, category_id, c.name;
 --   Provides the chronological spending history, truncated to the first day of each month,
 --   allowing both global and project-specific timeline comparisons.
 -- ########################################################
-CREATE OR REPLACE VIEW view_monthly_analytics AS
+CREATE OR REPLACE VIEW view_monthly_analytics WITH (security_invoker = true) AS
 SELECT 
     site_id,
     firm_id,
@@ -69,7 +69,7 @@ GROUP BY site_id, firm_id, DATE_TRUNC('month', expense_date);
 --   Provides the supplier cost breakdown for a specific project site, sorting
 --   which vendors received the most funds.
 -- ########################################################
-CREATE OR REPLACE VIEW view_vendor_analytics AS
+CREATE OR REPLACE VIEW view_vendor_analytics WITH (security_invoker = true) AS
 SELECT 
     site_id,
     vendor_id,
