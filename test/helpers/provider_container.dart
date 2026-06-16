@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:site_vault/feature/site/provider/site_provider.dart';
@@ -11,7 +10,7 @@ ProviderContainer makeContainer({
   List<Override> overrides = const [],
 }) {
   final container = ProviderContainer(
-    retry: (_, __) => null, // Disable automatic retries in unit tests
+    retry: (_, retryCount) => null, // Disable automatic retries in unit tests
     overrides: [
       if (mockRepo != null)
         siteRepositoryProvider.overrideWithValue(mockRepo),
