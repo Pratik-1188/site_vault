@@ -878,30 +878,35 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  DateTime _startedOn = DateTime.now();
+  final _dateController = TextEditingController();
+  DateTime? _startedOn;
   bool _isSaving = false;
 
   @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _dateController.dispose();
     super.dispose();
   }
 
   Future<void> _selectStartedOnDate(BuildContext context) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _startedOn,
+      initialDate: _startedOn ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
     if (picked != null) {
-      setState(() => _startedOn = picked);
+      setState(() {
+        _startedOn = picked;
+        _dateController.text = picked.toReadableString();
+      });
     }
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || _startedOn == null) return;
 
     setState(() => _isSaving = true);
     try {
@@ -912,7 +917,7 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
         firmId: widget.firmId,
         name: name,
         description: description.isEmpty ? null : description,
-        startedOn: _startedOn,
+        startedOn: _startedOn!,
         status: 'active',
       );
 
@@ -1038,16 +1043,21 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
                                       ),
                                     ),
                                     const SizedBox(height: 16),
-                                    ListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      title: const Text('Start Date *'),
-                                      subtitle: Text(
-                                        'Selected: ${_startedOn.toReadableString()}',
+                                    TextFormField(
+                                      controller: _dateController,
+                                      readOnly: true,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Start Date *',
+                                        prefixIcon: Icon(Icons.calendar_today_rounded),
+                                        hintText: 'Select project start date',
                                       ),
-                                      trailing: IconButton.filledTonal(
-                                        icon: const Icon(Icons.edit_calendar_rounded),
-                                        onPressed: () => _selectStartedOnDate(context),
-                                      ),
+                                      onTap: () => _selectStartedOnDate(context),
+                                      validator: (val) {
+                                        if (_startedOn == null) {
+                                          return 'Please select a start date';
+                                        }
+                                        return null;
+                                      },
                                     ),
                                   ],
                                 ),
