@@ -958,7 +958,7 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Add New Project Site',
+                            'Add Site',
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
                           ),
                           IconButton(
@@ -1038,7 +1038,7 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 OutlinedButton(
-                                  onPressed: () => Navigator.pop(context),
+                                  onPressed: _isSaving ? null : () => Navigator.pop(context),
                                   child: const Text('Cancel'),
                                 ),
                                 const SizedBox(width: 12),

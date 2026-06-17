@@ -650,7 +650,12 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
 
       if (mounted) {
         Navigator.pop(context);
-        AppSnackBar.showSuccess(context, 'Vendor details saved successfully!');
+        AppSnackBar.showSuccess(
+          context,
+          widget.vendorToEdit == null
+              ? 'Vendor created successfully!'
+              : 'Vendor updated successfully!',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -689,7 +694,7 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            widget.vendorToEdit == null ? 'Add New Vendor' : 'Edit Vendor Details',
+                            widget.vendorToEdit == null ? 'Add Vendor' : 'Edit Vendor Details',
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
                           ),
                           IconButton(
@@ -753,7 +758,7 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 OutlinedButton(
-                                  onPressed: () => Navigator.pop(context),
+                                  onPressed: _isSaving ? null : () => Navigator.pop(context),
                                   child: const Text('Cancel'),
                                 ),
                                 const SizedBox(width: 12),
@@ -768,7 +773,11 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
                                             valueColor: AlwaysStoppedAnimation(Colors.white),
                                           ),
                                         )
-                                      : const Text('Save Vendor'),
+                                      : Text(
+                                          widget.vendorToEdit == null
+                                              ? 'Create Vendor'
+                                              : 'Save Changes',
+                                        ),
                                 ),
                               ],
                             ),
@@ -837,7 +846,12 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
 
       if (mounted) {
         Navigator.pop(context);
-        AppSnackBar.showSuccess(context, 'Category saved successfully!');
+        AppSnackBar.showSuccess(
+          context,
+          widget.categoryToEdit == null
+              ? 'Category created successfully!'
+              : 'Category updated successfully!',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -876,7 +890,7 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            widget.categoryToEdit == null ? 'Add Expense Category' : 'Edit Category Details',
+                            widget.categoryToEdit == null ? 'Add Category' : 'Edit Category Details',
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
                           ),
                           IconButton(
@@ -931,7 +945,7 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 OutlinedButton(
-                                  onPressed: () => Navigator.pop(context),
+                                  onPressed: _isSaving ? null : () => Navigator.pop(context),
                                   child: const Text('Cancel'),
                                 ),
                                 const SizedBox(width: 12),
@@ -946,7 +960,11 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
                                             valueColor: AlwaysStoppedAnimation(Colors.white),
                                           ),
                                         )
-                                      : const Text('Save Category'),
+                                      : Text(
+                                          widget.categoryToEdit == null
+                                              ? 'Create Category'
+                                              : 'Save Changes',
+                                        ),
                                 ),
                               ],
                             ),
@@ -1048,7 +1066,7 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Add New User',
+                            'Add User',
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
                           ),
                           IconButton(
@@ -1162,7 +1180,7 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 OutlinedButton(
-                                  onPressed: () => Navigator.pop(context),
+                                  onPressed: _isSaving ? null : () => Navigator.pop(context),
                                   child: const Text('Cancel'),
                                 ),
                                 const SizedBox(width: 12),

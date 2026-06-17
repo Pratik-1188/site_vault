@@ -708,7 +708,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
               _currentTabIndex == 2 ||
               _currentTabIndex == 3)
           ? null
-          : FloatingActionButton(
+          : FloatingActionButton.extended(
               onPressed: () {
                 if (_currentTabIndex == 0) {
                   // Live Expense Creation Form sheet!
@@ -718,7 +718,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                   _openDocumentUploadSheet(context, site.id, site.firmId);
                 }
               },
-              child: const Icon(Icons.add_rounded),
+              icon: const Icon(Icons.add_rounded),
+              label: Text(
+                _currentTabIndex == 0 ? 'LOG EXPENSE' : 'ADD DOCUMENT',
+              ),
             ),
     );
   }
