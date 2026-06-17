@@ -459,3 +459,43 @@ CREATE POLICY "Team Full Access" ON audit_logs
 FOR ALL TO authenticated
 USING (true)
 WITH CHECK (true);
+
+
+-- ########################################################
+-- 10. SEED INITIAL ADMIN (Default fallback)
+-- ########################################################
+
+INSERT INTO auth.users (
+    instance_id,
+    id,
+    aud,
+    role,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    raw_app_meta_data,
+    raw_user_meta_data,
+    created_at,
+    updated_at,
+    confirmation_token,
+    email_change,
+    email_change_token_new,
+    recovery_token
+)
+SELECT 
+    '00000000-0000-0000-0000-000000000000',
+    'a2c89f5c-8973-4ea2-8b9a-412cd17498c8',
+    'authenticated',
+    'authenticated',
+    'admin@kkgroup.com',
+    extensions.crypt('SecureAdminPassword123!', extensions.gen_salt('bf')),
+    now(),
+    '{"provider": "email", "providers": ["email"], "role": "admin"}'::jsonb,
+    '{"display_name": "SystemAdmin", "role": "admin"}'::jsonb,
+    now(),
+    now(),
+    '', '', '', ''
+WHERE NOT EXISTS (
+    SELECT 1 FROM auth.users LIMIT 1
+);
+
