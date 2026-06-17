@@ -500,7 +500,7 @@ WHERE NOT EXISTS (
 );
 
 -- ########################################################
--- SEED DATA: CORE FIRMS (Production Synced UUIDs - DO NOT CHANGE)
+-- 11. SEED DATA: CORE FIRMS (Production Synced UUIDs - DO NOT CHANGE)
 -- ########################################################
 
 INSERT INTO public.firms (id, name, description)
