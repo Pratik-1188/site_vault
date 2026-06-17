@@ -8,6 +8,7 @@ import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
+import 'package:site_vault/shared/widget/status_badge.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/shared/model/profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -387,7 +388,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            _statusChip(vendor.isActive),
+                            StatusBadge(status: vendor.isActive ? 'active' : 'inactive'),
                             const SizedBox(width: 8),
                             PopupMenuButton<String>(
                               icon: const Icon(Icons.more_vert_rounded, size: 20),
@@ -491,7 +492,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            _statusChip(category.isActive),
+                            StatusBadge(status: category.isActive ? 'active' : 'inactive'),
                             const SizedBox(width: 8),
                             PopupMenuButton<String>(
                               icon: const Icon(Icons.more_vert_rounded, size: 20),
@@ -608,7 +609,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                           ),
                           subtitle: Row(
                             children: [
-                              _statusChip(isActive),
+                              StatusBadge(status: isActive ? 'active' : 'inactive'),
                             ],
                           ),
                           trailing: isSelf
@@ -661,20 +662,6 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
     );
   }
 
-  /// Small beautiful M3 active/inactive status chip
-  Widget _statusChip(bool isActive) {
-    return Chip(
-      label: Text(
-        isActive ? 'ACTIVE' : 'INACTIVE',
-        style: const TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
-    );
-  }
 }
 
 // ============================================================================

@@ -12,6 +12,7 @@ import 'package:site_vault/shared/utils/financial_year.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
+import 'package:site_vault/shared/widget/status_badge.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
@@ -699,7 +700,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _buildSiteStatusBadge(context, site.status),
+                  StatusBadge(status: site.status),
                 ],
               ),
 
@@ -767,54 +768,6 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildSiteStatusBadge(BuildContext context, String status) {
-    final statusLower = status.toLowerCase();
-    final isActive = statusLower == 'active';
-    final isCompleted = statusLower == 'completed';
-
-    final Color bgColor;
-    final Color textColor;
-    final IconData icon;
-
-    if (isActive) {
-      bgColor = Theme.of(context).colorScheme.secondaryContainer;
-      textColor = Theme.of(context).colorScheme.onSecondaryContainer;
-      icon = Icons.flash_on_rounded;
-    } else if (isCompleted) {
-      bgColor = Theme.of(context).colorScheme.surfaceContainerHighest;
-      textColor = Theme.of(context).colorScheme.onSurfaceVariant;
-      icon = Icons.done_all_rounded;
-    } else {
-      bgColor = Theme.of(context).colorScheme.errorContainer;
-      textColor = Theme.of(context).colorScheme.onErrorContainer;
-      icon = Icons.archive_outlined;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: AppRadius.brXs,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: textColor),
-          const SizedBox(width: 4),
-          Text(
-            status.toUpperCase(),
-            style: TextStyle(
-              color: textColor,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
       ),
     );
   }
