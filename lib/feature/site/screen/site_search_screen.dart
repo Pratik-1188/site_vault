@@ -643,15 +643,19 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
         ? site.startedOn!.toReadableString().toUpperCase()
         : 'NOT STARTED';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        borderRadius: AppRadius.brSm,
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12.0),
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.brMd,
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+          width: 1.0,
+        ),
       ),
       child: InkWell(
-        borderRadius: AppRadius.brSm,
+        borderRadius: AppRadius.brMd,
         onTap: () {
           context.push('/site/${site.id}', extra: site);
         },

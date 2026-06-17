@@ -359,34 +359,58 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                   itemCount: vendors.length,
                   itemBuilder: (context, index) {
                     final vendor = vendors[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Card(
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          leading: CircleAvatar(
-                            backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                            child: Icon(Icons.store_rounded, color: Theme.of(context).colorScheme.primary),
-                          ),
-                          title: Text(
-                            vendor.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          subtitle: Text(
-                            vendor.contactInfo ?? 'No contact info provided',
-                            style: const TextStyle(fontSize: 12),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _statusChip(vendor.isActive),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                icon: const Icon(Icons.edit_note_rounded, size: 22),
-                                onPressed: () => _openVendorForm(context, vendor),
-                              ),
-                            ],
-                          ),
+                    return Card(
+                      elevation: 0,
+                      margin: const EdgeInsets.only(bottom: 12.0),
+                      color: Theme.of(context).colorScheme.surfaceContainer,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppRadius.brMd,
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                          width: 1.0,
+                        ),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        leading: CircleAvatar(
+                          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                          child: Icon(Icons.store_rounded, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                        ),
+                        title: Text(
+                          vendor.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        subtitle: Text(
+                          vendor.contactInfo ?? 'No contact info provided',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _statusChip(vendor.isActive),
+                            const SizedBox(width: 8),
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert_rounded, size: 20),
+                              splashRadius: 20,
+                              onSelected: (action) {
+                                if (action == 'edit') {
+                                  _openVendorForm(context, vendor);
+                                }
+                              },
+                              itemBuilder: (_) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit_rounded, size: 16),
+                                      SizedBox(width: 8),
+                                      Text('Edit'),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -443,30 +467,54 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                   itemCount: categories.length,
                   itemBuilder: (context, index) {
                     final category = categories[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Card(
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          leading: CircleAvatar(
-                            backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                            child: Icon(Icons.category_rounded, color: Theme.of(context).colorScheme.primary),
-                          ),
-                          title: Text(
-                            category.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _statusChip(category.isActive),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                icon: const Icon(Icons.edit_note_rounded, size: 22),
-                                onPressed: () => _openCategoryForm(context, category),
-                              ),
-                            ],
-                          ),
+                    return Card(
+                      elevation: 0,
+                      margin: const EdgeInsets.only(bottom: 12.0),
+                      color: Theme.of(context).colorScheme.surfaceContainer,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppRadius.brMd,
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                          width: 1.0,
+                        ),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        leading: CircleAvatar(
+                          backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                          child: Icon(Icons.category_rounded, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                        ),
+                        title: Text(
+                          category.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _statusChip(category.isActive),
+                            const SizedBox(width: 8),
+                            PopupMenuButton<String>(
+                              icon: const Icon(Icons.more_vert_rounded, size: 20),
+                              splashRadius: 20,
+                              onSelected: (action) {
+                                if (action == 'edit') {
+                                  _openCategoryForm(context, category);
+                                }
+                              },
+                              itemBuilder: (_) => [
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.edit_rounded, size: 16),
+                                      SizedBox(width: 8),
+                                      Text('Edit'),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -530,19 +578,29 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                     return Opacity(
                       opacity: isActive ? 1.0 : 0.5,
                       child: Card(
-                        margin: const EdgeInsets.only(bottom: 8),
+                        margin: const EdgeInsets.only(bottom: 12.0),
                         elevation: 0,
+                        color: Theme.of(context).colorScheme.surfaceContainer,
                         shape: RoundedRectangleBorder(
-                          borderRadius: AppRadius.brSm,
+                          borderRadius: AppRadius.brMd,
                           side: BorderSide(
-                            color: Theme.of(context).colorScheme.outlineVariant,
-                            width: 0.5,
+                            color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+                            width: 1.0,
                           ),
                         ),
                         child: ListTile(
                           enabled: isActive,
                           leading: CircleAvatar(
-                            child: Text(profile.displayName.isNotEmpty ? profile.displayName.substring(0, 1).toUpperCase() : '?'),
+                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                            child: Text(
+                              profile.displayName.isNotEmpty
+                                  ? profile.displayName.substring(0, 1).toUpperCase()
+                                  : '?',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                           title: Text(
                             profile.displayName + (isSelf ? ' (You)' : ''),
@@ -555,16 +613,40 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                           ),
                           trailing: isSelf
                               ? null
-                              : IconButton(
-                                  icon: Icon(
-                                    Icons.delete_outline_rounded,
-                                    color: isActive
-                                        ? Theme.of(context).colorScheme.error
-                                        : Theme.of(context).disabledColor,
-                                  ),
-                                  onPressed: isActive
-                                      ? () => _confirmDeleteUser(context, profile)
-                                      : null,
+                              : PopupMenuButton<String>(
+                                  icon: const Icon(Icons.more_vert_rounded, size: 20),
+                                  splashRadius: 20,
+                                  onSelected: (action) {
+                                    if (action == 'delete' && isActive) {
+                                      _confirmDeleteUser(context, profile);
+                                    }
+                                  },
+                                  itemBuilder: (_) => [
+                                    PopupMenuItem(
+                                      value: 'delete',
+                                      enabled: isActive,
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.delete_outline_rounded,
+                                            size: 16,
+                                            color: isActive
+                                                ? Theme.of(context).colorScheme.error
+                                                : Theme.of(context).disabledColor,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Text(
+                                            'Delete',
+                                            style: TextStyle(
+                                              color: isActive
+                                                  ? Theme.of(context).colorScheme.error
+                                                  : Theme.of(context).disabledColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                         ),
                       ),

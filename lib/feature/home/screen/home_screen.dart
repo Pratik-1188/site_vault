@@ -538,8 +538,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                       if (tableName == 'expenses') {
                         logIcon = Icons.currency_rupee_rounded;
-                        logIconColor = const Color(0xFF1565C0);
-                        logBgColor = const Color(0xFFE3F2FD);
+                        logIconColor = Theme.of(context).colorScheme.onPrimaryContainer;
+                        logBgColor = Theme.of(context).colorScheme.primaryContainer;
                         
                         final newData = log['new_data'] as Map<String, dynamic>?;
                         final expenseTitle = newData?['title'] as String? ?? 'Expense Logged';
@@ -549,8 +549,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         logSubtitle = 'Amount: ₹${amount.toStringAsFixed(2)}';
                       } else if (tableName == 'sites') {
                         logIcon = Icons.location_on_rounded;
-                        logIconColor = const Color(0xFF2E7D32);
-                        logBgColor = const Color(0xFFE8F5E9);
+                        logIconColor = Theme.of(context).colorScheme.onSecondaryContainer;
+                        logBgColor = Theme.of(context).colorScheme.secondaryContainer;
 
                         final newData = log['new_data'] as Map<String, dynamic>?;
                         final siteName = newData?['name'] as String? ?? 'Site Created';
@@ -560,8 +560,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         logSubtitle = 'Status: ${status.toUpperCase()}';
                       } else {
                         logIcon = Icons.info_outline_rounded;
-                        logIconColor = Theme.of(context).colorScheme.primary;
-                        logBgColor = Theme.of(context).colorScheme.surfaceContainer;
+                        logIconColor = Theme.of(context).colorScheme.onTertiaryContainer;
+                        logBgColor = Theme.of(context).colorScheme.tertiaryContainer;
                         
                         logTitle = '${operation.toUpperCase()} on ${tableName.toUpperCase()}';
                         logSubtitle = null;
@@ -574,13 +574,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         creatorName: creatorName,
                         createdAt: createdAt,
                         onTap: null, // Logs can not be edited and they should not be clickable
-                        leading: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: logBgColor,
-                            borderRadius: AppRadius.brXs,
-                          ),
+                        leading: CircleAvatar(
+                          radius: 20,
+                          backgroundColor: logBgColor,
                           child: Icon(
                             logIcon,
                             color: logIconColor,
