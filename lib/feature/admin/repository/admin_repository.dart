@@ -134,4 +134,36 @@ class AdminRepository extends BaseRepository {
     });
   }
 
+  /// Securely creates a new user inside auth.users and public.profiles via RPC.
+  Future<String> createAppUser({
+    required String email,
+    required String password,
+    required String displayName,
+    required String role,
+  }) {
+    return safeCall('AdminRepository.createAppUser', () async {
+      final response = await client.rpc(
+        'create_app_user',
+        params: {
+          'p_email': email.trim(),
+          'p_password': password,
+          'p_display_name': displayName.trim(),
+          'p_role': role,
+        },
+      );
+      return response as String;
+    });
+  }
+
+  /// Securely deletes a user from auth.users (which deactivates public.profiles) via RPC.
+  Future<void> deleteAppUser(String userId) {
+    return safeCall('AdminRepository.deleteAppUser', () async {
+      await client.rpc(
+        'delete_app_user',
+        params: {
+          'p_user_id': userId,
+        },
+      );
+    });
+  }
 }

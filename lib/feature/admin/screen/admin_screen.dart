@@ -9,6 +9,8 @@ import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
+import 'package:site_vault/shared/model/profile.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Central administration settings panel managing Vendors, Categories, and Profiles.
 class AdminScreen extends ConsumerStatefulWidget {
@@ -105,6 +107,90 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
     );
   }
 
+  /// Opens the modal bottom sheet to create a new user
+  void _openUserForm(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _UserFormSheet(),
+    );
+  }
+
+  void _confirmDeleteUser(BuildContext context, Profile profile) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete User Account'),
+        content: Text(
+          'Are you sure you want to delete ${profile.displayName}?\n\n'
+          'This will delete their auth login credentials immediately and set their status to inactive. '
+          'Their historical records (expenses, documents) will remain associated with their inactive profile.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('CANCEL'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              _deleteUserAction(profile.id);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('DELETE'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteUserAction(String userId) async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+            ),
+            SizedBox(width: 12),
+            Text('Deleting user...'),
+          ],
+        ),
+        duration: Duration(days: 1),
+      ),
+    );
+
+    try {
+      await ref.read(adminProfilesProvider.notifier).deleteUser(userId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User deleted successfully!'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(cleanMessage),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -190,19 +276,25 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
           ],
         ),
       ),
-      floatingActionButton: _tabController.index == 2
-          ? null // Users tab is blank, no FAB needed
-          : FloatingActionButton.extended(
-              onPressed: () {
-                if (_tabController.index == 0) {
-                  _openVendorForm(context);
-                } else if (_tabController.index == 1) {
-                  _openCategoryForm(context);
-                }
-              },
-              icon: const Icon(Icons.add_rounded),
-              label: Text(_tabController.index == 0 ? 'ADD VENDOR' : 'ADD CATEGORY'),
-            ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          if (_tabController.index == 0) {
+            _openVendorForm(context);
+          } else if (_tabController.index == 1) {
+            _openCategoryForm(context);
+          } else if (_tabController.index == 2) {
+            _openUserForm(context);
+          }
+        },
+        icon: const Icon(Icons.add_rounded),
+        label: Text(
+          _tabController.index == 0
+              ? 'ADD VENDOR'
+              : _tabController.index == 1
+                  ? 'ADD CATEGORY'
+                  : 'ADD USER',
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: 3,
         onDestinationSelected: (index) {
@@ -408,7 +500,90 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
   // STAFF PROFILES PANEL TABS
   // ==========================================
   Widget _buildProfilesPanel() {
-    return const SizedBox.shrink();
+    final profilesAsync = ref.watch(filteredAdminProfilesProvider);
+    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Column(
+        children: [
+          // Search Field
+          CustomSearchBar(
+            controller: _profileSearchController,
+            onChanged: (val) {
+              ref.read(adminProfilesSearchQueryProvider.notifier).update(val);
+              setState(() {});
+            },
+            hintText: 'Search users by display name...',
+            showClearButton: _profileSearchController.text.isNotEmpty,
+            onClear: () {
+              _profileSearchController.clear();
+              ref.read(adminProfilesSearchQueryProvider.notifier).update("");
+              setState(() {});
+            },
+          ),
+          const SizedBox(height: 16),
+
+          // Users list
+          Expanded(
+            child: profilesAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error loading users: $e')),
+              data: (profiles) {
+                if (profiles.isEmpty) {
+                  return const Center(
+                    child: Text('No users found.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: profiles.length,
+                  itemBuilder: (context, index) {
+                    final profile = profiles[index];
+                    final isSelf = profile.id == currentUserId;
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppRadius.brSm,
+                        side: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                          width: 0.5,
+                        ),
+                      ),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          child: Text(profile.displayName.isNotEmpty ? profile.displayName.substring(0, 1).toUpperCase() : '?'),
+                        ),
+                        title: Text(
+                          profile.displayName + (isSelf ? ' (You)' : ''),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Row(
+                          children: [
+                            _statusChip(profile.isActive),
+                          ],
+                        ),
+                        trailing: isSelf
+                            ? null
+                            : IconButton(
+                                icon: Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                                onPressed: () => _confirmDeleteUser(context, profile),
+                              ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Small beautiful M3 active/inactive status chip
@@ -812,4 +987,260 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
     );
   }
 }
+
+// ============================================================================
+// 3. USER BOTTOM SHEET FORM EDITOR
+// ============================================================================
+class _UserFormSheet extends ConsumerStatefulWidget {
+  const _UserFormSheet();
+
+  @override
+  ConsumerState<_UserFormSheet> createState() => _UserFormSheetState();
+}
+
+class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _displayNameController = TextEditingController();
+  String _selectedRole = 'staff';
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _displayNameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      final displayName = _displayNameController.text.trim();
+
+      await ref.read(adminProfilesProvider.notifier).addUser(
+        email: email,
+        password: password,
+        displayName: displayName,
+        role: _selectedRole,
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User created successfully!'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(cleanMessage),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: AppRadius.verticalMd,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: SafeArea(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Pinned Header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Add New User',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 24, indent: 24, endIndent: 24),
+
+                    // Scrollable content
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.outlineVariant,
+                                ),
+                                borderRadius: AppRadius.brXs,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Text(
+                                      'Login Credentials & Details',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                            color: Theme.of(context).colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _displayNameController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Display Name *',
+                                        prefixIcon: Icon(Icons.person_rounded),
+                                        hintText: 'e.g. JohnDoe (No spaces)',
+                                      ),
+                                      validator: (val) {
+                                        if (val == null || val.trim().isEmpty) {
+                                          return 'Please enter a display name';
+                                        }
+                                        if (val.trim().length < 3) {
+                                          return 'Display name must be at least 3 characters';
+                                        }
+                                        if (RegExp(r'\s').hasMatch(val)) {
+                                          return 'Display name cannot contain spaces';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _emailController,
+                                      keyboardType: TextInputType.emailAddress,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Email Address *',
+                                        prefixIcon: Icon(Icons.email_rounded),
+                                        hintText: 'e.g. user@kkgroup.com',
+                                      ),
+                                      validator: (val) {
+                                        if (val == null || val.trim().isEmpty) {
+                                          return 'Please enter an email';
+                                        }
+                                        if (!val.contains('@')) {
+                                          return 'Please enter a valid email';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _passwordController,
+                                      obscureText: true,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Password *',
+                                        prefixIcon: Icon(Icons.lock_rounded),
+                                        hintText: 'Minimum 6 characters',
+                                      ),
+                                      validator: (val) {
+                                        if (val == null || val.isEmpty) {
+                                          return 'Please enter a password';
+                                        }
+                                        if (val.length < 6) {
+                                          return 'Password must be at least 6 characters';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    DropdownButtonFormField<String>(
+                                      initialValue: _selectedRole,
+                                      decoration: const InputDecoration(
+                                        labelText: 'User Role *',
+                                        prefixIcon: Icon(Icons.badge_rounded),
+                                      ),
+                                      items: const [
+                                        DropdownMenuItem(
+                                          value: 'staff',
+                                          child: Text('staff'),
+                                        ),
+                                        DropdownMenuItem(
+                                          value: 'admin',
+                                          child: Text('admin'),
+                                        ),
+                                      ],
+                                      onChanged: (val) {
+                                        if (val != null) {
+                                          setState(() => _selectedRole = val);
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            FilledButton.icon(
+                              onPressed: _isSaving ? null : _submit,
+                              icon: _isSaving
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.check_rounded),
+                              label: const Text('CREATE USER'),
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: AppRadius.brSm,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 
