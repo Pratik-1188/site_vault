@@ -10,6 +10,7 @@ import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/feature/site/provider/site_provider.dart';
 import 'package:site_vault/feature/site/model/site.dart';
+import 'package:site_vault/shared/utils/snackbar_message.dart';
 import '../model/document.dart';
 import '../provider/document_provider.dart';
 
@@ -146,12 +147,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error picking file: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackBar.showError(context, 'Error picking file: $e');
     }
   }
 
@@ -166,12 +162,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
     if (_selectedFirmId == null || _selectedSiteId == null) {
       debugPrint('[DocumentUpload] Scope selection missing');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select both Firm and Site.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppSnackBar.showError(context, 'Please select both Firm and Site.');
       }
       return;
     }
@@ -179,12 +170,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
     if (_pickedFileBytes == null || _pickedFileName == null) {
       debugPrint('[DocumentUpload] No file picked');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please select a file to upload.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppSnackBar.showError(context, 'Please select a file to upload.');
       }
       return;
     }
@@ -193,12 +179,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
     if (user == null) {
       debugPrint('[DocumentUpload] No active user session');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('No active session found. Please sign in again.'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppSnackBar.showError(context, 'No active session found. Please sign in again.');
       }
       return;
     }
@@ -248,25 +229,14 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Document uploaded successfully!'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Color(0xFF059669),
-          ),
-        );
+        AppSnackBar.showSuccess(context, 'Document uploaded successfully!');
       }
     } catch (e, stack) {
       debugPrint('[DocumentUpload] ERROR: $e');
       debugPrint('[DocumentUpload] STACK: $stack');
       if (mounted) {
         final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(cleanMessage),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppSnackBar.showError(context, cleanMessage);
       }
     } finally {
       if (mounted) {

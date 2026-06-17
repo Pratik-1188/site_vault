@@ -11,6 +11,7 @@ import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/shared/model/profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:site_vault/shared/utils/snackbar_message.dart';
 
 /// Central administration settings panel managing Vendors, Categories, and Profiles.
 class AdminScreen extends ConsumerStatefulWidget {
@@ -74,12 +75,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
         await ref.read(authActionsProvider).signOut();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error signing out: $e'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
+          AppSnackBar.showError(context, 'Error signing out: $e');
         }
       }
     }
@@ -169,24 +165,12 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
     try {
       await ref.read(adminProfilesProvider.notifier).deleteUser(userId);
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('User deleted successfully!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showSuccess(context, 'User deleted successfully!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
         final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(cleanMessage),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppSnackBar.showError(context, cleanMessage);
       }
     }
   }
@@ -666,16 +650,12 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vendor details saved successfully!'), behavior: SnackBarBehavior.floating),
-        );
+        AppSnackBar.showSuccess(context, 'Vendor details saved successfully!');
       }
     } catch (e) {
       if (mounted) {
         final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(cleanMessage), backgroundColor: Colors.redAccent),
-        );
+        AppSnackBar.showError(context, cleanMessage);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -861,16 +841,12 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Category saved successfully!'), behavior: SnackBarBehavior.floating),
-        );
+        AppSnackBar.showSuccess(context, 'Category saved successfully!');
       }
     } catch (e) {
       if (mounted) {
         final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(cleanMessage), backgroundColor: Colors.redAccent),
-        );
+        AppSnackBar.showError(context, cleanMessage);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -1041,22 +1017,12 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('User created successfully!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showSuccess(context, 'User created successfully!');
       }
     } catch (e) {
       if (mounted) {
         final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(cleanMessage),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppSnackBar.showError(context, cleanMessage);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);

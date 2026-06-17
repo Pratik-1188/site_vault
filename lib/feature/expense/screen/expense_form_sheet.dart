@@ -9,6 +9,7 @@ import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
+import 'package:site_vault/shared/utils/snackbar_message.dart';
 
 import 'package:site_vault/feature/site/provider/site_provider.dart';
 import 'package:site_vault/feature/site/model/site.dart';
@@ -210,12 +211,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error capturing photo: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackBar.showError(context, 'Error capturing photo: $e');
     }
   }
 
@@ -237,12 +233,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error picking file: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackBar.showError(context, 'Error picking file: $e');
     }
   }
 
@@ -283,22 +274,12 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
     final currentUserId = ref.read(currentAuthUserProvider)?.id;
     if (currentUserId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('User session expired. Please log in again.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      AppSnackBar.showError(context, 'User session expired. Please log in again.');
       return;
     }
 
     if (_selectedFirmId == null || _selectedSiteId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select both Firm and Site.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      AppSnackBar.showError(context, 'Please select both Firm and Site.');
       return;
     }
 
@@ -367,27 +348,17 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.expenseToEdit == null
-                  ? 'Expense created successfully!'
-                  : 'Expense updated successfully!',
-            ),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: const Color(0xFF059669),
-          ),
+        AppSnackBar.showSuccess(
+          context,
+          widget.expenseToEdit == null
+              ? 'Expense created successfully!'
+              : 'Expense updated successfully!',
         );
       }
     } catch (e) {
       if (mounted) {
         final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(cleanMessage),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppSnackBar.showError(context, cleanMessage);
       }
     } finally {
       if (mounted) {

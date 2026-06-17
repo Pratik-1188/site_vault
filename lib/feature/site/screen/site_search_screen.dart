@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
+import 'package:site_vault/shared/utils/snackbar_message.dart';
 
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
@@ -250,12 +251,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
         await ref.read(authActionsProvider).signOut();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error signing out: $e'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
+          AppSnackBar.showError(context, 'Error signing out: $e');
         }
       }
     }
@@ -923,22 +919,12 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Site created successfully!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showSuccess(context, 'Site created successfully!');
       }
     } catch (e) {
       if (mounted) {
         final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(cleanMessage),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppSnackBar.showError(context, cleanMessage);
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
