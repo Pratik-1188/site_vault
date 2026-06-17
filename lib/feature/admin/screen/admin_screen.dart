@@ -813,11 +813,11 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
                             if (widget.vendorToEdit != null) ...[
                               const SizedBox(height: 16),
                               SwitchListTile(
-                                title: const Text('Operational Status'),
-                                subtitle: const Text('Toggle between Active and Inactive availability'),
-                                value: _isActive,
-                                activeThumbColor: Theme.of(context).colorScheme.primary,
                                 contentPadding: EdgeInsets.zero,
+                                secondary: const Icon(Icons.check_circle_outline_rounded),
+                                title: const Text('Active Status'),
+                                subtitle: const Text('Allow selecting this vendor in new expenses'),
+                                value: _isActive,
                                 onChanged: (val) => setState(() => _isActive = val),
                               ),
                             ],
@@ -1000,11 +1000,11 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
                             if (widget.categoryToEdit != null) ...[
                               const SizedBox(height: 16),
                               SwitchListTile(
-                                title: const Text('Category Availability'),
-                                subtitle: const Text('Toggle between Active and Inactive (hides from dropdowns)'),
-                                value: _isActive,
-                                activeThumbColor: Theme.of(context).colorScheme.primary,
                                 contentPadding: EdgeInsets.zero,
+                                secondary: const Icon(Icons.check_circle_outline_rounded),
+                                title: const Text('Active Status'),
+                                subtitle: const Text('Allow selecting this category in new expenses'),
+                                value: _isActive,
                                 onChanged: (val) => setState(() => _isActive = val),
                               ),
                             ],

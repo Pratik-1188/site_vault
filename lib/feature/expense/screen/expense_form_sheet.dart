@@ -556,7 +556,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                             SwitchListTile(
                               contentPadding: EdgeInsets.zero,
                               title: const Text('GST Bill'),
-                              subtitle: const Text('Tax invoice with GST details'),
+                              subtitle: const Text('Include GST tax invoice details'),
                               secondary: const Icon(Icons.receipt_long_rounded),
                               value: _isGst,
                               onChanged: _isUploading ? null : (val) => setState(() => _isGst = val),
@@ -670,13 +670,14 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                   ),
                             ),
                             const SizedBox(height: 16),
-                            SwitchListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: const Text('Refundable Expense'),
-                              secondary: const Icon(Icons.assignment_return_rounded),
-                              value: _isRefundable,
-                              onChanged: _isUploading ? null : (val) => setState(() => _isRefundable = val),
-                            ),
+                             SwitchListTile(
+                               contentPadding: EdgeInsets.zero,
+                               title: const Text('Refundable'),
+                               subtitle: const Text('Mark this expense for reimbursement'),
+                               secondary: const Icon(Icons.assignment_return_rounded),
+                               value: _isRefundable,
+                               onChanged: _isUploading ? null : (val) => setState(() => _isRefundable = val),
+                             ),
                             const SizedBox(height: 16),
                             Text(
                               'Attachment',
