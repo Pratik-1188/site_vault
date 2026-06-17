@@ -499,3 +499,25 @@ WHERE NOT EXISTS (
     SELECT 1 FROM auth.users LIMIT 1
 );
 
+-- ########################################################
+-- SEED DATA: CORE FIRMS (Production Synced UUIDs - DO NOT CHANGE)
+-- ########################################################
+
+INSERT INTO public.firms (id, name, description)
+VALUES 
+    (
+        '0f140f6f-d994-4695-a838-bee13b3802f1', 
+        'KK Electricals', 
+        'Electrical contracting and maintenance division'
+    ),
+    (
+        '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3', 
+        'KK Associates', 
+        'Consultancy and project management services'
+    ),
+    (
+        '4e01a36a-87c0-4cca-9428-a2747a130c96', 
+        'KK Solar', 
+        'Solar panel installation and renewable energy projects'
+    )
+ON CONFLICT (id) DO NOTHING;
