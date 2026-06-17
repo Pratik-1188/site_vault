@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:site_vault/feature/admin/provider/admin_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
-import 'package:site_vault/shared/model/profile.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
@@ -106,16 +105,6 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
     );
   }
 
-  /// Opens the modal bottom sheet to edit a user/staff profile
-  void _openProfileForm(BuildContext context, Profile profile) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _ProfileFormSheet(profileToEdit: profile),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +168,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                     options: const [
                       ButtonGroupOption(value: 0, label: 'Vendors'),
                       ButtonGroupOption(value: 1, label: 'Categories'),
-                      ButtonGroupOption(value: 2, label: 'Staff Profiles'),
+                      ButtonGroupOption(value: 2, label: 'Users'),
                     ],
                     selectedValue: _tabController.index,
                     onSelected: (index) {
@@ -202,7 +191,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
         ),
       ),
       floatingActionButton: _tabController.index == 2
-          ? null // Staff are manually added via backend dashboard, admin can only edit/disable
+          ? null // Users tab is blank, no FAB needed
           : FloatingActionButton.extended(
               onPressed: () {
                 if (_tabController.index == 0) {
@@ -419,84 +408,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
   // STAFF PROFILES PANEL TABS
   // ==========================================
   Widget _buildProfilesPanel() {
-    final profilesAsync = ref.watch(filteredAdminProfilesProvider);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      child: Column(
-        children: [
-          // Search Field
-          CustomSearchBar(
-            controller: _profileSearchController,
-            onChanged: (val) {
-              ref.read(adminProfilesSearchQueryProvider.notifier).update(val);
-              setState(() {});
-            },
-            hintText: 'Search staff profiles by name...',
-            showClearButton: _profileSearchController.text.isNotEmpty,
-            onClear: () {
-              _profileSearchController.clear();
-              ref.read(adminProfilesSearchQueryProvider.notifier).update("");
-              setState(() {});
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Profiles list
-          Expanded(
-            child: profilesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error loading profiles: $e')),
-              data: (profiles) {
-                if (profiles.isEmpty) {
-                  return const Center(
-                    child: Text('No staff profiles found.', style: TextStyle(color: Colors.grey, fontSize: 13)),
-                  );
-                }
-
-                return ListView.builder(
-                  itemCount: profiles.length,
-                  itemBuilder: (context, index) {
-                    final profile = profiles[index];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12.0),
-                      child: Card(
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          leading: CircleAvatar(
-                            backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                            child: Icon(Icons.person_rounded, color: Theme.of(context).colorScheme.primary),
-                          ),
-                          title: Text(
-                            profile.displayName,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                          subtitle: Text(
-                            'Staff ID: ${profile.id.substring(0, 8)}...',
-                            style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Colors.grey),
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _statusChip(profile.isActive),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                icon: const Icon(Icons.edit_note_rounded, size: 22),
-                                onPressed: () => _openProfileForm(context, profile),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 
   /// Small beautiful M3 active/inactive status chip
@@ -901,192 +813,3 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
   }
 }
 
-// ============================================================================
-// 3. STAFF PROFILE BOTTOM SHEET FORM EDITOR
-// ============================================================================
-class _ProfileFormSheet extends ConsumerStatefulWidget {
-  final Profile profileToEdit;
-
-  const _ProfileFormSheet({required this.profileToEdit});
-
-  @override
-  ConsumerState<_ProfileFormSheet> createState() => _ProfileFormSheetState();
-}
-
-class _ProfileFormSheetState extends ConsumerState<_ProfileFormSheet> {
-  final _formKey = GlobalKey<FormState>();
-  late TextEditingController _nameController;
-  bool _isActive = true;
-  bool _isSaving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController(text: widget.profileToEdit.displayName);
-    _isActive = widget.profileToEdit.isActive;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isSaving = true);
-    try {
-      final name = _nameController.text.trim();
-
-      await ref.read(adminProfilesProvider.notifier).editProfile(
-            id: widget.profileToEdit.id,
-            displayName: name,
-            isActive: _isActive,
-          );
-
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Staff profile saved successfully!'), behavior: SnackBarBehavior.floating),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(cleanMessage),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        child: Material(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.verticalMd,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: SafeArea(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Pinned Header
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Edit Staff Profile',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 24, indent: 24, endIndent: 24),
-
-                    // Scrollable Content
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Card(
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                side: BorderSide(
-                                  color: Theme.of(context).colorScheme.outlineVariant,
-                                ),
-                                borderRadius: AppRadius.brXs,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    Text(
-                                      'Staff Profile Details',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                            color: Theme.of(context).colorScheme.primary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    TextFormField(
-                                      controller: _nameController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Staff Display Name * (NO SPACES)',
-                                        prefixIcon: Icon(Icons.person_outline_rounded),
-                                        hintText: 'e.g. RameshPatel (letters/numbers only)',
-                                      ),
-                                      validator: (val) {
-                                        if (val == null || val.trim().isEmpty) {
-                                          return 'Please enter a display name';
-                                        }
-                                        if (val.trim().contains(' ')) {
-                                          return 'Spaces are NOT allowed (Database requirement)';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                    const SizedBox(height: 16),
-                                    SwitchListTile(
-                                      title: const Text('Staff Activity'),
-                                      subtitle: const Text('Toggle to enable/disable staff transaction log access'),
-                                      value: _isActive,
-                                      activeThumbColor: Theme.of(context).colorScheme.primary,
-                                      contentPadding: EdgeInsets.zero,
-                                      onChanged: (val) => setState(() => _isActive = val),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-
-                            SizedBox(
-                              width: double.infinity,
-                              height: 52,
-                              child: ElevatedButton(
-                                onPressed: _isSaving ? null : _submit,
-                                child: _isSaving
-                                    ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white))
-                                    : const Text('SAVE PROFILE DETAILS'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

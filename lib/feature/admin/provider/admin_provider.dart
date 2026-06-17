@@ -119,18 +119,6 @@ class AdminProfiles extends _$AdminProfiles {
     return repo.fetchAllProfiles();
   }
 
-  /// Modifies profile display name and activity status and invalidates dropdown selections.
-  Future<void> editProfile({
-    required String id,
-    required String displayName,
-    required bool isActive,
-  }) async {
-    final repo = ref.read(adminRepositoryProvider);
-    await repo.updateProfile(id: id, displayName: displayName, isActive: isActive);
-    
-    ref.invalidateSelf();
-    ref.invalidate(profilesProvider);
-  }
 }
 
 // ==========================================

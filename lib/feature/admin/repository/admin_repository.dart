@@ -134,24 +134,4 @@ class AdminRepository extends BaseRepository {
     });
   }
 
-  /// Updates a user's display name and active status.
-  Future<Profile> updateProfile({
-    required String id,
-    required String displayName,
-    required bool isActive,
-  }) {
-    return safeCall('AdminRepository.updateProfile', () async {
-      final response = await client
-          .from('profiles')
-          .update({
-            'display_name': displayName.trim(),
-            'is_active': isActive,
-          })
-          .eq('id', id)
-          .select()
-          .single();
-
-      return Profile.fromJson(response);
-    });
-  }
 }
