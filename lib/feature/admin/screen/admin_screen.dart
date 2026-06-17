@@ -541,39 +541,48 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                   itemBuilder: (context, index) {
                     final profile = profiles[index];
                     final isSelf = profile.id == currentUserId;
+                    final isActive = profile.isActive;
 
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.brSm,
-                        side: BorderSide(
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                          width: 0.5,
+                    return Opacity(
+                      opacity: isActive ? 1.0 : 0.5,
+                      child: Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: AppRadius.brSm,
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                            width: 0.5,
+                          ),
                         ),
-                      ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          child: Text(profile.displayName.isNotEmpty ? profile.displayName.substring(0, 1).toUpperCase() : '?'),
-                        ),
-                        title: Text(
-                          profile.displayName + (isSelf ? ' (You)' : ''),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Row(
-                          children: [
-                            _statusChip(profile.isActive),
-                          ],
-                        ),
-                        trailing: isSelf
-                            ? null
-                            : IconButton(
-                                icon: Icon(
-                                  Icons.delete_outline_rounded,
-                                  color: Theme.of(context).colorScheme.error,
+                        child: ListTile(
+                          enabled: isActive,
+                          leading: CircleAvatar(
+                            child: Text(profile.displayName.isNotEmpty ? profile.displayName.substring(0, 1).toUpperCase() : '?'),
+                          ),
+                          title: Text(
+                            profile.displayName + (isSelf ? ' (You)' : ''),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Row(
+                            children: [
+                              _statusChip(isActive),
+                            ],
+                          ),
+                          trailing: isSelf
+                              ? null
+                              : IconButton(
+                                  icon: Icon(
+                                    Icons.delete_outline_rounded,
+                                    color: isActive
+                                        ? Theme.of(context).colorScheme.error
+                                        : Theme.of(context).disabledColor,
+                                  ),
+                                  onPressed: isActive
+                                      ? () => _confirmDeleteUser(context, profile)
+                                      : null,
                                 ),
-                                onPressed: () => _confirmDeleteUser(context, profile),
-                              ),
+                        ),
                       ),
                     );
                   },
