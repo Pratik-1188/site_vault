@@ -1,6 +1,8 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:site_vault/shared/utils/error_interceptor.dart';
 
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
@@ -75,6 +77,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
@@ -83,82 +86,84 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
             borderRadius: AppRadius.verticalMd,
           ),
           child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Select Date Range',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 20.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Select Date Range',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'FINANCIAL YEARS',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
+                    const SizedBox(height: 16),
+                    Text(
+                      'FINANCIAL YEARS',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...fyList.map((fy) {
-                    final isSelected =
-                        currentRange.from?.year == fy.startDate.year &&
-                        currentRange.from?.month == fy.startDate.month &&
-                        currentRange.from?.day == fy.startDate.day &&
-                        currentRange.to?.year == fy.endDate.year &&
-                        currentRange.to?.month == fy.endDate.month &&
-                        currentRange.to?.day == fy.endDate.day;
+                    const SizedBox(height: 8),
+                    ...fyList.map((fy) {
+                      final isSelected =
+                          currentRange.from?.year == fy.startDate.year &&
+                          currentRange.from?.month == fy.startDate.month &&
+                          currentRange.from?.day == fy.startDate.day &&
+                          currentRange.to?.year == fy.endDate.year &&
+                          currentRange.to?.month == fy.endDate.month &&
+                          currentRange.to?.day == fy.endDate.day;
 
-                    return ListTile(
-                      leading: Icon(
-                        Icons.calendar_today_rounded,
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
-                      ),
-                      title: Text(
-                        fy.label,
-                        style: TextStyle(
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                      return ListTile(
+                        leading: Icon(
+                          Icons.calendar_today_rounded,
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
                         ),
-                      ),
-                      subtitle: Text(
-                        '${fy.startDate.toReadableString()} - ${fy.endDate.toReadableString()}',
-                      ),
-                      trailing: isSelected
-                          ? Icon(
-                              Icons.check_rounded,
-                              color: Theme.of(context).colorScheme.primary,
-                            )
-                          : null,
+                        title: Text(
+                          fy.label,
+                          style: TextStyle(
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${fy.startDate.toReadableString()} - ${fy.endDate.toReadableString()}',
+                        ),
+                        trailing: isSelected
+                            ? Icon(
+                                Icons.check_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                              )
+                            : null,
+                        onTap: () {
+                          ref
+                              .read(startedDateRangeProvider.notifier)
+                              .update(
+                                DateRange(from: fy.startDate, to: fy.endDate),
+                              );
+                          Navigator.pop(context);
+                        },
+                      );
+                    }),
+                    const Divider(height: 16),
+                    ListTile(
+                      leading: const Icon(Icons.date_range_rounded),
+                      title: const Text('Custom Date Range...'),
+                      subtitle: const Text('Select a custom start and end date'),
                       onTap: () {
-                        ref
-                            .read(startedDateRangeProvider.notifier)
-                            .update(
-                              DateRange(from: fy.startDate, to: fy.endDate),
-                            );
                         Navigator.pop(context);
+                        _selectCustomDateRange(context);
                       },
-                    );
-                  }),
-                  const Divider(height: 16),
-                  ListTile(
-                    leading: const Icon(Icons.date_range_rounded),
-                    title: const Text('Custom Date Range...'),
-                    subtitle: const Text('Select a custom start and end date'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _selectCustomDateRange(context);
-                    },
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -202,6 +207,17 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
       return fy.label;
     }
     return '${dateRange.from!.toShortString()} - ${dateRange.to!.toShortString()}';
+  }
+
+  /// Opens the modal bottom sheet to create a new project site
+  void _openSiteForm(BuildContext context, String firmId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _SiteFormSheet(firmId: firmId),
+    );
   }
 
   /// Confirms and handles user sign out
@@ -423,6 +439,13 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
         ],
       ),
     ),
+      floatingActionButton: selectedFirm != null
+          ? FloatingActionButton.extended(
+              onPressed: () => _openSiteForm(context, selectedFirm),
+              icon: const Icon(Icons.add_location_alt_rounded),
+              label: const Text('ADD SITE'),
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: 1,
         onDestinationSelected: (index) {
@@ -833,6 +856,233 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
             ),
             const SizedBox(height: 48),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// SITE BOTTOM SHEET FORM EDITOR
+// ============================================================================
+class _SiteFormSheet extends ConsumerStatefulWidget {
+  final String firmId;
+
+  const _SiteFormSheet({required this.firmId});
+
+  @override
+  ConsumerState<_SiteFormSheet> createState() => _SiteFormSheetState();
+}
+
+class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  DateTime _startedOn = DateTime.now();
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectStartedOnDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _startedOn,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() => _startedOn = picked);
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+    try {
+      final name = _nameController.text.trim();
+      final description = _descriptionController.text.trim();
+
+      await ref.read(siteActionsProvider).createSite(
+        firmId: widget.firmId,
+        name: name,
+        description: description.isEmpty ? null : description,
+        startedOn: _startedOn,
+        status: 'active',
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Site created successfully!'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(cleanMessage),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: AppRadius.verticalMd,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: SafeArea(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Sticky Header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Add New Project Site',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 24, indent: 24, endIndent: 24),
+
+                    // Scrollable form content
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                side: BorderSide(
+                                  color: Theme.of(context).colorScheme.outlineVariant,
+                                ),
+                                borderRadius: AppRadius.brXs,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Text(
+                                      'Site Specification',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                            color: Theme.of(context).colorScheme.primary,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _nameController,
+                                      textCapitalization: TextCapitalization.words,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Site Name *',
+                                        prefixIcon: Icon(Icons.location_on_rounded),
+                                        hintText: 'e.g. Solar Power Grid A',
+                                      ),
+                                      validator: (val) {
+                                        if (val == null || val.trim().isEmpty) {
+                                          return 'Please enter a site name';
+                                        }
+                                        if (val.trim().length < 3) {
+                                          return 'Site name must be at least 3 characters';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      controller: _descriptionController,
+                                      maxLines: 2,
+                                      textCapitalization: TextCapitalization.sentences,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Description / Scope',
+                                        prefixIcon: Icon(Icons.description_rounded),
+                                        hintText: 'Describe the scope of work (optional)',
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      title: const Text('Start Date *'),
+                                      subtitle: Text(
+                                        'Selected: ${_startedOn.toReadableString()}',
+                                      ),
+                                      trailing: IconButton.filledTonal(
+                                        icon: const Icon(Icons.edit_calendar_rounded),
+                                        onPressed: () => _selectStartedOnDate(context),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            FilledButton.icon(
+                              onPressed: _isSaving ? null : _submit,
+                              icon: _isSaving
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.check_rounded),
+                              label: const Text('CREATE SITE'),
+                              style: FilledButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: AppRadius.brSm,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

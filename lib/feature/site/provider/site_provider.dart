@@ -138,6 +138,31 @@ class SiteActions {
 
     return updated;
   }
+
+  Future<Site> createSite({
+    required String firmId,
+    required String name,
+    String? description,
+    required DateTime startedOn,
+    String status = 'active',
+    DateTime? completedOn,
+  }) async {
+    final repo = ref.read(siteRepositoryProvider);
+    final created = await repo.createSite(
+      firmId: firmId,
+      name: name,
+      description: description,
+      startedOn: startedOn,
+      status: status,
+      completedOn: completedOn,
+    );
+
+    // Invalidate sites list provider and specific active sites dropdown provider
+    ref.invalidate(sitesProvider);
+    ref.invalidate(activeSitesByFirmProvider(firmId));
+
+    return created;
+  }
 }
 
 final siteActionsProvider = Provider<SiteActions>((ref) => SiteActions(ref));
