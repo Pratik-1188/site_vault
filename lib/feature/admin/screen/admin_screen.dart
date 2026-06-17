@@ -709,72 +709,68 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Card(
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                side: BorderSide(
-                                  color: Theme.of(context).colorScheme.outlineVariant,
-                                ),
-                                borderRadius: AppRadius.brXs,
+                            Text(
+                              'Vendor Details',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _nameController,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: const InputDecoration(
+                                labelText: 'Vendor Business Name *',
+                                prefixIcon: Icon(Icons.store_rounded),
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    Text(
-                                      'Vendor Details',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                            color: Theme.of(context).colorScheme.primary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    TextFormField(
-                                      controller: _nameController,
-                                      textCapitalization: TextCapitalization.words,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Vendor Business Name *',
-                                        prefixIcon: Icon(Icons.store_rounded),
-                                      ),
-                                      validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a name' : null,
-                                    ),
-                                    const SizedBox(height: 16),
-                                    TextFormField(
-                                      controller: _contactController,
-                                      keyboardType: TextInputType.phone,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Contact / Phone Info',
-                                        prefixIcon: Icon(Icons.phone_rounded),
-                                        hintText: 'e.g. +91 98765 43210',
-                                      ),
-                                    ),
-                                    if (widget.vendorToEdit != null) ...[
-                                      const SizedBox(height: 16),
-                                      SwitchListTile(
-                                        title: const Text('Operational Status'),
-                                        subtitle: const Text('Toggle between Active and Inactive availability'),
-                                        value: _isActive,
-                                        activeThumbColor: Theme.of(context).colorScheme.primary,
-                                        contentPadding: EdgeInsets.zero,
-                                        onChanged: (val) => setState(() => _isActive = val),
-                                      ),
-                                    ],
-                                  ],
-                                ),
+                              validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a name' : null,
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _contactController,
+                              keyboardType: TextInputType.phone,
+                              decoration: const InputDecoration(
+                                labelText: 'Contact / Phone Info',
+                                prefixIcon: Icon(Icons.phone_rounded),
+                                hintText: 'e.g. +91 98765 43210',
                               ),
                             ),
-                            const SizedBox(height: 24),
-
-                            SizedBox(
-                              width: double.infinity,
-                              height: 52,
-                              child: ElevatedButton(
-                                onPressed: _isSaving ? null : _submit,
-                                child: _isSaving
-                                    ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white))
-                                    : const Text('SAVE VENDOR RECORD'),
+                            if (widget.vendorToEdit != null) ...[
+                              const SizedBox(height: 16),
+                              SwitchListTile(
+                                title: const Text('Operational Status'),
+                                subtitle: const Text('Toggle between Active and Inactive availability'),
+                                value: _isActive,
+                                activeThumbColor: Theme.of(context).colorScheme.primary,
+                                contentPadding: EdgeInsets.zero,
+                                onChanged: (val) => setState(() => _isActive = val),
                               ),
+                            ],
+                            const SizedBox(height: 32),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Cancel'),
+                                ),
+                                const SizedBox(width: 12),
+                                FilledButton(
+                                  onPressed: _isSaving ? null : _submit,
+                                  child: _isSaving
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                                          ),
+                                        )
+                                      : const Text('Save Vendor'),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -900,63 +896,59 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Card(
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                side: BorderSide(
-                                  color: Theme.of(context).colorScheme.outlineVariant,
-                                ),
-                                borderRadius: AppRadius.brXs,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    Text(
-                                      'Category Details',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                            color: Theme.of(context).colorScheme.primary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    TextFormField(
-                                      controller: _nameController,
-                                      textCapitalization: TextCapitalization.words,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Expense Category Name *',
-                                        prefixIcon: Icon(Icons.category_rounded),
-                                        hintText: 'e.g. Electric Cables, Concrete Foundation',
-                                      ),
-                                      validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a category name' : null,
-                                    ),
-                                    if (widget.categoryToEdit != null) ...[
-                                      const SizedBox(height: 16),
-                                      SwitchListTile(
-                                        title: const Text('Category Availability'),
-                                        subtitle: const Text('Toggle between Active and Inactive (hides from dropdowns)'),
-                                        value: _isActive,
-                                        activeThumbColor: Theme.of(context).colorScheme.primary,
-                                        contentPadding: EdgeInsets.zero,
-                                        onChanged: (val) => setState(() => _isActive = val),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
+                            Text(
+                              'Category Details',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                             ),
-                            const SizedBox(height: 24),
-
-                            SizedBox(
-                              width: double.infinity,
-                              height: 52,
-                              child: ElevatedButton(
-                                onPressed: _isSaving ? null : _submit,
-                                child: _isSaving
-                                    ? const CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(Colors.white))
-                                    : const Text('SAVE EXPENSE CATEGORY'),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _nameController,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: const InputDecoration(
+                                labelText: 'Expense Category Name *',
+                                prefixIcon: Icon(Icons.category_rounded),
+                                hintText: 'e.g. Electric Cables, Concrete Foundation',
                               ),
+                              validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a category name' : null,
+                            ),
+                            if (widget.categoryToEdit != null) ...[
+                              const SizedBox(height: 16),
+                              SwitchListTile(
+                                title: const Text('Category Availability'),
+                                subtitle: const Text('Toggle between Active and Inactive (hides from dropdowns)'),
+                                value: _isActive,
+                                activeThumbColor: Theme.of(context).colorScheme.primary,
+                                contentPadding: EdgeInsets.zero,
+                                onChanged: (val) => setState(() => _isActive = val),
+                              ),
+                            ],
+                            const SizedBox(height: 32),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Cancel'),
+                                ),
+                                const SizedBox(width: 12),
+                                FilledButton(
+                                  onPressed: _isSaving ? null : _submit,
+                                  child: _isSaving
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                                          ),
+                                        )
+                                      : const Text('Save Category'),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -1076,132 +1068,118 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Card(
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                side: BorderSide(
-                                  color: Theme.of(context).colorScheme.outlineVariant,
-                                ),
-                                borderRadius: AppRadius.brXs,
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    Text(
-                                      'Login Credentials & Details',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                            color: Theme.of(context).colorScheme.primary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    TextFormField(
-                                      controller: _displayNameController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Display Name *',
-                                        prefixIcon: Icon(Icons.person_rounded),
-                                        hintText: 'e.g. JohnDoe (No spaces)',
-                                      ),
-                                      validator: (val) {
-                                        if (val == null || val.trim().isEmpty) {
-                                          return 'Please enter a display name';
-                                        }
-                                        if (val.trim().length < 3) {
-                                          return 'Display name must be at least 3 characters';
-                                        }
-                                        if (RegExp(r'\s').hasMatch(val)) {
-                                          return 'Display name cannot contain spaces';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                    const SizedBox(height: 16),
-                                    TextFormField(
-                                      controller: _emailController,
-                                      keyboardType: TextInputType.emailAddress,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Email Address *',
-                                        prefixIcon: Icon(Icons.email_rounded),
-                                        hintText: 'e.g. user@kkgroup.com',
-                                      ),
-                                      validator: (val) {
-                                        if (val == null || val.trim().isEmpty) {
-                                          return 'Please enter an email';
-                                        }
-                                        if (!val.contains('@')) {
-                                          return 'Please enter a valid email';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                    const SizedBox(height: 16),
-                                    TextFormField(
-                                      controller: _passwordController,
-                                      obscureText: true,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Password *',
-                                        prefixIcon: Icon(Icons.lock_rounded),
-                                        hintText: 'Minimum 6 characters',
-                                      ),
-                                      validator: (val) {
-                                        if (val == null || val.isEmpty) {
-                                          return 'Please enter a password';
-                                        }
-                                        if (val.length < 6) {
-                                          return 'Password must be at least 6 characters';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                    const SizedBox(height: 16),
-                                    DropdownButtonFormField<String>(
-                                      initialValue: _selectedRole,
-                                      decoration: const InputDecoration(
-                                        labelText: 'User Role *',
-                                        prefixIcon: Icon(Icons.badge_rounded),
-                                      ),
-                                      items: const [
-                                        DropdownMenuItem(
-                                          value: 'staff',
-                                          child: Text('staff'),
-                                        ),
-                                        DropdownMenuItem(
-                                          value: 'admin',
-                                          child: Text('admin'),
-                                        ),
-                                      ],
-                                      onChanged: (val) {
-                                        if (val != null) {
-                                          setState(() => _selectedRole = val);
-                                        }
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            Text(
+                              'Login Credentials & Details',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                             ),
-                            const SizedBox(height: 24),
-                            FilledButton.icon(
-                              onPressed: _isSaving ? null : _submit,
-                              icon: _isSaving
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Icon(Icons.check_rounded),
-                              label: const Text('CREATE USER'),
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: AppRadius.brSm,
-                                ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _displayNameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Display Name *',
+                                prefixIcon: Icon(Icons.person_rounded),
+                                hintText: 'e.g. JohnDoe (No spaces)',
                               ),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Please enter a display name';
+                                }
+                                if (val.trim().length < 3) {
+                                  return 'Display name must be at least 3 characters';
+                                }
+                                if (RegExp(r'\s').hasMatch(val)) {
+                                  return 'Display name cannot contain spaces';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: const InputDecoration(
+                                labelText: 'Email Address *',
+                                prefixIcon: Icon(Icons.email_rounded),
+                                hintText: 'e.g. user@kkgroup.com',
+                              ),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Please enter an email';
+                                }
+                                if (!val.contains('@')) {
+                                  return 'Please enter a valid email';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Password *',
+                                prefixIcon: Icon(Icons.lock_rounded),
+                                hintText: 'Minimum 6 characters',
+                              ),
+                              validator: (val) {
+                                if (val == null || val.isEmpty) {
+                                  return 'Please enter a password';
+                                }
+                                if (val.length < 6) {
+                                  return 'Password must be at least 6 characters';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<String>(
+                              initialValue: _selectedRole,
+                              decoration: const InputDecoration(
+                                labelText: 'User Role *',
+                                prefixIcon: Icon(Icons.badge_rounded),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                  value: 'staff',
+                                  child: Text('staff'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'admin',
+                                  child: Text('admin'),
+                                ),
+                              ],
+                              onChanged: (val) {
+                                if (val != null) {
+                                  setState(() => _selectedRole = val);
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 32),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Cancel'),
+                                ),
+                                const SizedBox(width: 12),
+                                FilledButton(
+                                  onPressed: _isSaving ? null : _submit,
+                                  child: _isSaving
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                                          ),
+                                        )
+                                      : const Text('Create User'),
+                                ),
+                              ],
                             ),
                           ],
                         ),

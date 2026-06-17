@@ -978,97 +978,84 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Card(
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                side: BorderSide(
-                                  color: Theme.of(context).colorScheme.outlineVariant,
-                                ),
-                                borderRadius: AppRadius.brXs,
+                            Text(
+                              'Site Specification',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _nameController,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: const InputDecoration(
+                                labelText: 'Site Name *',
+                                prefixIcon: Icon(Icons.location_on_rounded),
+                                hintText: 'e.g. Solar Power Grid A',
                               ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                                  children: [
-                                    Text(
-                                      'Site Specification',
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                            color: Theme.of(context).colorScheme.primary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    TextFormField(
-                                      controller: _nameController,
-                                      textCapitalization: TextCapitalization.words,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Site Name *',
-                                        prefixIcon: Icon(Icons.location_on_rounded),
-                                        hintText: 'e.g. Solar Power Grid A',
-                                      ),
-                                      validator: (val) {
-                                        if (val == null || val.trim().isEmpty) {
-                                          return 'Please enter a site name';
-                                        }
-                                        if (val.trim().length < 3) {
-                                          return 'Site name must be at least 3 characters';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                    const SizedBox(height: 16),
-                                    TextFormField(
-                                      controller: _descriptionController,
-                                      maxLines: 2,
-                                      textCapitalization: TextCapitalization.sentences,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Description / Scope',
-                                        prefixIcon: Icon(Icons.description_rounded),
-                                        hintText: 'Describe the scope of work (optional)',
-                                      ),
-                                    ),
-                                    const SizedBox(height: 16),
-                                    TextFormField(
-                                      controller: _dateController,
-                                      readOnly: true,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Start Date *',
-                                        prefixIcon: Icon(Icons.calendar_today_rounded),
-                                        hintText: 'Select project start date',
-                                      ),
-                                      onTap: () => _selectStartedOnDate(context),
-                                      validator: (val) {
-                                        if (_startedOn == null) {
-                                          return 'Please select a start date';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ],
-                                ),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Please enter a site name';
+                                }
+                                if (val.trim().length < 3) {
+                                  return 'Site name must be at least 3 characters';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _descriptionController,
+                              maxLines: 2,
+                              textCapitalization: TextCapitalization.sentences,
+                              decoration: const InputDecoration(
+                                labelText: 'Description / Scope',
+                                prefixIcon: Icon(Icons.description_rounded),
+                                hintText: 'Describe the scope of work (optional)',
                               ),
                             ),
-                            const SizedBox(height: 24),
-                            FilledButton.icon(
-                              onPressed: _isSaving ? null : _submit,
-                              icon: _isSaving
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Icon(Icons.check_rounded),
-                              label: const Text('CREATE SITE'),
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: AppRadius.brSm,
-                                ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _dateController,
+                              readOnly: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Start Date *',
+                                prefixIcon: Icon(Icons.calendar_today_rounded),
+                                hintText: 'Select project start date',
                               ),
+                              onTap: () => _selectStartedOnDate(context),
+                              validator: (val) {
+                                if (_startedOn == null) {
+                                  return 'Please select a start date';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 32),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Cancel'),
+                                ),
+                                const SizedBox(width: 12),
+                                FilledButton(
+                                  onPressed: _isSaving ? null : _submit,
+                                  child: _isSaving
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                                          ),
+                                        )
+                                      : const Text('Create Site'),
+                                ),
+                              ],
                             ),
                           ],
                         ),

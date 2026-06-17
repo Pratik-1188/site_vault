@@ -316,258 +316,204 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                                 ),
                               )
                             else ...[
-                              // Context Scope Card
-                              Card(
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  side: BorderSide(
-                                    color: Theme.of(context).colorScheme.outlineVariant,
-                                  ),
-                                  borderRadius: AppRadius.brXs,
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      Text(
-                                        'Scope',
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                              color: Theme.of(context).colorScheme.primary,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                              // 1. Context Scope
+                              if (!_isContextLocked) ...[
+                                Text(
+                                  'Scope',
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        color: Theme.of(context).colorScheme.primary,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      const SizedBox(height: 16),
-                                      firmsAsync.when(
-                                        loading: () => const LinearProgressIndicator(),
-                                        error: (err, _) => Text('Error loading firms: $err'),
-                                        data: (firms) {
-                                          return DropdownButtonFormField<String>(
-                                            initialValue: _selectedFirmId,
-                                            decoration: InputDecoration(
-                                              labelText: 'Firm',
-                                              prefixIcon: const Icon(Icons.business_rounded),
-                                              suffixIcon: _isContextLocked
-                                                  ? const Icon(Icons.lock_outline_rounded)
-                                                  : null,
+                                ),
+                                const SizedBox(height: 16),
+                                firmsAsync.when(
+                                  loading: () => const LinearProgressIndicator(),
+                                  error: (err, _) => Text('Error loading firms: $err'),
+                                  data: (firms) {
+                                    return DropdownButtonFormField<String>(
+                                      initialValue: _selectedFirmId,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Firm',
+                                        prefixIcon: Icon(Icons.business_rounded),
+                                      ),
+                                      items: firms.map((firm) {
+                                        return DropdownMenuItem<String>(
+                                          value: firm.id,
+                                          child: Text(firm.name),
+                                        );
+                                      }).toList(),
+                                      onChanged: (val) {
+                                        if (val != null) {
+                                          setState(() {
+                                            _selectedFirmId = val;
+                                            _selectedSiteId = null;
+                                          });
+                                          _loadSitesForFirm(val);
+                                        }
+                                      },
+                                      validator: (val) => val == null ? 'Firm is required' : null,
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                                DropdownButtonFormField<String>(
+                                  initialValue: _selectedSiteId,
+                                  decoration: InputDecoration(
+                                    labelText: 'Site',
+                                    prefixIcon: const Icon(Icons.location_on_rounded),
+                                    suffixIcon: _isLoadingSites
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: Padding(
+                                              padding: EdgeInsets.all(12.0),
+                                              child: CircularProgressIndicator(strokeWidth: 2),
                                             ),
-                                            icon: _isContextLocked ? const SizedBox.shrink() : null,
-                                            items: firms.map((firm) {
-                                              return DropdownMenuItem<String>(
-                                                value: firm.id,
-                                                child: Text(firm.name),
-                                              );
-                                            }).toList(),
-                                            onChanged: _isContextLocked
-                                                ? null
-                                                : (val) {
-                                                    if (val != null) {
-                                                      setState(() {
-                                                        _selectedFirmId = val;
-                                                        _selectedSiteId = null;
-                                                      });
-                                                      _loadSitesForFirm(val);
-                                                    }
-                                                  },
-                                            validator: (val) => val == null ? 'Firm is required' : null,
-                                          );
+                                          )
+                                        : null,
+                                  ),
+                                  items: _activeSites?.map((site) {
+                                        return DropdownMenuItem<String>(
+                                          value: site.id,
+                                          child: Text(site.name),
+                                        );
+                                      }).toList() ??
+                                      [],
+                                  onChanged: _selectedFirmId == null
+                                      ? null
+                                      : (val) {
+                                          setState(() {
+                                            _selectedSiteId = val;
+                                          });
                                         },
-                                      ),
-                                      const SizedBox(height: 16),
-                                      DropdownButtonFormField<String>(
-                                        initialValue: _selectedSiteId,
-                                        decoration: InputDecoration(
-                                          labelText: 'Site',
-                                          prefixIcon: const Icon(Icons.location_on_rounded),
-                                          suffixIcon: _isContextLocked
-                                              ? const Icon(Icons.lock_outline_rounded)
-                                              : _isLoadingSites
-                                                  ? const SizedBox(
-                                                      width: 20,
-                                                      height: 20,
-                                                      child: Padding(
-                                                        padding: EdgeInsets.all(12.0),
-                                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                                      ),
-                                                    )
-                                                  : null,
-                                        ),
-                                        icon: (_isContextLocked || _isLoadingSites)
-                                            ? const SizedBox.shrink()
-                                            : null,
-                                        items: _activeSites?.map((site) {
-                                              return DropdownMenuItem<String>(
-                                                value: site.id,
-                                                child: Text(site.name),
-                                              );
-                                            }).toList() ??
-                                            [],
-                                        onChanged: (_isContextLocked || _selectedFirmId == null)
-                                            ? null
-                                            : (val) {
-                                                setState(() {
-                                                  _selectedSiteId = val;
-                                                });
-                                              },
-                                        validator: (val) => val == null ? 'Site is required' : null,
-                                      ),
-                                    ],
-                                  ),
+                                  validator: (val) => val == null ? 'Site is required' : null,
                                 ),
+                                const SizedBox(height: 24),
+                              ],
+
+                              // 2. Document Metadata
+                              Text(
+                                'Document Metadata',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                               ),
                               const SizedBox(height: 16),
-
-                              // Document Metadata Card
-                              Card(
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  side: BorderSide(
-                                    color: Theme.of(context).colorScheme.outlineVariant,
-                                  ),
-                                  borderRadius: AppRadius.brXs,
+                              TextFormField(
+                                controller: _fileNameController,
+                                decoration: const InputDecoration(
+                                  labelText: 'File Name *',
+                                  hintText: 'Enter a custom name for this document...',
+                                  prefixIcon: Icon(Icons.title_rounded),
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      Text(
-                                        'Document Metadata',
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                              color: Theme.of(context).colorScheme.primary,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      TextFormField(
-                                        controller: _fileNameController,
-                                        decoration: const InputDecoration(
-                                          labelText: 'File Name *',
-                                          hintText: 'Enter a custom name for this document...',
-                                          prefixIcon: Icon(Icons.title_rounded),
-                                        ),
-                                        textCapitalization: TextCapitalization.sentences,
-                                        validator: (val) {
-                                          if (val == null || val.trim().isEmpty) {
-                                            return 'Please enter a file name';
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                      const SizedBox(height: 16),
-                                      TextFormField(
-                                        controller: _descriptionController,
-                                        maxLines: 3,
-                                        decoration: const InputDecoration(
-                                          labelText: 'Document Description / Tag Details',
-                                          hintText: 'Enter helpful notes explaining what this drawing covers...',
-                                          prefixIcon: Icon(Icons.description_rounded),
-                                        ),
-                                        textCapitalization: TextCapitalization.sentences,
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                textCapitalization: TextCapitalization.sentences,
+                                validator: (val) {
+                                  if (val == null || val.trim().isEmpty) {
+                                    return 'Please enter a file name';
+                                  }
+                                  return null;
+                                },
                               ),
                               const SizedBox(height: 16),
-
-                              // File Attachment Card
-                              Card(
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  side: BorderSide(
-                                    color: Theme.of(context).colorScheme.outlineVariant,
-                                  ),
-                                  borderRadius: AppRadius.brXs,
+                              TextFormField(
+                                controller: _descriptionController,
+                                maxLines: 3,
+                                decoration: const InputDecoration(
+                                  labelText: 'Document Description / Tag Details',
+                                  hintText: 'Enter helpful notes explaining what this drawing covers...',
+                                  prefixIcon: Icon(Icons.description_rounded),
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                                    children: [
-                                      Text(
-                                        'File Attachment',
-                                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                              color: Theme.of(context).colorScheme.primary,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                      const SizedBox(height: 16),
-                                      _pickedFileName != null
-                                          ? Card(
-                                              elevation: 0,
-                                              color: Theme.of(context).colorScheme.surfaceContainer,
-                                              child: Padding(
-                                                padding: const EdgeInsets.all(16.0),
-                                                child: Row(
-                                                  children: [
-                                                    Icon(
-                                                      _getFileIcon(_pickedFileName!),
-                                                      color: Theme.of(context).colorScheme.primary,
-                                                    ),
-                                                    const SizedBox(width: 16),
-                                                    Expanded(
-                                                      child: Column(
-                                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                                        children: [
-                                                          Text(
-                                                            _pickedFileName!,
-                                                            style: const TextStyle(
-                                                              fontWeight: FontWeight.bold,
-                                                              fontSize: 14,
-                                                            ),
-                                                            maxLines: 1,
-                                                            overflow: TextOverflow.ellipsis,
-                                                          ),
-                                                          const SizedBox(height: 4),
-                                                          Text(
-                                                            'File picked & ready for upload',
-                                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                                                ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    IconButton(
-                                                      icon: const Icon(
-                                                        Icons.delete_outline_rounded,
-                                                        color: Colors.redAccent,
-                                                      ),
-                                                      onPressed: () {
-                                                        setState(() {
-                                                          _pickedFileName = null;
-                                                          _pickedFileBytes = null;
-                                                          _fileNameController.clear();
-                                                        });
-                                                      },
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            )
-                                          : Padding(
-                                              padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                              child: OutlinedButton.icon(
-                                                onPressed: _pickDocument,
-                                                icon: const Icon(Icons.cloud_upload_outlined),
-                                                label: const Text('Select Site Blueprint, PDF, or Doc'),
-                                              ),
-                                            ),
-                                    ],
-                                  ),
-                                ),
+                                textCapitalization: TextCapitalization.sentences,
                               ),
                               const SizedBox(height: 24),
 
-                              // Upload submit action
-                              SizedBox(
-                                width: double.infinity,
-                                height: 52,
-                                child: ElevatedButton(
-                                  onPressed: _submitForm,
-                                  child: const Text('UPLOAD SITE DOCUMENT'),
-                                ),
+                              // 3. File Attachment
+                              Text(
+                                'File Attachment',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                              const SizedBox(height: 16),
+                              _pickedFileName != null
+                                  ? Card(
+                                      elevation: 0,
+                                      color: Theme.of(context).colorScheme.surfaceContainer,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(16.0),
+                                        child: Row(
+                                          children: [
+                                            Icon(
+                                              _getFileIcon(_pickedFileName!),
+                                              color: Theme.of(context).colorScheme.primary,
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    _pickedFileName!,
+                                                    style: const TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 14,
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                  const SizedBox(height: 4),
+                                                  Text(
+                                                    'File picked & ready for upload',
+                                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            IconButton(
+                                              icon: const Icon(
+                                                Icons.delete_outline_rounded,
+                                                color: Colors.redAccent,
+                                              ),
+                                              onPressed: () {
+                                                setState(() {
+                                                  _pickedFileName = null;
+                                                  _pickedFileBytes = null;
+                                                  _fileNameController.clear();
+                                                });
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                      child: OutlinedButton.icon(
+                                        onPressed: _pickDocument,
+                                        icon: const Icon(Icons.cloud_upload_outlined),
+                                        label: const Text('Select Site Blueprint, PDF, or Doc'),
+                                      ),
+                                    ),
+                              const SizedBox(height: 32),
+
+                              // Bottom Action Buttons
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  OutlinedButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  FilledButton(
+                                    onPressed: _submitForm,
+                                    child: const Text('Upload Site Document'),
+                                  ),
+                                ],
                               ),
                             ],
                           ],

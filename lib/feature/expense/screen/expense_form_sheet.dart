@@ -814,30 +814,24 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 // Bottom Action Buttons
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 12),
                     FilledButton(
                       onPressed: _submitForm,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                      ),
                       child: Text(
                         widget.expenseToEdit == null
                             ? 'Submit Expense'
                             : 'Save Changes',
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                      ),
-                      child: const Text('Cancel'),
                     ),
                   ],
                 ),
