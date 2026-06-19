@@ -7,6 +7,7 @@ import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
+import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
 
 /// Central analytics hub screen showing Group (All Firms) and Firm comparative cost statistics.
 class AnalyticsDashboardScreen extends ConsumerStatefulWidget {
@@ -521,27 +522,12 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
 
   /// Confirms and handles user sign out
   Future<void> _handleSignOut() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text(
-          'Are you sure you want to sign out of KK Group Site Vault?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('SIGN OUT'),
-          ),
-        ],
-      ),
+    final confirmed = await ConfirmationDialogs.confirm(
+      context,
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out of KK Group Site Vault?',
+      confirmLabel: 'SIGN OUT',
+      isDestructive: true,
     );
 
     if (confirmed == true && mounted) {

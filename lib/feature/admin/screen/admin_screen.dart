@@ -9,6 +9,7 @@ import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/shared/widget/status_badge.dart';
+import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/shared/model/profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -48,30 +49,15 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
 
   /// Confirms and handles user sign out
   Future<void> _handleSignOut() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text(
-          'Are you sure you want to sign out of KK Group Site Vault?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('SIGN OUT'),
-          ),
-        ],
-      ),
+    final confirmed = await ConfirmationDialogs.confirm(
+      context,
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out of KK Group Site Vault?',
+      confirmLabel: 'SIGN OUT',
+      isDestructive: true,
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed && mounted) {
       try {
         await ref.read(authActionsProvider).signOut();
       } catch (e) {
@@ -115,34 +101,20 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
     );
   }
 
-  void _confirmDeleteUser(BuildContext context, Profile profile) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Delete User Account'),
-        content: Text(
-          'Are you sure you want to delete ${profile.displayName}?\n\n'
+  void _confirmDeleteUser(BuildContext context, Profile profile) async {
+    final confirmed = await ConfirmationDialogs.confirmStrong(
+      context,
+      title: 'Delete User Account',
+      message: 'Are you sure you want to delete ${profile.displayName}?\n\n'
           'This will delete their auth login credentials immediately and set their status to inactive. '
           'Their historical records (expenses, documents) will remain associated with their inactive profile.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              _deleteUserAction(profile.id);
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('DELETE'),
-          ),
-        ],
-      ),
+      expectedMatch: profile.displayName,
+      confirmLabel: 'DELETE',
     );
+
+    if (confirmed) {
+      _deleteUserAction(profile.id);
+    }
   }
 
   Future<void> _deleteUserAction(String userId) async {
@@ -1081,12 +1053,27 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final displayName = _displayNameController.text.trim();
+
+    final confirmed = await ConfirmationDialogs.confirmReview(
+      context,
+      title: 'Review User Details',
+      message: 'Please verify the details below before creating the user account.',
+      fields: {
+        'Email': email,
+        'Display Name': displayName,
+        'Role': _selectedRole,
+        'Password': '•' * password.length,
+      },
+      confirmLabel: 'Create',
+    );
+
+    if (!confirmed) return;
+
     setState(() => _isSaving = true);
     try {
-      final email = _emailController.text.trim();
-      final password = _passwordController.text;
-      final displayName = _displayNameController.text.trim();
-
       await ref.read(adminProfilesProvider.notifier).addUser(
         email: email,
         password: password,

@@ -5,8 +5,9 @@ import 'package:site_vault/feature/home/provider/home_provider.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
 import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
-import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/vault_card.dart';
+import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
+import 'package:site_vault/shared/theme/app_radius.dart';
 
 /// A premium, M3-styled Operations Dashboard representing the master corporate ledger overview.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -19,25 +20,12 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Confirms and handles user sign out
   Future<void> _handleSignOut() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out of KK Group Site Vault?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('SIGN OUT'),
-          ),
-        ],
-      ),
+    final confirmed = await ConfirmationDialogs.confirm(
+      context,
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out of KK Group Site Vault?',
+      confirmLabel: 'SIGN OUT',
+      isDestructive: true,
     );
 
     if (confirmed == true && mounted) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
 
 import 'package:site_vault/feature/document/model/document.dart';
 import 'package:site_vault/feature/document/provider/document_provider.dart';
@@ -14,28 +15,13 @@ import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 
 class SiteDetailDialogs {
-  static Future<bool?> confirmSignOut(BuildContext context) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text(
-          'Are you sure you want to sign out of KK Group Site Vault?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('SIGN OUT'),
-          ),
-        ],
-      ),
+  static Future<bool?> confirmSignOut(BuildContext context) async {
+    return ConfirmationDialogs.confirm(
+      context,
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out of KK Group Site Vault?',
+      confirmLabel: 'SIGN OUT',
+      isDestructive: true,
     );
   }
 
@@ -43,87 +29,57 @@ class SiteDetailDialogs {
     BuildContext context, {
     required String fromStatus,
     required String toStatus,
-  }) {
-    if (fromStatus == toStatus) return Future.value(true);
+    required String siteName,
+  }) async {
+    if (fromStatus.toLowerCase() == toStatus.toLowerCase()) return true;
 
-    final normalizedFrom = fromStatus.toLowerCase();
     final normalizedTo = toStatus.toLowerCase();
     final destructive = normalizedTo == 'deleted';
-    final title = destructive ? 'Delete Site?' : 'Change Site Status?';
-    final message = destructive
-        ? 'This will mark the site as DELETED and soft-delete related expenses. Documents will remain attached.'
-        : 'This will mark the site as COMPLETED and lock the site in read-only mode.';
 
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(
-          '$message\n\nCurrent status: ${normalizedFrom.toUpperCase()}\nNew status: ${normalizedTo.toUpperCase()}',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('CONFIRM'),
-          ),
-        ],
-      ),
+    final String title;
+    final String message;
+
+    if (destructive) {
+      title = 'Delete Site?';
+      message = 'This will mark the site as DELETED and soft-delete related expenses. Documents will remain attached.';
+    } else {
+      title = 'Complete Site?';
+      message = 'This will mark the site as COMPLETED and lock the site in read-only mode.';
+    }
+
+    final confirmed = await ConfirmationDialogs.confirmStrong(
+      context,
+      title: title,
+      message: message,
+      expectedMatch: siteName,
+      confirmLabel: destructive ? 'DELETE' : 'COMPLETE',
     );
+    return confirmed;
   }
 
   static Future<bool?> confirmDeleteExpense(
     BuildContext context, {
     required Expense expense,
-  }) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Expense?'),
-        content: Text(
-          'Are you sure you want to delete "${expense.title}"? This will soft-delete the transaction record.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('DELETE'),
-          ),
-        ],
-      ),
+  }) async {
+    return ConfirmationDialogs.confirm(
+      context,
+      title: 'Delete Expense?',
+      message: 'Are you sure you want to delete "${expense.title}"? This will soft-delete the transaction record.',
+      confirmLabel: 'DELETE',
+      isDestructive: true,
     );
   }
 
   static Future<bool?> confirmDeleteDocument(
     BuildContext context, {
     required SiteDocument document,
-  }) {
-    return showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Document?'),
-        content: Text(
-          'Are you sure you want to delete "${document.fileName}"? This will soft-delete the document record from the vault.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
-            child: const Text('DELETE'),
-          ),
-        ],
-      ),
+  }) async {
+    return ConfirmationDialogs.confirm(
+      context,
+      title: 'Delete Document?',
+      message: 'Are you sure you want to delete "${document.fileName}"? This will soft-delete the document record from the vault.',
+      confirmLabel: 'DELETE',
+      isDestructive: true,
     );
   }
 

@@ -165,6 +165,7 @@ class SiteDetailController extends ChangeNotifier {
           context,
           fromStatus: previousStatus,
           toStatus: targetStatus,
+          siteName: currentSite?.name ?? name,
         );
         if (confirmed != true) {
           return;
