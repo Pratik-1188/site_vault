@@ -119,15 +119,32 @@ class AdminProfiles extends _$AdminProfiles {
     return repo.fetchAllProfiles();
   }
 
-  /// Modifies profile display name and activity status and invalidates dropdown selections.
-  Future<void> editProfile({
-    required String id,
+  /// Securely creates a new user and invalidates relevant caches.
+  Future<void> addUser({
+    required String email,
+    required String password,
     required String displayName,
-    required bool isActive,
+    required String role,
   }) async {
     final repo = ref.read(adminRepositoryProvider);
-    await repo.updateProfile(id: id, displayName: displayName, isActive: isActive);
+    await repo.createAppUser(
+      email: email,
+      password: password,
+      displayName: displayName,
+      role: role,
+    );
     
+    // Invalidate local admin profiles list and dropdown selections cache
+    ref.invalidateSelf();
+    ref.invalidate(profilesProvider);
+  }
+
+  /// Securely deletes a user and invalidates relevant caches.
+  Future<void> deleteUser(String userId) async {
+    final repo = ref.read(adminRepositoryProvider);
+    await repo.deleteAppUser(userId);
+    
+    // Invalidate local admin profiles list and dropdown selections cache
     ref.invalidateSelf();
     ref.invalidate(profilesProvider);
   }

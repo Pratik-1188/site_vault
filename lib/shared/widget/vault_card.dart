@@ -52,7 +52,102 @@ class VaultCard extends StatelessWidget {
     final theme = Theme.of(context);
     final isClickable = onTap != null;
 
-    final cardWidget = Card(
+    final content = Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 1. Top Metadata Header (Name & Created At date-time)
+          if ((creatorName != null && creatorName!.trim().isNotEmpty) || createdAt != null) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Top Left: Creator / Changer Name
+                if (creatorName != null && creatorName!.trim().isNotEmpty)
+                  Expanded(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.person_outline_rounded,
+                          size: 14,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            creatorName!,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                
+                // Top Right: Date Time Timestamp
+                if (createdAt != null)
+                  Text(
+                    createdAt!.toReadableDateTimeString(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Divider(
+              height: 1,
+              thickness: 0.5,
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // 2. Main Row Content (Leading widget, titles, and trailing widget)
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: 16),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    title,
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      subtitle!,
+                    ],
+                  ],
+                ),
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: 8),
+                trailing!,
+              ],
+            ],
+          ),
+
+          // 3. Optional Expanded Body Content (Used for popups / detail cards)
+          if (expandedContent != null) ...[
+            const SizedBox(height: 12),
+            expandedContent!,
+          ],
+        ],
+      ),
+    );
+
+    return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 12),
       color: theme.colorScheme.surfaceContainer,
@@ -63,111 +158,13 @@ class VaultCard extends StatelessWidget {
           width: 1.0,
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 1. Top Metadata Header (Name & Created At date-time)
-            if ((creatorName != null && creatorName!.trim().isNotEmpty) || createdAt != null) ...[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Top Left: Creator / Changer Name
-                  if (creatorName != null && creatorName!.trim().isNotEmpty)
-                    Expanded(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.person_outline_rounded,
-                            size: 14,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              creatorName!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  
-                  // Top Right: Date Time Timestamp
-                  if (createdAt != null)
-                    Text(
-                      createdAt!.toReadableDateTimeString(),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Divider(
-                height: 1,
-                thickness: 0.5,
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
-              ),
-              const SizedBox(height: 12),
-            ],
-
-            // 2. Main Row Content (Leading widget, titles, and trailing widget)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                if (leading != null) ...[
-                  leading!,
-                  const SizedBox(width: 16),
-                ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      title,
-                      if (subtitle != null) ...[
-                        const SizedBox(height: 4),
-                        subtitle!,
-                      ],
-                    ],
-                  ),
-                ),
-                if (trailing != null) ...[
-                  const SizedBox(width: 8),
-                  trailing!,
-                ],
-              ],
-            ),
-
-            // 3. Optional Expanded Body Content (Used for popups / detail cards)
-            if (expandedContent != null) ...[
-              const SizedBox(height: 12),
-              expandedContent!,
-            ],
-          ],
-        ),
-      ),
+      child: isClickable
+          ? InkWell(
+              onTap: onTap,
+              borderRadius: AppRadius.brMd,
+              child: content,
+            )
+          : content,
     );
-
-    // If clickable, wrap inside an interactive inkwell ripple component
-    if (isClickable) {
-      return InkWell(
-        onTap: onTap,
-        borderRadius: AppRadius.brMd,
-        child: cardWidget,
-      );
-    }
-
-    return cardWidget;
   }
 }

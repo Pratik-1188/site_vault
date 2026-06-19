@@ -5,8 +5,9 @@ import 'package:site_vault/feature/home/provider/home_provider.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
 import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
-import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/vault_card.dart';
+import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
+import 'package:site_vault/shared/theme/app_radius.dart';
 
 /// A premium, M3-styled Operations Dashboard representing the master corporate ledger overview.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -19,25 +20,12 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   /// Confirms and handles user sign out
   Future<void> _handleSignOut() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out of KK Group Site Vault?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('SIGN OUT'),
-          ),
-        ],
-      ),
+    final confirmed = await ConfirmationDialogs.confirm(
+      context,
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out of KK Group Site Vault?',
+      confirmLabel: 'SIGN OUT',
+      isDestructive: true,
     );
 
     if (confirmed == true && mounted) {
@@ -406,7 +394,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Log New\nExpense',
+                                'Add\nExpense',
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                                       fontWeight: FontWeight.bold,
@@ -448,7 +436,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Add Document',
+                                'Upload\nDocument',
                                 textAlign: TextAlign.center,
                                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                                       fontWeight: FontWeight.bold,
@@ -538,8 +526,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                       if (tableName == 'expenses') {
                         logIcon = Icons.currency_rupee_rounded;
-                        logIconColor = const Color(0xFF1565C0);
-                        logBgColor = const Color(0xFFE3F2FD);
+                        logIconColor = Theme.of(context).colorScheme.onPrimaryContainer;
+                        logBgColor = Theme.of(context).colorScheme.primaryContainer;
                         
                         final newData = log['new_data'] as Map<String, dynamic>?;
                         final expenseTitle = newData?['title'] as String? ?? 'Expense Logged';
@@ -549,8 +537,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         logSubtitle = 'Amount: ₹${amount.toStringAsFixed(2)}';
                       } else if (tableName == 'sites') {
                         logIcon = Icons.location_on_rounded;
-                        logIconColor = const Color(0xFF2E7D32);
-                        logBgColor = const Color(0xFFE8F5E9);
+                        logIconColor = Theme.of(context).colorScheme.onSecondaryContainer;
+                        logBgColor = Theme.of(context).colorScheme.secondaryContainer;
 
                         final newData = log['new_data'] as Map<String, dynamic>?;
                         final siteName = newData?['name'] as String? ?? 'Site Created';
@@ -560,8 +548,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         logSubtitle = 'Status: ${status.toUpperCase()}';
                       } else {
                         logIcon = Icons.info_outline_rounded;
-                        logIconColor = Theme.of(context).colorScheme.primary;
-                        logBgColor = Theme.of(context).colorScheme.surfaceContainer;
+                        logIconColor = Theme.of(context).colorScheme.onTertiaryContainer;
+                        logBgColor = Theme.of(context).colorScheme.tertiaryContainer;
                         
                         logTitle = '${operation.toUpperCase()} on ${tableName.toUpperCase()}';
                         logSubtitle = null;
@@ -574,13 +562,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         creatorName: creatorName,
                         createdAt: createdAt,
                         onTap: null, // Logs can not be edited and they should not be clickable
-                        leading: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: logBgColor,
-                            borderRadius: AppRadius.brXs,
-                          ),
+                        leading: CircleAvatar(
+                          radius: 20,
+                          backgroundColor: logBgColor,
                           child: Icon(
                             logIcon,
                             color: logIconColor,

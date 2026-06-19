@@ -188,7 +188,7 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                                     children: [
                                       Icon(Icons.edit_rounded, size: 16),
                                       SizedBox(width: 8),
-                                      Text('Edit Details'),
+                                      Text('Edit'),
                                     ],
                                   ),
                                 ),

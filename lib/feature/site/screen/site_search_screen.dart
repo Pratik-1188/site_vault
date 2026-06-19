@@ -1,6 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:site_vault/shared/utils/error_interceptor.dart';
+import 'package:site_vault/shared/utils/snackbar_message.dart';
 
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
@@ -9,6 +12,8 @@ import 'package:site_vault/shared/utils/financial_year.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
+import 'package:site_vault/shared/widget/status_badge.dart';
+import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
@@ -75,6 +80,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return Container(
@@ -83,82 +89,84 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
             borderRadius: AppRadius.verticalMd,
           ),
           child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 20.0),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Select Date Range',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20.0, 0.0, 20.0, 20.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Select Date Range',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'FINANCIAL YEARS',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.grey,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
+                    const SizedBox(height: 16),
+                    Text(
+                      'FINANCIAL YEARS',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...fyList.map((fy) {
-                    final isSelected =
-                        currentRange.from?.year == fy.startDate.year &&
-                        currentRange.from?.month == fy.startDate.month &&
-                        currentRange.from?.day == fy.startDate.day &&
-                        currentRange.to?.year == fy.endDate.year &&
-                        currentRange.to?.month == fy.endDate.month &&
-                        currentRange.to?.day == fy.endDate.day;
+                    const SizedBox(height: 8),
+                    ...fyList.map((fy) {
+                      final isSelected =
+                          currentRange.from?.year == fy.startDate.year &&
+                          currentRange.from?.month == fy.startDate.month &&
+                          currentRange.from?.day == fy.startDate.day &&
+                          currentRange.to?.year == fy.endDate.year &&
+                          currentRange.to?.month == fy.endDate.month &&
+                          currentRange.to?.day == fy.endDate.day;
 
-                    return ListTile(
-                      leading: Icon(
-                        Icons.calendar_today_rounded,
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.primary
-                            : null,
-                      ),
-                      title: Text(
-                        fy.label,
-                        style: TextStyle(
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                      return ListTile(
+                        leading: Icon(
+                          Icons.calendar_today_rounded,
+                          color: isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
                         ),
-                      ),
-                      subtitle: Text(
-                        '${fy.startDate.toReadableString()} - ${fy.endDate.toReadableString()}',
-                      ),
-                      trailing: isSelected
-                          ? Icon(
-                              Icons.check_rounded,
-                              color: Theme.of(context).colorScheme.primary,
-                            )
-                          : null,
+                        title: Text(
+                          fy.label,
+                          style: TextStyle(
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${fy.startDate.toReadableString()} - ${fy.endDate.toReadableString()}',
+                        ),
+                        trailing: isSelected
+                            ? Icon(
+                                Icons.check_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                              )
+                            : null,
+                        onTap: () {
+                          ref
+                              .read(startedDateRangeProvider.notifier)
+                              .update(
+                                DateRange(from: fy.startDate, to: fy.endDate),
+                              );
+                          Navigator.pop(context);
+                        },
+                      );
+                    }),
+                    const Divider(height: 16),
+                    ListTile(
+                      leading: const Icon(Icons.date_range_rounded),
+                      title: const Text('Custom Date Range...'),
+                      subtitle: const Text('Select a custom start and end date'),
                       onTap: () {
-                        ref
-                            .read(startedDateRangeProvider.notifier)
-                            .update(
-                              DateRange(from: fy.startDate, to: fy.endDate),
-                            );
                         Navigator.pop(context);
+                        _selectCustomDateRange(context);
                       },
-                    );
-                  }),
-                  const Divider(height: 16),
-                  ListTile(
-                    leading: const Icon(Icons.date_range_rounded),
-                    title: const Text('Custom Date Range...'),
-                    subtitle: const Text('Select a custom start and end date'),
-                    onTap: () {
-                      Navigator.pop(context);
-                      _selectCustomDateRange(context);
-                    },
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -204,29 +212,25 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     return '${dateRange.from!.toShortString()} - ${dateRange.to!.toShortString()}';
   }
 
+  /// Opens the modal bottom sheet to create a new project site
+  void _openSiteForm(BuildContext context, String firmId) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _SiteFormSheet(firmId: firmId),
+    );
+  }
+
   /// Confirms and handles user sign out
   Future<void> _handleSignOut() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Sign Out'),
-        content: const Text(
-          'Are you sure you want to sign out of KK Group Site Vault?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('SIGN OUT'),
-          ),
-        ],
-      ),
+    final confirmed = await ConfirmationDialogs.confirm(
+      context,
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out of KK Group Site Vault?',
+      confirmLabel: 'SIGN OUT',
+      isDestructive: true,
     );
 
     if (confirmed == true && mounted) {
@@ -234,12 +238,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
         await ref.read(authActionsProvider).signOut();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error signing out: $e'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
+          AppSnackBar.showError(context, 'Error signing out: $e');
         }
       }
     }
@@ -423,6 +422,13 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
         ],
       ),
     ),
+      floatingActionButton: selectedFirm != null
+          ? FloatingActionButton.extended(
+              onPressed: () => _openSiteForm(context, selectedFirm),
+              icon: const Icon(Icons.add_location_alt_rounded),
+              label: const Text('ADD SITE'),
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: 1,
         onDestinationSelected: (index) {
@@ -624,15 +630,19 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
         ? site.startedOn!.toReadableString().toUpperCase()
         : 'NOT STARTED';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        borderRadius: AppRadius.brSm,
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12.0),
+      color: Theme.of(context).colorScheme.surfaceContainer,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.brMd,
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+          width: 1.0,
+        ),
       ),
       child: InkWell(
-        borderRadius: AppRadius.brSm,
+        borderRadius: AppRadius.brMd,
         onTap: () {
           context.push('/site/${site.id}', extra: site);
         },
@@ -676,7 +686,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  _buildSiteStatusBadge(context, site.status),
+                  StatusBadge(status: site.status),
                 ],
               ),
 
@@ -748,54 +758,6 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     );
   }
 
-  Widget _buildSiteStatusBadge(BuildContext context, String status) {
-    final statusLower = status.toLowerCase();
-    final isActive = statusLower == 'active';
-    final isCompleted = statusLower == 'completed';
-
-    final Color bgColor;
-    final Color textColor;
-    final IconData icon;
-
-    if (isActive) {
-      bgColor = Theme.of(context).colorScheme.secondaryContainer;
-      textColor = Theme.of(context).colorScheme.onSecondaryContainer;
-      icon = Icons.flash_on_rounded;
-    } else if (isCompleted) {
-      bgColor = Theme.of(context).colorScheme.surfaceContainerHighest;
-      textColor = Theme.of(context).colorScheme.onSurfaceVariant;
-      icon = Icons.done_all_rounded;
-    } else {
-      bgColor = Theme.of(context).colorScheme.errorContainer;
-      textColor = Theme.of(context).colorScheme.onErrorContainer;
-      icon = Icons.archive_outlined;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: AppRadius.brXs,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: textColor),
-          const SizedBox(width: 4),
-          Text(
-            status.toUpperCase(),
-            style: TextStyle(
-              color: textColor,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildEmptyState() {
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -833,6 +795,220 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
             ),
             const SizedBox(height: 48),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// SITE BOTTOM SHEET FORM EDITOR
+// ============================================================================
+class _SiteFormSheet extends ConsumerStatefulWidget {
+  final String firmId;
+
+  const _SiteFormSheet({required this.firmId});
+
+  @override
+  ConsumerState<_SiteFormSheet> createState() => _SiteFormSheetState();
+}
+
+class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _dateController = TextEditingController();
+  DateTime? _startedOn;
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _dateController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectStartedOnDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _startedOn ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) {
+      setState(() {
+        _startedOn = picked;
+        _dateController.text = picked.toReadableString();
+      });
+    }
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate() || _startedOn == null) return;
+
+    setState(() => _isSaving = true);
+    try {
+      final name = _nameController.text.trim();
+      final description = _descriptionController.text.trim();
+
+      await ref.read(siteActionsProvider).createSite(
+        firmId: widget.firmId,
+        name: name,
+        description: description.isEmpty ? null : description,
+        startedOn: _startedOn!,
+        status: 'active',
+      );
+
+      if (mounted) {
+        Navigator.pop(context);
+        AppSnackBar.showSuccess(context, 'Site created successfully!');
+      }
+    } catch (e) {
+      if (mounted) {
+        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
+        AppSnackBar.showError(context, cleanMessage);
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: Material(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: AppRadius.verticalMd,
+          child: Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+            child: SafeArea(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Sticky Header
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Add Site',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close_rounded),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Divider(height: 24, indent: 24, endIndent: 24),
+
+                    // Scrollable form content
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Site Specification',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _nameController,
+                              textCapitalization: TextCapitalization.words,
+                              decoration: const InputDecoration(
+                                labelText: 'Site Name *',
+                                prefixIcon: Icon(Icons.location_on_rounded),
+                                hintText: 'e.g. Solar Power Grid A',
+                              ),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Please enter a site name';
+                                }
+                                if (val.trim().length < 3) {
+                                  return 'Site name must be at least 3 characters';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _descriptionController,
+                              maxLines: 2,
+                              textCapitalization: TextCapitalization.sentences,
+                              decoration: const InputDecoration(
+                                labelText: 'Description / Scope',
+                                prefixIcon: Icon(Icons.description_rounded),
+                                hintText: 'Describe the scope of work (optional)',
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _dateController,
+                              readOnly: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Start Date *',
+                                prefixIcon: Icon(Icons.calendar_today_rounded),
+                                hintText: 'Select project start date',
+                              ),
+                              onTap: () => _selectStartedOnDate(context),
+                              validator: (val) {
+                                if (_startedOn == null) {
+                                  return 'Please select a start date';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 32),
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: _isSaving ? null : () => Navigator.pop(context),
+                                  child: const Text('Cancel'),
+                                ),
+                                const SizedBox(width: 12),
+                                FilledButton(
+                                  onPressed: _isSaving ? null : _submit,
+                                  child: _isSaving
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                                          ),
+                                        )
+                                      : const Text('Create Site'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

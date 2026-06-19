@@ -9,6 +9,7 @@ import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
+import 'package:site_vault/shared/utils/snackbar_message.dart';
 
 import 'package:site_vault/feature/site/provider/site_provider.dart';
 import 'package:site_vault/feature/site/model/site.dart';
@@ -210,12 +211,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error capturing photo: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackBar.showError(context, 'Error capturing photo: $e');
     }
   }
 
@@ -237,12 +233,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error picking file: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      AppSnackBar.showError(context, 'Error picking file: $e');
     }
   }
 
@@ -283,22 +274,12 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
     final currentUserId = ref.read(currentAuthUserProvider)?.id;
     if (currentUserId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('User session expired. Please log in again.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      AppSnackBar.showError(context, 'User session expired. Please log in again.');
       return;
     }
 
     if (_selectedFirmId == null || _selectedSiteId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select both Firm and Site.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      AppSnackBar.showError(context, 'Please select both Firm and Site.');
       return;
     }
 
@@ -367,27 +348,17 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.expenseToEdit == null
-                  ? 'Expense created successfully!'
-                  : 'Expense updated successfully!',
-            ),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: const Color(0xFF059669),
-          ),
+        AppSnackBar.showSuccess(
+          context,
+          widget.expenseToEdit == null
+              ? 'Expense created successfully!'
+              : 'Expense updated successfully!',
         );
       }
     } catch (e) {
       if (mounted) {
         final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(cleanMessage),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppSnackBar.showError(context, cleanMessage);
       }
     } finally {
       if (mounted) {
@@ -431,12 +402,12 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            widget.expenseToEdit == null ? 'Add Expense' : 'Edit Expense',
+                            widget.expenseToEdit == null ? 'Add Expense' : 'Edit Expense Details',
                             style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
                           ),
                           IconButton(
                             icon: const Icon(Icons.close_rounded),
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: _isUploading ? null : () => Navigator.pop(context),
                           ),
                         ],
                       ),
@@ -451,432 +422,411 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            if (_isUploading)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 40.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(),
-                          SizedBox(height: 16),
-                          Text(
-                            'Uploading receipt & saving record...',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                else ...[
-                  // 1. Context Scope
-                  if (!_isContextLocked) ...[
-                    Text(
-                      'Scope',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 16),
-                    firmsAsync.when(
-                      loading: () => const LinearProgressIndicator(),
-                      error: (err, _) => Text('Error loading firms: $err'),
-                      data: (firms) {
-                        return DropdownButtonFormField<String>(
-                          initialValue: _selectedFirmId,
-                          decoration: const InputDecoration(
-                            labelText: 'Firm',
-                            prefixIcon: Icon(Icons.business_rounded),
-                          ),
-                          items: firms.map((firm) {
-                            return DropdownMenuItem<String>(
-                              value: firm.id,
-                              child: Text(firm.name),
-                            );
-                          }).toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() {
-                                _selectedFirmId = val;
-                                _selectedSiteId = null;
-                              });
-                              _loadSitesForFirm(val);
-                            }
-                          },
-                          validator: (val) =>
-                              val == null ? 'Firm is required' : null,
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      initialValue: _selectedSiteId,
-                      decoration: InputDecoration(
-                        labelText: 'Site',
-                        prefixIcon: const Icon(Icons.location_on_rounded),
-                        suffixIcon: _isLoadingSites
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: Padding(
-                                  padding: EdgeInsets.all(12.0),
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              )
-                            : null,
-                      ),
-                      items: _activeSites?.map((site) {
-                            return DropdownMenuItem<String>(
-                              value: site.id,
-                              child: Text(site.name),
-                            );
-                          }).toList() ??
-                          [],
-                      onChanged: _selectedFirmId == null
-                          ? null
-                          : (val) {
-                              setState(() {
-                                _selectedSiteId = val;
-                              });
-                            },
-                      validator: (val) =>
-                          val == null ? 'Site is required' : null,
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // 2. Core Details Section
-                  Text(
-                    'Core Details',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'Expense Title',
-                      hintText: 'e.g. Purchase of Fuses & Wires',
-                      prefixIcon: Icon(Icons.title_rounded),
-                    ),
-                    textCapitalization: TextCapitalization.sentences,
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Title is required';
-                      }
-                      if (val.trim().length <= 2) {
-                        return 'Title must be longer than 2 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _amountController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Total Amount',
-                      hintText: '0.00',
-                      prefixIcon: Icon(Icons.currency_rupee_rounded),
-                    ),
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Amount required';
-                      }
-                      final numVal = double.tryParse(val);
-                      if (numVal == null || numVal <= 0) {
-                        return 'Enter a valid positive amount';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('GST Bill'),
-                    subtitle: const Text('Tax invoice with GST details'),
-                    secondary: const Icon(Icons.receipt_long_rounded),
-                    value: _isGst,
-                    onChanged: (val) => setState(() => _isGst = val),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // 3. Attributes Section
-                  Text(
-                    'Attributes',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  categoriesAsync.when(
-                    loading: () => const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                    error: (e, _) => Text('Err: $e'),
-                    data: (categories) {
-                      return DropdownButtonFormField<String>(
-                        initialValue: _selectedCategoryId,
-                        decoration: const InputDecoration(
-                          labelText: 'Category',
-                          prefixIcon: Icon(Icons.category_rounded),
-                        ),
-                        items: categories.map((c) {
-                          return DropdownMenuItem(
-                            value: c.id,
-                            child: Text(c.name),
-                          );
-                        }).toList(),
-                        onChanged: (val) => setState(
-                          () => _selectedCategoryId = val,
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<PaymentMode>(
-                    initialValue: _selectedPaymentMode,
-                    decoration: const InputDecoration(
-                      labelText: 'Payment Mode',
-                      prefixIcon: Icon(Icons.payment_rounded),
-                    ),
-                    items: PaymentMode.values.map((mode) {
-                      return DropdownMenuItem(
-                        value: mode,
-                        child: Text(mode.toDisplayLabel()),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _selectedPaymentMode = val);
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  vendorsAsync.when(
-                    loading: () => const Center(
-                      child: SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                    error: (e, _) => Text('Err: $e'),
-                    data: (vendors) {
-                      return DropdownButtonFormField<String>(
-                        initialValue: _selectedVendorId,
-                        decoration: const InputDecoration(
-                          labelText: 'Vendor',
-                          prefixIcon: Icon(Icons.store_rounded),
-                        ),
-                        items: vendors.map((v) {
-                          return DropdownMenuItem(
-                            value: v.id,
-                            child: Text(v.name),
-                          );
-                        }).toList(),
-                        onChanged: (val) =>
-                            setState(() => _selectedVendorId = val),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    readOnly: true,
-                    controller: TextEditingController(
-                      text: _selectedDate.toReadableString(),
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Expense Date',
-                      prefixIcon: Icon(Icons.calendar_today_rounded),
-                    ),
-                    onTap: () => _selectDate(context),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // 4. Documentation & Options Section
-                  Text(
-                    'Documentation & Options',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 16),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Refundable Expense'),
-                    secondary: const Icon(Icons.assignment_return_rounded),
-                    value: _isRefundable,
-                    onChanged: (val) => setState(() => _isRefundable = val),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _descriptionController,
-                    maxLines: 3,
-                    decoration: const InputDecoration(
-                      labelText: 'Notes',
-                      hintText: 'Additional details...',
-                      prefixIcon: Icon(Icons.description_rounded),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Attachment',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  _pickedFileName != null
-                      ? Card(
-                          elevation: 0,
-                          color: Theme.of(context).colorScheme.surfaceContainer,
-                          child: ListTile(
-                            leading: Icon(
-                              _pickedFileName!.toLowerCase().endsWith('.pdf')
-                                  ? Icons.picture_as_pdf_rounded
-                                  : Icons.image_rounded,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            title: Text(
-                              _pickedFileName!,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                            ),
-                            subtitle: Text(
-                              'Ready to upload on save',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline_rounded,
-                                color: Colors.redAccent,
+                            // 1. Context Scope
+                            if (!_isContextLocked) ...[
+                              Text(
+                                'Scope',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _pickedFileName = null;
-                                  _pickedFileBytes = null;
-                                });
+                              const SizedBox(height: 16),
+                              firmsAsync.when(
+                                loading: () => const LinearProgressIndicator(),
+                                error: (err, _) => Text('Error loading firms: $err'),
+                                data: (firms) {
+                                  return DropdownButtonFormField<String>(
+                                    initialValue: _selectedFirmId,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Firm',
+                                      prefixIcon: Icon(Icons.business_rounded),
+                                    ),
+                                    items: firms.map((firm) {
+                                      return DropdownMenuItem<String>(
+                                        value: firm.id,
+                                        child: Text(firm.name),
+                                      );
+                                    }).toList(),
+                                    onChanged: _isUploading ? null : (val) {
+                                      if (val != null) {
+                                        setState(() {
+                                          _selectedFirmId = val;
+                                          _selectedSiteId = null;
+                                        });
+                                        _loadSitesForFirm(val);
+                                      }
+                                    },
+                                    validator: (val) =>
+                                        val == null ? 'Firm is required' : null,
+                                  );
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              DropdownButtonFormField<String>(
+                                initialValue: _selectedSiteId,
+                                decoration: InputDecoration(
+                                  labelText: 'Site',
+                                  prefixIcon: const Icon(Icons.location_on_rounded),
+                                  suffixIcon: _isLoadingSites
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: Padding(
+                                            padding: EdgeInsets.all(12.0),
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                items: _activeSites?.map((site) {
+                                      return DropdownMenuItem<String>(
+                                        value: site.id,
+                                        child: Text(site.name),
+                                      );
+                                    }).toList() ??
+                                    [],
+                                onChanged: (_selectedFirmId == null || _isUploading)
+                                    ? null
+                                    : (val) {
+                                        setState(() {
+                                          _selectedSiteId = val;
+                                        });
+                                      },
+                                validator: (val) =>
+                                    val == null ? 'Site is required' : null,
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+
+                            // 2. Core Details Section
+                            Text(
+                              'Core Details',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _titleController,
+                              enabled: !_isUploading,
+                              decoration: const InputDecoration(
+                                labelText: 'Expense Title',
+                                hintText: 'e.g. Purchase of Fuses & Wires',
+                                prefixIcon: Icon(Icons.title_rounded),
+                              ),
+                              textCapitalization: TextCapitalization.sentences,
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Title is required';
+                                }
+                                if (val.trim().length <= 2) {
+                                  return 'Title must be longer than 2 characters';
+                                }
+                                return null;
                               },
                             ),
-                          ),
-                        )
-                      : Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            side: BorderSide(
-                              color:
-                                  Theme.of(context).colorScheme.outlineVariant,
-                              style: BorderStyle.solid,
-                            ),
-                            borderRadius: AppRadius.brXs,
-                          ),
-                          child: InkWell(
-                            borderRadius: AppRadius.brXs,
-                            onTap: () => _showAttachmentPicker(context),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 24.0,
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _amountController,
+                              enabled: !_isUploading,
+                              keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true,
                               ),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.add_a_photo_rounded,
-                                    size: 32,
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Upload Receipt',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Tap to capture or select',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant,
-                                        ),
-                                  ),
-                                ],
+                              decoration: const InputDecoration(
+                                labelText: 'Total Amount',
+                                hintText: '0.00',
+                                prefixIcon: Icon(Icons.currency_rupee_rounded),
                               ),
+                              validator: (val) {
+                                if (val == null || val.trim().isEmpty) {
+                                  return 'Amount required';
+                                }
+                                final numVal = double.tryParse(val);
+                                if (numVal == null || numVal <= 0) {
+                                  return 'Enter a valid positive amount';
+                                }
+                                return null;
+                              },
                             ),
-                          ),
-                        )
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
+                            const SizedBox(height: 16),
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text('GST Bill'),
+                              subtitle: const Text('Include GST tax invoice details'),
+                              secondary: const Icon(Icons.receipt_long_rounded),
+                              value: _isGst,
+                              onChanged: _isUploading ? null : (val) => setState(() => _isGst = val),
+                            ),
+                            const SizedBox(height: 24),
 
-                // Bottom Action Buttons
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    FilledButton(
-                      onPressed: _submitForm,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
+                            // 3. Attributes Section
+                            Text(
+                              'Attributes',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 16),
+                            categoriesAsync.when(
+                              loading: () => const Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                              error: (e, _) => Text('Err: $e'),
+                              data: (categories) {
+                                return DropdownButtonFormField<String>(
+                                  initialValue: _selectedCategoryId,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Category',
+                                    prefixIcon: Icon(Icons.category_rounded),
+                                  ),
+                                  items: categories.map((c) {
+                                    return DropdownMenuItem(
+                                      value: c.id,
+                                      child: Text(c.name),
+                                    );
+                                  }).toList(),
+                                  onChanged: _isUploading ? null : (val) => setState(
+                                    () => _selectedCategoryId = val,
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<PaymentMode>(
+                              initialValue: _selectedPaymentMode,
+                              decoration: const InputDecoration(
+                                labelText: 'Payment Mode',
+                                prefixIcon: Icon(Icons.payment_rounded),
+                              ),
+                              items: PaymentMode.values.map((mode) {
+                                return DropdownMenuItem(
+                                  value: mode,
+                                  child: Text(mode.toDisplayLabel()),
+                                );
+                              }).toList(),
+                              onChanged: _isUploading ? null : (val) {
+                                if (val != null) {
+                                  setState(() => _selectedPaymentMode = val);
+                                }
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            vendorsAsync.when(
+                              loading: () => const Center(
+                                child: SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                              error: (e, _) => Text('Err: $e'),
+                              data: (vendors) {
+                                return DropdownButtonFormField<String>(
+                                  initialValue: _selectedVendorId,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Vendor',
+                                    prefixIcon: Icon(Icons.store_rounded),
+                                  ),
+                                  items: vendors.map((v) {
+                                    return DropdownMenuItem(
+                                      value: v.id,
+                                      child: Text(v.name),
+                                    );
+                                  }).toList(),
+                                  onChanged: _isUploading ? null : (val) =>
+                                      setState(() => _selectedVendorId = val),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              readOnly: true,
+                              controller: TextEditingController(
+                                text: _selectedDate.toReadableString(),
+                              ),
+                              decoration: const InputDecoration(
+                                labelText: 'Expense Date',
+                                prefixIcon: Icon(Icons.calendar_today_rounded),
+                              ),
+                              onTap: _isUploading ? null : () => _selectDate(context),
+                            ),
+                            const SizedBox(height: 24),
+
+                            // 4. Documentation & Options Section
+                            Text(
+                              'Documentation & Options',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            const SizedBox(height: 16),
+                             SwitchListTile(
+                               contentPadding: EdgeInsets.zero,
+                               title: const Text('Refundable'),
+                               subtitle: const Text('Mark this expense for reimbursement'),
+                               secondary: const Icon(Icons.assignment_return_rounded),
+                               value: _isRefundable,
+                               onChanged: _isUploading ? null : (val) => setState(() => _isRefundable = val),
+                             ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Attachment',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                            const SizedBox(height: 8),
+                            _pickedFileName != null
+                                ? Card(
+                                    elevation: 0,
+                                    color: Theme.of(context).colorScheme.surfaceContainer,
+                                    child: ListTile(
+                                      leading: Icon(
+                                        _pickedFileName!.toLowerCase().endsWith('.pdf')
+                                            ? Icons.picture_as_pdf_rounded
+                                            : Icons.image_rounded,
+                                        color: Theme.of(context).colorScheme.primary,
+                                      ),
+                                      title: Text(
+                                        _pickedFileName!,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                      ),
+                                      subtitle: Text(
+                                        'Ready to upload on save',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant,
+                                            ),
+                                      ),
+                                      trailing: IconButton(
+                                        icon: const Icon(
+                                          Icons.delete_outline_rounded,
+                                          color: Colors.redAccent,
+                                        ),
+                                        onPressed: _isUploading
+                                            ? null
+                                            : () {
+                                                setState(() {
+                                                  _pickedFileName = null;
+                                                  _pickedFileBytes = null;
+                                                });
+                                              },
+                                      ),
+                                    ),
+                                  )
+                                : Card(
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      side: BorderSide(
+                                        color:
+                                            Theme.of(context).colorScheme.outlineVariant,
+                                        style: BorderStyle.solid,
+                                      ),
+                                      borderRadius: AppRadius.brXs,
+                                    ),
+                                    child: InkWell(
+                                      borderRadius: AppRadius.brXs,
+                                      onTap: _isUploading ? null : () => _showAttachmentPicker(context),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 24.0,
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            Icon(
+                                              Icons.add_a_photo_rounded,
+                                              size: 32,
+                                              color:
+                                                  Theme.of(context).colorScheme.primary,
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              'Upload Receipt',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleSmall
+                                                  ?.copyWith(
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Tap to capture or select',
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall
+                                                  ?.copyWith(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                            const SizedBox(height: 32),
+
+                            // Bottom Action Buttons
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                OutlinedButton(
+                                  onPressed: _isUploading ? null : () => Navigator.pop(context),
+                                  child: const Text('Cancel'),
+                                ),
+                                const SizedBox(width: 12),
+                                FilledButton(
+                                  onPressed: _isUploading ? null : _submitForm,
+                                  child: _isUploading
+                                      ? const SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                                          ),
+                                        )
+                                      : Text(
+                                          widget.expenseToEdit == null
+                                              ? 'Create Expense'
+                                              : 'Save Changes',
+                                        ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                      child: Text(
-                        widget.expenseToEdit == null
-                            ? 'Submit Expense'
-                            : 'Save Changes',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(48),
-                      ),
-                      child: const Text('Cancel'),
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  ),
-);
+    );
   }
 }

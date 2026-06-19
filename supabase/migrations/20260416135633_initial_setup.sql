@@ -459,3 +459,223 @@ CREATE POLICY "Team Full Access" ON audit_logs
 FOR ALL TO authenticated
 USING (true)
 WITH CHECK (true);
+
+
+-- ########################################################
+-- 9B. ADMIN USER MANAGEMENT FUNCTIONS & CONSTRAINTS
+-- ########################################################
+
+
+-- Admin-only RPC function to create a new user securely
+CREATE OR REPLACE FUNCTION public.create_app_user(
+    p_email TEXT,
+    p_password TEXT,
+    p_display_name TEXT,
+    p_role TEXT
+)
+RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, extensions
+AS $$
+DECLARE
+    new_user_id UUID;
+    encrypted_pw TEXT;
+BEGIN
+    -- 1. Check if the executing user is an admin
+    IF NOT EXISTS (
+        SELECT 1 FROM auth.users
+        WHERE id = auth.uid()
+          AND (
+            (raw_user_meta_data->>'role' = 'admin') OR
+            (raw_app_meta_data->>'role' = 'admin')
+          )
+    ) THEN
+        RAISE EXCEPTION 'Access denied: Only administrators can create users.';
+    END IF;
+
+    -- 2. Validate input parameters
+    IF p_email IS NULL OR trim(p_email) = '' THEN
+        RAISE EXCEPTION 'Email is required.';
+    END IF;
+    IF p_password IS NULL OR length(p_password) < 6 THEN
+        RAISE EXCEPTION 'Password must be at least 6 characters.';
+    END IF;
+    IF p_display_name IS NULL OR trim(p_display_name) = '' THEN
+        RAISE EXCEPTION 'Display name is required.';
+    END IF;
+    -- check for spaces in display_name
+    IF p_display_name ~ '\s' THEN
+        RAISE EXCEPTION 'Display name cannot contain spaces.';
+    END IF;
+
+    -- 3. Check for display name uniqueness (case-insensitive) in profiles
+    IF EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE LOWER(display_name) = LOWER(p_display_name)
+    ) THEN
+        RAISE EXCEPTION 'Display name % is already taken.', p_display_name;
+    END IF;
+
+    -- 4. Check if email already exists in auth.users
+    IF EXISTS (
+        SELECT 1 FROM auth.users
+        WHERE LOWER(email) = LOWER(p_email)
+    ) THEN
+        RAISE EXCEPTION 'Email % is already registered.', p_email;
+    END IF;
+
+    -- 5. Generate new UUID and encrypt password
+    new_user_id := gen_random_uuid();
+    encrypted_pw := extensions.crypt(p_password, extensions.gen_salt('bf'));
+
+    -- 6. Insert into auth.users
+    INSERT INTO auth.users (
+        instance_id,
+        id,
+        aud,
+        role,
+        email,
+        encrypted_password,
+        email_confirmed_at,
+        raw_app_meta_data,
+        raw_user_meta_data,
+        created_at,
+        updated_at,
+        confirmation_token,
+        email_change,
+        email_change_token_new,
+        recovery_token
+    )
+    VALUES (
+        '00000000-0000-0000-0000-000000000000',
+        new_user_id,
+        'authenticated',
+        'authenticated',
+        p_email,
+        encrypted_pw,
+        now(),
+        jsonb_build_object('provider', 'email', 'providers', array['email'], 'role', p_role),
+        jsonb_build_object('display_name', p_display_name, 'role', p_role),
+        now(),
+        now(),
+        '', '', '', ''
+    );
+
+    -- 7. Insert into auth.identities
+    INSERT INTO auth.identities (
+        user_id,
+        identity_data,
+        provider,
+        provider_id,
+        last_sign_in_at,
+        created_at,
+        updated_at
+    )
+    VALUES (
+        new_user_id,
+        jsonb_build_object('sub', new_user_id::text, 'email', LOWER(p_email)),
+        'email',
+        new_user_id::text,
+        now(),
+        now(),
+        now()
+    );
+
+    RETURN new_user_id;
+END;
+$$;
+
+-- Admin-only RPC function to delete a user securely
+CREATE OR REPLACE FUNCTION public.delete_app_user(
+    p_user_id UUID
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+BEGIN
+    -- 1. Check if the executing user is an admin
+    IF NOT EXISTS (
+        SELECT 1 FROM auth.users
+        WHERE id = auth.uid()
+          AND (
+            (raw_user_meta_data->>'role' = 'admin') OR
+            (raw_app_meta_data->>'role' = 'admin')
+          )
+    ) THEN
+        RAISE EXCEPTION 'Access denied: Only administrators can delete users.';
+    END IF;
+
+    -- 2. Prevent admin from deleting themselves
+    IF p_user_id = auth.uid() THEN
+        RAISE EXCEPTION 'You cannot delete your own account.';
+    END IF;
+
+    -- 3. Delete from auth.users (triggers profile inactivation automatically)
+    DELETE FROM auth.users WHERE id = p_user_id;
+END;
+$$;
+
+
+-- ########################################################
+-- 10. SEED INITIAL ADMIN (Default fallback)
+-- ########################################################
+
+INSERT INTO auth.users (
+    instance_id,
+    id,
+    aud,
+    role,
+    email,
+    encrypted_password,
+    email_confirmed_at,
+    raw_app_meta_data,
+    raw_user_meta_data,
+    created_at,
+    updated_at,
+    confirmation_token,
+    email_change,
+    email_change_token_new,
+    recovery_token
+)
+SELECT 
+    '00000000-0000-0000-0000-000000000000',
+    'a2c89f5c-8973-4ea2-8b9a-412cd17498c8',
+    'authenticated',
+    'authenticated',
+    'admin@kkgroup.com',
+    extensions.crypt('SecureAdminPassword123!', extensions.gen_salt('bf')),
+    now(),
+    '{"provider": "email", "providers": ["email"], "role": "admin"}'::jsonb,
+    '{"display_name": "SystemAdmin", "role": "admin"}'::jsonb,
+    now(),
+    now(),
+    '', '', '', ''
+WHERE NOT EXISTS (
+    SELECT 1 FROM auth.users LIMIT 1
+);
+
+-- ########################################################
+-- 11. SEED DATA: CORE FIRMS (Production Synced UUIDs - DO NOT CHANGE)
+-- ########################################################
+
+INSERT INTO public.firms (id, name, description)
+VALUES 
+    (
+        '0f140f6f-d994-4695-a838-bee13b3802f1', 
+        'KK Electricals', 
+        'Electrical contracting and maintenance division'
+    ),
+    (
+        '169eceeb-dfc3-4535-b6ad-2e9f8eb884d3', 
+        'KK Associates', 
+        'Consultancy and project management services'
+    ),
+    (
+        '4e01a36a-87c0-4cca-9428-a2747a130c96', 
+        'KK Solar', 
+        'Solar panel installation and renewable energy projects'
+    )
+ON CONFLICT (id) DO NOTHING;

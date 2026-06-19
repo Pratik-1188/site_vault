@@ -89,4 +89,32 @@ class SiteRepository extends BaseRepository {
       return Site.fromJson(response);
     });
   }
+
+  /// Creates a new site record in Supabase.
+  Future<Site> createSite({
+    required String firmId,
+    required String name,
+    String? description,
+    required DateTime startedOn,
+    String status = 'active',
+    DateTime? completedOn,
+  }) {
+    return safeCall('SiteRepository.createSite', () async {
+      final response = await client
+          .from('sites')
+          .insert({
+            'firm_id': firmId,
+            'name': name.trim(),
+            'description': description?.trim().isEmpty == true ? null : description?.trim(),
+            'started_on': '${startedOn.year}-${startedOn.month.toString().padLeft(2, '0')}-${startedOn.day.toString().padLeft(2, '0')}',
+            'status': status,
+            'completed_on': completedOn != null
+                ? '${completedOn.year}-${completedOn.month.toString().padLeft(2, '0')}-${completedOn.day.toString().padLeft(2, '0')}'
+                : null,
+          })
+          .select()
+          .single();
+      return Site.fromJson(response);
+    });
+  }
 }
