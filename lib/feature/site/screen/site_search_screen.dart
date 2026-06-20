@@ -15,6 +15,7 @@ import 'package:site_vault/shared/widget/status_badge.dart';
 import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
 import 'package:site_vault/shared/widget/sheet_action_row.dart';
 import 'package:site_vault/shared/widget/app_navigation_bar.dart';
+import 'package:site_vault/shared/widget/async_value_widget.dart';
 import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
@@ -289,8 +290,8 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
           // 1. Segmented Business Division Selector
-          firmsAsync.when(
-            data: (firmsList) => _buildSegmentedButton(context, selectedFirm, firmsList),
+          AsyncValueWidget(
+            value: firmsAsync,
             loading: () => const Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
@@ -302,6 +303,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
               ),
             ),
             error: (err, _) => const SizedBox.shrink(),
+            data: (firmsList) => _buildSegmentedButton(context, selectedFirm, firmsList),
           ),
 
           // 2. Floating Search Bar with Filter Reset Option
@@ -326,8 +328,8 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
 
           // 4. Scrollable Ledger Content (Active Sites list)
           Expanded(
-            child: sitesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+            child: AsyncValueWidget(
+              value: sitesAsync,
               error: (error, _) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),

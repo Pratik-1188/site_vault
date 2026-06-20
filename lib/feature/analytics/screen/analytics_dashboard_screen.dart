@@ -8,6 +8,7 @@ import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
 import 'package:site_vault/shared/widget/app_navigation_bar.dart';
+import 'package:site_vault/shared/widget/async_value_widget.dart';
 import 'package:site_vault/shared/utils/number_formatter.dart';
 
 /// Central analytics hub screen showing Group (All Firms) and Firm comparative cost statistics.
@@ -72,8 +73,8 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
         body: Column(
           children: [
           // Scope Toggle Selector
-          firmsAsync.when(
-            data: (firmsList) => _buildScopeSelector(firmsList),
+          AsyncValueWidget(
+            value: firmsAsync,
             loading: () => const Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
@@ -85,12 +86,13 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
               ),
             ),
             error: (err, _) => const SizedBox.shrink(),
+            data: (firmsList) => _buildScopeSelector(firmsList),
           ),
 
           Expanded(
-            child: summariesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error loading dashboard: $e')),
+            child: AsyncValueWidget(
+              value: summariesAsync,
+              errorMessage: 'Error loading dashboard',
               data: (firmSummaries) {
                 // If All Firms, compute combined summary; otherwise select matching firm
                 final activeSummaries = selectedFirmId == null
@@ -329,9 +331,10 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
             Text('Spend breakdown by expense category types.', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 20),
 
-            categorySpendAsync.when(
-              loading: () => const Center(child: LinearProgressIndicator()),
-              error: (e, _) => Text('Error category splits: $e'),
+            AsyncValueWidget(
+              value: categorySpendAsync,
+              useLinearProgress: true,
+              errorMessage: 'Error category splits',
               data: (categories) {
                 if (categories.isEmpty) {
                   return Center(
@@ -411,9 +414,9 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
             Text('Month-over-month aggregated spending trends.', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 20),
 
-            monthlySpendAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text('Error timelines: $e'),
+            AsyncValueWidget(
+              value: monthlySpendAsync,
+              errorMessage: 'Error timelines',
               data: (trends) {
                 if (trends.isEmpty) {
                   return Center(

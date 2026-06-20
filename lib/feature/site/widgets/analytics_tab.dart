@@ -5,6 +5,7 @@ import 'package:site_vault/feature/analytics/model/analytics_models.dart';
 import 'package:site_vault/feature/analytics/provider/analytics_provider.dart';
 
 import '../model/site.dart';
+import 'package:site_vault/shared/widget/async_value_widget.dart';
 import 'package:site_vault/shared/utils/number_formatter.dart';
 
 class AnalyticsTab extends ConsumerWidget {
@@ -36,9 +37,9 @@ class AnalyticsTab extends ConsumerWidget {
             style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
-          categorySpendAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text('Error loading category splits: $e'),
+          AsyncValueWidget(
+            value: categorySpendAsync,
+            errorMessage: 'Error loading category splits',
             data: (categories) {
               if (categories.isEmpty) {
                 return Center(
@@ -133,9 +134,10 @@ class AnalyticsTab extends ConsumerWidget {
             style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
-          monthlySpendAsync.when(
-            loading: () => const Center(child: LinearProgressIndicator()),
-            error: (e, _) => Text('Error loading monthly trend: $e'),
+          AsyncValueWidget(
+            value: monthlySpendAsync,
+            useLinearProgress: true,
+            errorMessage: 'Error loading monthly trend',
             data: (trends) {
               if (trends.isEmpty) {
                 return Center(
@@ -224,9 +226,10 @@ class AnalyticsTab extends ConsumerWidget {
             style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
-          vendorSpendAsync.when(
-            loading: () => const Center(child: LinearProgressIndicator()),
-            error: (e, _) => Text('Error loading vendor spend: $e'),
+          AsyncValueWidget(
+            value: vendorSpendAsync,
+            useLinearProgress: true,
+            errorMessage: 'Error loading vendor spend',
             data: (vendors) {
               if (vendors.isEmpty) {
                 return Center(

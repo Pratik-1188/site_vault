@@ -5,6 +5,7 @@ import 'package:site_vault/feature/document/model/document.dart';
 import 'package:site_vault/feature/document/provider/document_provider.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/widget/vault_card.dart';
+import 'package:site_vault/shared/widget/async_value_widget.dart';
 
 import '../model/site.dart';
 
@@ -84,10 +85,9 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: documentsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) =>
-                  Center(child: Text('Error loading documents: $e')),
+            child: AsyncValueWidget(
+              value: documentsAsync,
+              errorMessage: 'Error loading documents',
               data: (documents) {
                 if (documents.isEmpty) {
                   return Center(

@@ -370,9 +370,11 @@ NavigationBar(
 
 ---
 
-### 12. `asyncValue.when(loading: CircularProgressIndicator, error: Text('Error: $e'))` — 10+ Instances
+### 12. `asyncValue.when(loading: CircularProgressIndicator, error: Text('Error: $e'))` — 10+ Instances [RESOLVED]
 
-The `.when()` loading/error arms are repeated across all list views. The error string format is also inconsistent:
+**Status**: Resolved. Extracted the repeated `.when()` loading/error arms across list views into a unified, reusable `AsyncValueWidget<T>` widget under `lib/shared/widget/async_value_widget.dart`.
+
+The `.when()` loading/error arms were repeated across all list views. The error string format was also inconsistent:
 
 - `'Error loading vendors: $e'` — admin_screen
 - `'Failed to load sites: $error'` — site_search (different phrasing)

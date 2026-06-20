@@ -13,6 +13,7 @@ import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
 import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
 import 'package:site_vault/shared/widget/sheet_action_row.dart';
 import 'package:site_vault/shared/widget/app_navigation_bar.dart';
+import 'package:site_vault/shared/widget/async_value_widget.dart';
 import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import 'package:site_vault/shared/model/profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -236,9 +237,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
 
           // Vendors list
           Expanded(
-            child: vendorsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error loading vendors: $e')),
+            child: AsyncValueWidget(
+              value: vendorsAsync,
+              errorMessage: 'Error loading vendors',
               data: (vendors) {
                 if (vendors.isEmpty) {
                   return Center(
@@ -344,9 +345,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
 
           // Categories list
           Expanded(
-            child: categoriesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error loading categories: $e')),
+            child: AsyncValueWidget(
+              value: categoriesAsync,
+              errorMessage: 'Error loading categories',
               data: (categories) {
                 if (categories.isEmpty) {
                   return Center(
@@ -449,9 +450,9 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
 
           // Users list
           Expanded(
-            child: profilesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error loading users: $e')),
+            child: AsyncValueWidget(
+              value: profilesAsync,
+              errorMessage: 'Error loading users',
               data: (profiles) {
                 if (profiles.isEmpty) {
                   return Center(

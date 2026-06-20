@@ -7,6 +7,7 @@ import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/utils/number_formatter.dart';
 import 'package:site_vault/shared/widget/vault_card.dart';
+import 'package:site_vault/shared/widget/async_value_widget.dart';
 
 import '../model/site.dart';
 
@@ -65,12 +66,13 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          totalAsync.when(
+          AsyncValueWidget(
+            value: totalAsync,
             loading: () => Container(
               height: 80,
               color: Theme.of(context).colorScheme.surfaceContainer.withValues(alpha: 0.1),
             ),
-            error: (e, _) => Text('Error loading total: $e'),
+            errorMessage: 'Error loading total',
             data: (total) {
               return Card(
                 child: ListTile(
@@ -109,7 +111,8 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
             },
           ),
           const SizedBox(height: 12),
-          categoriesAsync.when(
+          AsyncValueWidget(
+            value: categoriesAsync,
             loading: () => const SizedBox(height: 38),
             error: (e, _) => const SizedBox.shrink(),
             data: (categories) {
@@ -145,10 +148,9 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: expensesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) =>
-                  Center(child: Text('Error loading expenses: $e')),
+            child: AsyncValueWidget(
+              value: expensesAsync,
+              errorMessage: 'Error loading expenses',
               data: (expenses) {
                 if (expenses.isEmpty) {
                   return Center(
