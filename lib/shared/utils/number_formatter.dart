@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 /// A lightweight numeric and currency formatting utility for KK Group Site Vault.
 ///
 /// Keeps formatting clean and consistent across the UI without bringing in
@@ -37,5 +39,33 @@ extension NumberFormatter on num {
     }
     
     return '${isNegative ? '-' : ''}₹$formattedInteger$decimalPart';
+  }
+
+  /// Returns a [TextSpan] representing the formatted currency, where the
+  /// decimal part (paise) is rendered in a smaller size than the main part.
+  TextSpan toCurrencySpan({
+    TextStyle? style,
+    double decimalScale = 0.75,
+  }) {
+    final formatted = toCurrency();
+    final parts = formatted.split('.');
+    if (parts.length < 2) {
+      return TextSpan(text: formatted, style: style);
+    }
+    
+    final mainPart = parts[0];
+    final decimalPart = '.${parts[1]}';
+    
+    final double baseSize = style?.fontSize ?? 14.0;
+    final decStyle = (style ?? const TextStyle()).copyWith(
+      fontSize: baseSize * decimalScale,
+    );
+    
+    return TextSpan(
+      children: [
+        TextSpan(text: mainPart, style: style),
+        TextSpan(text: decimalPart, style: decStyle),
+      ],
+    );
   }
 }

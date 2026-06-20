@@ -82,10 +82,11 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                     'Total Expenses Spent',
                     style: TextStyle(fontSize: 12),
                   ),
-                  subtitle: Text(
-                    total.toCurrency(),
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
+                  subtitle: Text.rich(
+                    total.toCurrencySpan(
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                 ),
@@ -256,11 +257,12 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                             ),
                             const SizedBox(width: 4),
                           ],
-                          Text(
-                            expense.amount.toCurrency(),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                          Text.rich(
+                            expense.amount.toCurrencySpan(
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),

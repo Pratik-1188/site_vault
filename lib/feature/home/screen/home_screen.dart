@@ -214,12 +214,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                           fontWeight: FontWeight.bold,
                                         ),
                                   ),
-                                  data: (sum) => Text(
-                                    sum.toCurrency(),
-                                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                          color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                        ),
+                                  data: (sum) => Text.rich(
+                                    sum.toCurrencySpan(
+                                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                            color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                          ),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -337,12 +338,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                               ),
                               error: (e, _) => const Text('--'),
-                              data: (sum) => Text(
-                                sum.toCurrency(),
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFFE65100),
+                              data: (sum) => Text.rich(
+                                sum.toCurrencySpan(
+                                  style: const TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFE65100),
+                                  ),
                                 ),
                               ),
                             ),

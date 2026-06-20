@@ -143,7 +143,12 @@ class SiteDetailDialogs {
                 const SizedBox(height: 8),
                 _splitRow(
                   'Amount Spent',
-                  expense.amount.toCurrency(),
+                  expense.amount.toCurrencySpan(
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   isBold: true,
                 ),
                 const SizedBox(height: 8),
@@ -498,9 +503,14 @@ class SiteDetailDialogs {
 
   static Widget _splitRow(
     String label,
-    String value, {
+    dynamic value, {
     bool isBold = false,
   }) {
+    final valueStyle = TextStyle(
+      fontSize: 14,
+      fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+    );
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -511,13 +521,16 @@ class SiteDetailDialogs {
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+        if (value is InlineSpan)
+          Text.rich(
+            value,
+            style: valueStyle,
+          )
+        else
+          Text(
+            value.toString(),
+            style: valueStyle,
           ),
-        ),
       ],
     );
   }

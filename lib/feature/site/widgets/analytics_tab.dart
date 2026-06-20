@@ -68,7 +68,12 @@ class AnalyticsTab extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 16.0),
                       child: _analyticsProgressBar(
                         c.categoryName,
-                        c.totalSpend.toCurrency(),
+                        c.totalSpend.toCurrencySpan(
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         percentage,
                       ),
                     );
@@ -185,11 +190,12 @@ class AnalyticsTab extends ConsumerWidget {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   const SizedBox.shrink(),
-                                  Text(
-                                    item.totalSpend.toCurrency(),
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 10,
+                                  Text.rich(
+                                    item.totalSpend.toCurrencySpan(
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 10,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -260,11 +266,12 @@ class AnalyticsTab extends ConsumerWidget {
                             fontSize: 13,
                           ),
                         ),
-                        trailing: Text(
-                          v.totalSpend.toCurrency(),
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                        trailing: Text.rich(
+                          v.totalSpend.toCurrencySpan(
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ),
@@ -279,7 +286,7 @@ class AnalyticsTab extends ConsumerWidget {
     );
   }
 
-  Widget _analyticsProgressBar(String label, String value, double percentage) {
+  Widget _analyticsProgressBar(String label, dynamic value, double percentage) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -290,10 +297,16 @@ class AnalyticsTab extends ConsumerWidget {
               label,
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             ),
-            Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
+            if (value is InlineSpan)
+              Text.rich(
+                value,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              )
+            else
+              Text(
+                value.toString(),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
           ],
         ),
         const SizedBox(height: 8),

@@ -234,13 +234,23 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
       physics: const NeverScrollableScrollPhysics(),
       childAspectRatio: 1.4,
       children: [
-        _kpiCard('Total Spend', total.toCurrency(), Icons.payments_rounded, accentColor),
+        _kpiCard(
+          'Total Spend',
+          total.toCurrencySpan(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.1,
+                ),
+          ),
+          Icons.payments_rounded,
+          accentColor,
+        ),
         _kpiCard('Transactions', '$count logs', Icons.inventory_2_outlined, Colors.purple),
       ],
     );
   }
 
-  Widget _kpiCard(String label, String value, IconData icon, Color accentColor) {
+  Widget _kpiCard(String label, dynamic value, IconData icon, Color accentColor) {
     return Card(
       elevation: 0,
       color: Theme.of(context).colorScheme.surfaceContainer,
@@ -263,15 +273,22 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                 Icon(icon, size: 18, color: accentColor),
               ],
             ),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.1,
-                  ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            if (value is InlineSpan)
+              Text.rich(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+            else
+              Text(
+                value.toString(),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.1,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
           ],
         ),
       ),
@@ -319,7 +336,12 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
               return Column(
                 children: [
                   if (idx > 0) const Divider(height: 16, thickness: 0.5),
-                  _legendRow(item.name, item.spend.toCurrency(), '${(item.percentage * 100).toInt()}%', item.percentage),
+                  _legendRow(
+                    item.name,
+                    item.spend.toCurrencySpan(style: const TextStyle(fontSize: 12)),
+                    '${(item.percentage * 100).toInt()}%',
+                    item.percentage,
+                  ),
                 ],
               );
             }),
@@ -329,7 +351,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
     );
   }
 
-  Widget _legendRow(String label, String value, String percent, double ratio) {
+  Widget _legendRow(String label, dynamic value, String percent, double ratio) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -337,7 +359,10 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           children: [
             Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
             const Spacer(),
-            Text(value, style: const TextStyle(fontSize: 12)),
+            if (value is InlineSpan)
+              Text.rich(value)
+            else
+              Text(value.toString(), style: const TextStyle(fontSize: 12)),
             const SizedBox(width: 12),
             Text(percent, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
           ],
@@ -397,7 +422,15 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                              Text(entry.value.toCurrency(), style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary, fontSize: 13)),
+                              Text.rich(
+                                entry.value.toCurrencySpan(
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -492,9 +525,10 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     const SizedBox.shrink(),
-                                    Text(
-                                      item.value.toCurrency(),
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                                    Text.rich(
+                                      item.value.toCurrencySpan(
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                                      ),
                                     ),
                                   ],
                                 ),
