@@ -5,10 +5,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
-import 'package:site_vault/shared/utils/error_interceptor.dart';
+
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
+import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 
 import 'package:site_vault/feature/site/widgets/site_scope_selector_mixin.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
@@ -38,7 +39,7 @@ class ExpenseFormSheet extends ConsumerStatefulWidget {
   ConsumerState<ExpenseFormSheet> createState() => _ExpenseFormSheetState();
 }
 
-class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteScopeSelectorMixin {
+class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteScopeSelectorMixin, FormSubmitMixin {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _titleController;
@@ -58,7 +59,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
   String? _pickedFileName;
   Uint8List? _pickedFileBytes;
   String? _pickedMimeType;
-  bool _isUploading = false;
 
   @override
   void initState() {
@@ -235,83 +235,62 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
       return;
     }
 
-    setState(() {
-      _isUploading = true;
-    });
+    await runFormSubmit(
+      action: () async {
+        String? fileUrl;
 
-    try {
-      String? fileUrl;
+        // 1. Upload receipt to storage if picked or captured
+        if (_pickedFileBytes != null && _pickedFileName != null) {
+          fileUrl = await ref
+              .read(storageActionsProvider)
+              .uploadFile(
+                bucket: selectedSiteId!, // Site's unique UUID bucket
+                path: 'expenses',
+                fileBytes: _pickedFileBytes!,
+                fileName: _pickedFileName!,
+                mimeType: _pickedMimeType,
+              );
+          if (!mounted) return;
+        }
 
-      // 1. Upload receipt to storage if picked or captured
-      if (_pickedFileBytes != null && _pickedFileName != null) {
-        fileUrl = await ref
-            .read(storageActionsProvider)
-            .uploadFile(
-              bucket: selectedSiteId!, // Site's unique UUID bucket
-              path: 'expenses',
-              fileBytes: _pickedFileBytes!,
-              fileName: _pickedFileName!,
-              mimeType: _pickedMimeType,
-            );
-        if (!mounted) return;
-      }
-
-      // 2. Build the Expense Object
-      final total = double.parse(_amountController.text.trim());
-      final expense = Expense(
-        id: widget.expenseToEdit?.id ?? '',
-        firmId: selectedFirmId!,
-        siteId: selectedSiteId!,
-        createdBy: currentUserId, // Bind creator user ID behind the scenes
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
-        attachmentPath: fileUrl ?? widget.expenseToEdit?.attachmentPath,
-        expenseDate: _selectedDate,
-        categoryId: _selectedCategoryId,
-        vendorId: _selectedVendorId,
-        amount: total,
-        isGst: _isGst,
-        paymentMode: _selectedPaymentMode,
-        isRefundable: _isRefundable,
-        createdAt: widget.expenseToEdit?.createdAt ?? DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      // 3. Database Write operations
-      // 3. Database Write operations
-      if (widget.expenseToEdit == null) {
-        // Create Mode
-        await ref.read(expenseActionsProvider).createExpense(expense);
-      } else {
-        // Edit Mode
-        await ref
-            .read(expenseActionsProvider)
-            .updateExpense(expense, previousSiteId: widget.siteId);
-      }
-
-      if (mounted) {
-        Navigator.pop(context);
-        AppSnackBar.showSuccess(
-          context,
-          widget.expenseToEdit == null
-              ? 'Expense created successfully!'
-              : 'Expense updated successfully!',
+        // 2. Build the Expense Object
+        final total = double.parse(_amountController.text.trim());
+        final expense = Expense(
+          id: widget.expenseToEdit?.id ?? '',
+          firmId: selectedFirmId!,
+          siteId: selectedSiteId!,
+          createdBy: currentUserId, // Bind creator user ID behind the scenes
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim().isEmpty
+              ? null
+              : _descriptionController.text.trim(),
+          attachmentPath: fileUrl ?? widget.expenseToEdit?.attachmentPath,
+          expenseDate: _selectedDate,
+          categoryId: _selectedCategoryId,
+          vendorId: _selectedVendorId,
+          amount: total,
+          isGst: _isGst,
+          paymentMode: _selectedPaymentMode,
+          isRefundable: _isRefundable,
+          createdAt: widget.expenseToEdit?.createdAt ?? DateTime.now(),
+          updatedAt: DateTime.now(),
         );
-      }
-    } catch (e) {
-      if (mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        AppSnackBar.showError(context, cleanMessage);
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-        });
-      }
-    }
+
+        // 3. Database Write operations
+        if (widget.expenseToEdit == null) {
+          // Create Mode
+          await ref.read(expenseActionsProvider).createExpense(expense);
+        } else {
+          // Edit Mode
+          await ref
+              .read(expenseActionsProvider)
+              .updateExpense(expense, previousSiteId: widget.siteId);
+        }
+      },
+      successMessage: widget.expenseToEdit == null
+          ? 'Expense created successfully!'
+          : 'Expense updated successfully!',
+    );
   }
 
   @override
@@ -324,7 +303,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
           ? 'Add Expense'
           : 'Edit Expense Details',
       formKey: _formKey,
-      canClose: !_isUploading,
+      canClose: !isSubmitting,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -346,7 +325,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
                             const SizedBox(height: 16),
                             TextFormField(
                               controller: _titleController,
-                              enabled: !_isUploading,
+                              enabled: !isSubmitting,
                               decoration: const InputDecoration(
                                 labelText: 'Expense Title',
                                 hintText: 'e.g. Purchase of Fuses & Wires',
@@ -366,7 +345,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
                             const SizedBox(height: 16),
                             TextFormField(
                               controller: _amountController,
-                              enabled: !_isUploading,
+                              enabled: !isSubmitting,
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                     decimal: true,
@@ -396,7 +375,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
                               ),
                               secondary: const Icon(Icons.receipt_long_rounded),
                               value: _isGst,
-                              onChanged: _isUploading
+                              onChanged: isSubmitting
                                   ? null
                                   : (val) => setState(() => _isGst = val),
                             ),
@@ -438,7 +417,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
                                       child: Text(c.name),
                                     );
                                   }).toList(),
-                                  onChanged: _isUploading
+                                  onChanged: isSubmitting
                                       ? null
                                       : (val) => setState(
                                           () => _selectedCategoryId = val,
@@ -459,7 +438,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
                                   child: Text(mode.toDisplayLabel()),
                                 );
                               }).toList(),
-                              onChanged: _isUploading
+                              onChanged: isSubmitting
                                   ? null
                                   : (val) {
                                       if (val != null) {
@@ -494,7 +473,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
                                       child: Text(v.name),
                                     );
                                   }).toList(),
-                                  onChanged: _isUploading
+                                  onChanged: isSubmitting
                                       ? null
                                       : (val) => setState(
                                           () => _selectedVendorId = val,
@@ -512,7 +491,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
                                 labelText: 'Expense Date',
                                 prefixIcon: Icon(Icons.calendar_today_rounded),
                               ),
-                              onTap: _isUploading
+                              onTap: isSubmitting
                                   ? null
                                   : () => _selectDate(context),
                             ),
@@ -540,7 +519,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
                                 Icons.assignment_return_rounded,
                               ),
                               value: _isRefundable,
-                              onChanged: _isUploading
+                              onChanged: isSubmitting
                                   ? null
                                   : (val) =>
                                         setState(() => _isRefundable = val),
@@ -599,7 +578,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
                                           Icons.delete_outline_rounded,
                                           color: Colors.redAccent,
                                         ),
-                                        onPressed: _isUploading
+                                        onPressed: isSubmitting
                                             ? null
                                             : () {
                                                 setState(() {
@@ -623,7 +602,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
                                     ),
                                     child: InkWell(
                                       borderRadius: AppRadius.brXs,
-                                      onTap: _isUploading
+                                      onTap: isSubmitting
                                           ? null
                                           : () =>
                                                 _showAttachmentPicker(context),
@@ -674,15 +653,15 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 OutlinedButton(
-                                  onPressed: _isUploading
+                                  onPressed: isSubmitting
                                       ? null
                                       : () => Navigator.pop(context),
                                   child: const Text('Cancel'),
                                 ),
                                 const SizedBox(width: 12),
                                 FilledButton(
-                                  onPressed: _isUploading ? null : _submitForm,
-                                  child: _isUploading
+                                  onPressed: isSubmitting ? null : _submitForm,
+                                  child: isSubmitting
                                       ? const SizedBox(
                                           width: 20,
                                           height: 20,

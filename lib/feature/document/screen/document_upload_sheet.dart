@@ -4,8 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
-import 'package:site_vault/shared/utils/error_interceptor.dart';
+
 import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
+import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import 'package:site_vault/feature/site/widgets/site_scope_selector_mixin.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
 import '../model/document.dart';
@@ -32,7 +33,7 @@ class DocumentUploadSheet extends ConsumerStatefulWidget {
       _DocumentUploadSheetState();
 }
 
-class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with SiteScopeSelectorMixin {
+class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with SiteScopeSelectorMixin, FormSubmitMixin {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _fileNameController;
@@ -42,7 +43,6 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with 
   String? _pickedFileName;
   Uint8List? _pickedFileBytes;
   String? _pickedMimeType;
-  bool _isUploading = false;
 
   @override
   void initState() {
@@ -140,65 +140,46 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with 
     final uploaderId = user.id;
     debugPrint('[DocumentUpload] Uploader: $uploaderId');
 
-    setState(() {
-      _isUploading = true;
-    });
+    await runFormSubmit(
+      action: () async {
+        // 1. Upload file binary to the site's auto-created bucket
+        debugPrint('[DocumentUpload] Uploading file to storage...');
+        final fileUrl = await ref
+            .read(storageActionsProvider)
+            .uploadFile(
+              bucket: selectedSiteId!,
+              path: 'documents',
+              fileBytes: _pickedFileBytes!,
+              fileName: _pickedFileName!,
+              mimeType: _pickedMimeType,
+            );
+        debugPrint('[DocumentUpload] Storage upload OK: $fileUrl');
 
-    try {
-      // 1. Upload file binary to the site's auto-created bucket
-      debugPrint('[DocumentUpload] Uploading file to storage...');
-      final fileUrl = await ref
-          .read(storageActionsProvider)
-          .uploadFile(
-            bucket: selectedSiteId!,
-            path: 'documents',
-            fileBytes: _pickedFileBytes!,
-            fileName: _pickedFileName!,
-            mimeType: _pickedMimeType,
-          );
-      debugPrint('[DocumentUpload] Storage upload OK: $fileUrl');
+        if (!mounted) return;
 
-      if (!mounted) return;
+        // 2. Build the SiteDocument Object
+        final document = SiteDocument(
+          id: '',
+          siteId: selectedSiteId!,
+          createdBy: uploaderId,
+          fileName: _fileNameController.text.trim(),
+          description: _descriptionController.text.trim().isEmpty
+              ? null
+              : _descriptionController.text.trim(),
+          fileUrl: fileUrl,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
 
-      // 2. Build the SiteDocument Object
-      final document = SiteDocument(
-        id: '',
-        siteId: selectedSiteId!,
-        createdBy: uploaderId,
-        fileName: _fileNameController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
-        fileUrl: fileUrl,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-
-      // 3. Save DB entry using the SiteDocuments controller notifier
-      debugPrint('[DocumentUpload] Inserting document record...');
-      await ref
-          .read(documentActionsProvider)
-          .addDocument(document);
-      debugPrint('[DocumentUpload] Insert OK');
-
-      if (mounted) {
-        Navigator.pop(context);
-        AppSnackBar.showSuccess(context, 'Document uploaded successfully!');
-      }
-    } catch (e, stack) {
-      debugPrint('[DocumentUpload] ERROR: $e');
-      debugPrint('[DocumentUpload] STACK: $stack');
-      if (mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        AppSnackBar.showError(context, cleanMessage);
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-        });
-      }
-    }
+        // 3. Save DB entry using the SiteDocuments controller notifier
+        debugPrint('[DocumentUpload] Inserting document record...');
+        await ref
+            .read(documentActionsProvider)
+            .addDocument(document);
+        debugPrint('[DocumentUpload] Insert OK');
+      },
+      successMessage: 'Document uploaded successfully!',
+    );
   }
 
   @override
@@ -206,7 +187,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with 
     return AppBottomSheet(
       title: 'Upload Document',
       formKey: _formKey,
-      canClose: !_isUploading,
+      canClose: !isSubmitting,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -225,7 +206,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with 
                             const SizedBox(height: 16),
                             TextFormField(
                               controller: _fileNameController,
-                              enabled: !_isUploading,
+                              enabled: !isSubmitting,
                               decoration: const InputDecoration(
                                 labelText: 'File Name *',
                                 hintText: 'Enter a custom name for this document...',
@@ -242,7 +223,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with 
                             const SizedBox(height: 16),
                             TextFormField(
                               controller: _descriptionController,
-                              enabled: !_isUploading,
+                              enabled: !isSubmitting,
                               maxLines: 3,
                               decoration: const InputDecoration(
                                 labelText: 'Document Description / Tag Details',
@@ -303,7 +284,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with 
                                               Icons.delete_outline_rounded,
                                               color: Colors.redAccent,
                                             ),
-                                            onPressed: _isUploading
+                                            onPressed: isSubmitting
                                                 ? null
                                                 : () {
                                                     setState(() {
@@ -320,7 +301,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with 
                                 : Padding(
                                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                                     child: OutlinedButton.icon(
-                                      onPressed: _isUploading ? null : _pickDocument,
+                                      onPressed: isSubmitting ? null : _pickDocument,
                                       icon: const Icon(Icons.cloud_upload_outlined),
                                       label: const Text('Select Site Blueprint, PDF, or Doc'),
                                     ),
@@ -332,13 +313,13 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with 
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 OutlinedButton(
-                                  onPressed: _isUploading ? null : () => Navigator.pop(context),
+                                  onPressed: isSubmitting ? null : () => Navigator.pop(context),
                                   child: const Text('Cancel'),
                                 ),
                                 const SizedBox(width: 12),
                                 FilledButton(
-                                  onPressed: _isUploading ? null : _submitForm,
-                                  child: _isUploading
+                                  onPressed: isSubmitting ? null : _submitForm,
+                                  child: isSubmitting
                                       ? const SizedBox(
                                           width: 20,
                                           height: 20,

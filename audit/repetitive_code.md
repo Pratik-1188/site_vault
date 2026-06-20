@@ -146,7 +146,9 @@ The `PopupMenuButton` that triggers this (account icon → Sign Out row) is also
 
 ---
 
-### 4. `_submit()` / `_submitForm()` Skeleton — Identical in All 6 Form Sheets
+### 4. `_submit()` / `_submitForm()` Skeleton — Identical in All 6 Form Sheets [RESOLVED]
+
+**Status**: Resolved. Refactored into the reusable `FormSubmitMixin` in `lib/shared/mixin/form_submit_mixin.dart` which encapsulates the submission state, popup navigation, error handling, and success messages.
 
 The async submit lifecycle (loading guard → try → `ref.read` → `Navigator.pop` → `AppSnackBar.showSuccess` → catch → `SupabaseErrorInterceptor` → finally) is repeated **6 times**. Only the provider call changes.
 

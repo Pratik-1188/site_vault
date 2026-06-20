@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:site_vault/shared/utils/error_interceptor.dart';
-import 'package:site_vault/shared/utils/snackbar_message.dart';
+
 
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
@@ -14,6 +13,7 @@ import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/widget/status_badge.dart';
 import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
+import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
 
@@ -762,13 +762,12 @@ class _SiteFormSheet extends ConsumerStatefulWidget {
   ConsumerState<_SiteFormSheet> createState() => _SiteFormSheetState();
 }
 
-class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
+class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> with FormSubmitMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _dateController = TextEditingController();
   DateTime? _startedOn;
-  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -796,31 +795,21 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate() || _startedOn == null) return;
 
-    setState(() => _isSaving = true);
-    try {
-      final name = _nameController.text.trim();
-      final description = _descriptionController.text.trim();
+    final name = _nameController.text.trim();
+    final description = _descriptionController.text.trim();
 
-      await ref.read(siteActionsProvider).createSite(
-        firmId: widget.firmId,
-        name: name,
-        description: description.isEmpty ? null : description,
-        startedOn: _startedOn!,
-        status: 'active',
-      );
-
-      if (mounted) {
-        Navigator.pop(context);
-        AppSnackBar.showSuccess(context, 'Site created successfully!');
-      }
-    } catch (e) {
-      if (mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        AppSnackBar.showError(context, cleanMessage);
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+    await runFormSubmit(
+      action: () async {
+        await ref.read(siteActionsProvider).createSite(
+          firmId: widget.firmId,
+          name: name,
+          description: description.isEmpty ? null : description,
+          startedOn: _startedOn!,
+          status: 'active',
+        );
+      },
+      successMessage: 'Site created successfully!',
+    );
   }
 
   @override
@@ -828,7 +817,7 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
     return AppBottomSheet(
       title: 'Add Site',
       formKey: _formKey,
-      canClose: !_isSaving,
+      canClose: !isSubmitting,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -893,13 +882,13 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               OutlinedButton(
-                onPressed: _isSaving ? null : () => Navigator.pop(context),
+                onPressed: isSubmitting ? null : () => Navigator.pop(context),
                 child: const Text('Cancel'),
               ),
               const SizedBox(width: 12),
               FilledButton(
-                onPressed: _isSaving ? null : _submit,
-                child: _isSaving
+                onPressed: isSubmitting ? null : _submit,
+                child: isSubmitting
                     ? const SizedBox(
                         width: 20,
                         height: 20,

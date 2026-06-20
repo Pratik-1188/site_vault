@@ -11,6 +11,7 @@ import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/shared/widget/status_badge.dart';
 import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
 import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
+import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import 'package:site_vault/shared/model/profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
@@ -596,12 +597,11 @@ class _VendorFormSheet extends ConsumerStatefulWidget {
   ConsumerState<_VendorFormSheet> createState() => _VendorFormSheetState();
 }
 
-class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
+class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> with FormSubmitMixin {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _contactController;
   bool _isActive = true;
-  bool _isSaving = false;
 
   @override
   void initState() {
@@ -621,39 +621,26 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isSaving = true);
-    try {
-      final name = _nameController.text.trim();
-      final contact = _contactController.text.trim();
+    final name = _nameController.text.trim();
+    final contact = _contactController.text.trim();
 
-      if (widget.vendorToEdit == null) {
-        await ref.read(adminVendorsProvider.notifier).addVendor(name: name, contactInfo: contact);
-      } else {
-        await ref.read(adminVendorsProvider.notifier).editVendor(
-              id: widget.vendorToEdit!.id,
-              name: name,
-              contactInfo: contact,
-              isActive: _isActive,
-            );
-      }
-
-      if (mounted) {
-        Navigator.pop(context);
-        AppSnackBar.showSuccess(
-          context,
-          widget.vendorToEdit == null
-              ? 'Vendor created successfully!'
-              : 'Vendor updated successfully!',
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        AppSnackBar.showError(context, cleanMessage);
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+    await runFormSubmit(
+      action: () async {
+        if (widget.vendorToEdit == null) {
+          await ref.read(adminVendorsProvider.notifier).addVendor(name: name, contactInfo: contact);
+        } else {
+          await ref.read(adminVendorsProvider.notifier).editVendor(
+                id: widget.vendorToEdit!.id,
+                name: name,
+                contactInfo: contact,
+                isActive: _isActive,
+              );
+        }
+      },
+      successMessage: widget.vendorToEdit == null
+          ? 'Vendor created successfully!'
+          : 'Vendor updated successfully!',
+    );
   }
 
   @override
@@ -661,7 +648,7 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
     return AppBottomSheet(
       title: widget.vendorToEdit == null ? 'Add Vendor' : 'Edit Vendor Details',
       formKey: _formKey,
-      canClose: !_isSaving,
+      canClose: !isSubmitting,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -710,13 +697,13 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               OutlinedButton(
-                onPressed: _isSaving ? null : () => Navigator.pop(context),
+                onPressed: isSubmitting ? null : () => Navigator.pop(context),
                 child: const Text('Cancel'),
               ),
               const SizedBox(width: 12),
               FilledButton(
-                onPressed: _isSaving ? null : _submit,
-                child: _isSaving
+                onPressed: isSubmitting ? null : _submit,
+                child: isSubmitting
                     ? const SizedBox(
                         width: 20,
                         height: 20,
@@ -751,11 +738,10 @@ class _CategoryFormSheet extends ConsumerStatefulWidget {
   ConsumerState<_CategoryFormSheet> createState() => _CategoryFormSheetState();
 }
 
-class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
+class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> with FormSubmitMixin {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   bool _isActive = true;
-  bool _isSaving = false;
 
   @override
   void initState() {
@@ -773,37 +759,24 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isSaving = true);
-    try {
-      final name = _nameController.text.trim();
+    final name = _nameController.text.trim();
 
-      if (widget.categoryToEdit == null) {
-        await ref.read(adminCategoriesProvider.notifier).addCategory(name: name);
-      } else {
-        await ref.read(adminCategoriesProvider.notifier).editCategory(
-              id: widget.categoryToEdit!.id,
-              name: name,
-              isActive: _isActive,
-            );
-      }
-
-      if (mounted) {
-        Navigator.pop(context);
-        AppSnackBar.showSuccess(
-          context,
-          widget.categoryToEdit == null
-              ? 'Category created successfully!'
-              : 'Category updated successfully!',
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        AppSnackBar.showError(context, cleanMessage);
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+    await runFormSubmit(
+      action: () async {
+        if (widget.categoryToEdit == null) {
+          await ref.read(adminCategoriesProvider.notifier).addCategory(name: name);
+        } else {
+          await ref.read(adminCategoriesProvider.notifier).editCategory(
+                id: widget.categoryToEdit!.id,
+                name: name,
+                isActive: _isActive,
+              );
+        }
+      },
+      successMessage: widget.categoryToEdit == null
+          ? 'Category created successfully!'
+          : 'Category updated successfully!',
+    );
   }
 
   @override
@@ -811,7 +784,7 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
     return AppBottomSheet(
       title: widget.categoryToEdit == null ? 'Add Category' : 'Edit Category Details',
       formKey: _formKey,
-      canClose: !_isSaving,
+      canClose: !isSubmitting,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -851,13 +824,13 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               OutlinedButton(
-                onPressed: _isSaving ? null : () => Navigator.pop(context),
+                onPressed: isSubmitting ? null : () => Navigator.pop(context),
                 child: const Text('Cancel'),
               ),
               const SizedBox(width: 12),
               FilledButton(
-                onPressed: _isSaving ? null : _submit,
-                child: _isSaving
+                onPressed: isSubmitting ? null : _submit,
+                child: isSubmitting
                     ? const SizedBox(
                         width: 20,
                         height: 20,
@@ -890,13 +863,12 @@ class _UserFormSheet extends ConsumerStatefulWidget {
   ConsumerState<_UserFormSheet> createState() => _UserFormSheetState();
 }
 
-class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
+class _UserFormSheetState extends ConsumerState<_UserFormSheet> with FormSubmitMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _displayNameController = TextEditingController();
   String _selectedRole = 'staff';
-  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -928,27 +900,17 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
 
     if (!confirmed) return;
 
-    setState(() => _isSaving = true);
-    try {
-      await ref.read(adminProfilesProvider.notifier).addUser(
-        email: email,
-        password: password,
-        displayName: displayName,
-        role: _selectedRole,
-      );
-
-      if (mounted) {
-        Navigator.pop(context);
-        AppSnackBar.showSuccess(context, 'User created successfully!');
-      }
-    } catch (e) {
-      if (mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        AppSnackBar.showError(context, cleanMessage);
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+    await runFormSubmit(
+      action: () async {
+        await ref.read(adminProfilesProvider.notifier).addUser(
+          email: email,
+          password: password,
+          displayName: displayName,
+          role: _selectedRole,
+        );
+      },
+      successMessage: 'User created successfully!',
+    );
   }
 
   @override
@@ -956,7 +918,7 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
     return AppBottomSheet(
       title: 'Add User',
       formKey: _formKey,
-      canClose: !_isSaving,
+      canClose: !isSubmitting,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1055,13 +1017,13 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               OutlinedButton(
-                onPressed: _isSaving ? null : () => Navigator.pop(context),
+                onPressed: isSubmitting ? null : () => Navigator.pop(context),
                 child: const Text('Cancel'),
               ),
               const SizedBox(width: 12),
               FilledButton(
-                onPressed: _isSaving ? null : _submit,
-                child: _isSaving
+                onPressed: isSubmitting ? null : _submit,
+                child: isSubmitting
                     ? const SizedBox(
                         width: 20,
                         height: 20,
