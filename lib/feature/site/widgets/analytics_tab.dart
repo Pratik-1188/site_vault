@@ -5,6 +5,7 @@ import 'package:site_vault/feature/analytics/model/analytics_models.dart';
 import 'package:site_vault/feature/analytics/provider/analytics_provider.dart';
 
 import '../model/site.dart';
+import 'package:site_vault/shared/utils/number_formatter.dart';
 
 class AnalyticsTab extends ConsumerWidget {
   final Site site;
@@ -67,7 +68,7 @@ class AnalyticsTab extends ConsumerWidget {
                       padding: const EdgeInsets.only(bottom: 16.0),
                       child: _analyticsProgressBar(
                         c.categoryName,
-                        '₹${c.totalSpend.toStringAsFixed(2)}',
+                        c.totalSpend.toCurrency(),
                         percentage,
                       ),
                     );
@@ -185,7 +186,7 @@ class AnalyticsTab extends ConsumerWidget {
                                 children: [
                                   const SizedBox.shrink(),
                                   Text(
-                                    '₹${item.totalSpend.toStringAsFixed(2)}',
+                                    item.totalSpend.toCurrency(),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 10,
@@ -260,7 +261,7 @@ class AnalyticsTab extends ConsumerWidget {
                           ),
                         ),
                         trailing: Text(
-                          '₹${v.totalSpend.toStringAsFixed(2)}',
+                          v.totalSpend.toCurrency(),
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,

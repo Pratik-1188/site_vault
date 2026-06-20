@@ -8,6 +8,7 @@ import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
 import 'package:site_vault/shared/widget/vault_card.dart';
 import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
+import 'package:site_vault/shared/utils/number_formatter.dart';
 
 /// A premium, M3-styled Operations Dashboard representing the master corporate ledger overview.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -214,7 +215,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         ),
                                   ),
                                   data: (sum) => Text(
-                                    '₹${sum.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+                                    sum.toCurrency(),
                                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                           fontWeight: FontWeight.bold,
                                           color: Theme.of(context).colorScheme.onPrimaryContainer,
@@ -337,7 +338,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                               error: (e, _) => const Text('--'),
                               data: (sum) => Text(
-                                '₹${sum.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+                                sum.toCurrency(),
                                 style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -534,7 +535,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         final amount = newData?['amount'] as num? ?? 0.0;
                         
                         logTitle = 'Expense: $expenseTitle';
-                        logSubtitle = 'Amount: ₹${amount.toStringAsFixed(2)}';
+                        logSubtitle = 'Amount: ${amount.toCurrency()}';
                       } else if (tableName == 'sites') {
                         logIcon = Icons.location_on_rounded;
                         logIconColor = Theme.of(context).colorScheme.onSecondaryContainer;

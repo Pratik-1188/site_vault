@@ -8,6 +8,7 @@ import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
+import 'package:site_vault/shared/utils/number_formatter.dart';
 
 /// Central analytics hub screen showing Group (All Firms) and Firm comparative cost statistics.
 class AnalyticsDashboardScreen extends ConsumerStatefulWidget {
@@ -233,7 +234,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
       physics: const NeverScrollableScrollPhysics(),
       childAspectRatio: 1.4,
       children: [
-        _kpiCard('Total Spend', '₹${total.toStringAsFixed(2)}', Icons.payments_rounded, accentColor),
+        _kpiCard('Total Spend', total.toCurrency(), Icons.payments_rounded, accentColor),
         _kpiCard('Transactions', '$count logs', Icons.inventory_2_outlined, Colors.purple),
       ],
     );
@@ -318,7 +319,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
               return Column(
                 children: [
                   if (idx > 0) const Divider(height: 16, thickness: 0.5),
-                  _legendRow(item.name, '₹${item.spend.toStringAsFixed(2)}', '${(item.percentage * 100).toInt()}%', item.percentage),
+                  _legendRow(item.name, item.spend.toCurrency(), '${(item.percentage * 100).toInt()}%', item.percentage),
                 ],
               );
             }),
@@ -396,7 +397,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                              Text('₹${entry.value.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary, fontSize: 13)),
+                              Text(entry.value.toCurrency(), style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary, fontSize: 13)),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -492,7 +493,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                                   children: [
                                     const SizedBox.shrink(),
                                     Text(
-                                      '₹${item.value.toStringAsFixed(2)}',
+                                      item.value.toCurrency(),
                                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
                                     ),
                                   ],

@@ -3,3 +3,7 @@
 3. disable users tab for non-admins
 4. Error handelling
 5. Active shown on expense and vendor/category are different
+
+- remove the admin creation from migration file
+
+* build a detailed readme to describe every step to create this codebase in running state from github codebase

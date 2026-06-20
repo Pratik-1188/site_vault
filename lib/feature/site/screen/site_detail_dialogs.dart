@@ -13,6 +13,7 @@ import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
+import 'package:site_vault/shared/utils/number_formatter.dart';
 
 class SiteDetailDialogs {
   static Future<bool?> confirmSignOut(BuildContext context) async {
@@ -142,7 +143,7 @@ class SiteDetailDialogs {
                 const SizedBox(height: 8),
                 _splitRow(
                   'Amount Spent',
-                  '₹${expense.amount.toStringAsFixed(2)}',
+                  expense.amount.toCurrency(),
                   isBold: true,
                 ),
                 const SizedBox(height: 8),

@@ -5,6 +5,7 @@ import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/feature/expense/provider/expense_provider.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
+import 'package:site_vault/shared/utils/number_formatter.dart';
 import 'package:site_vault/shared/widget/vault_card.dart';
 
 import '../model/site.dart';
@@ -82,7 +83,7 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                     style: TextStyle(fontSize: 12),
                   ),
                   subtitle: Text(
-                    '\u20B9${total.toStringAsFixed(2)}',
+                    total.toCurrency(),
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.w900,
                     ),
@@ -256,7 +257,7 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                             const SizedBox(width: 4),
                           ],
                           Text(
-                            '\u20B9${expense.amount.toStringAsFixed(2)}',
+                            expense.amount.toCurrency(),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
