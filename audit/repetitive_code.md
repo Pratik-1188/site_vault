@@ -111,7 +111,9 @@ Also duplicated: the entire **Firm + Site cascading dropdown UI block** — expe
 
 ---
 
-### 3. `_handleSignOut()` — Identical Method in 3 Screens
+### 3. `_handleSignOut()` — Identical Method in 3 Screens [RESOLVED]
+
+**Status**: Resolved. Refactored into a reusable `SignOutMenuButton` widget which encapsulates the user profile dropdown, confirmation dialog, and the auth provider call.
 
 **admin_screen.dart L51–69 ≡ site_search_screen.dart L227–245 ≡ home_screen.dart L23–46**
 

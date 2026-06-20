@@ -10,7 +10,7 @@ import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/shared/widget/status_badge.dart';
 import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
-import 'package:site_vault/feature/auth/provider/auth_provider.dart';
+import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
 import 'package:site_vault/shared/model/profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
@@ -47,26 +47,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
     super.dispose();
   }
 
-  /// Confirms and handles user sign out
-  Future<void> _handleSignOut() async {
-    final confirmed = await ConfirmationDialogs.confirm(
-      context,
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out of KK Group Site Vault?',
-      confirmLabel: 'SIGN OUT',
-      isDestructive: true,
-    );
 
-    if (confirmed && mounted) {
-      try {
-        await ref.read(authActionsProvider).signOut();
-      } catch (e) {
-        if (mounted) {
-          AppSnackBar.showError(context, 'Error signing out: $e');
-        }
-      }
-    }
-  }
 
   /// Opens the modal bottom sheet to create or edit a vendor
   void _openVendorForm(BuildContext context, [Vendor? vendor]) {
@@ -167,32 +148,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
-              actions: [
-                PopupMenuButton<String>(
-                  icon: Icon(
-                    Icons.account_circle_rounded,
-                    size: 28,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  tooltip: 'User Profile Options',
-                  onSelected: (val) {
-                    if (val == 'signout') {
-                      _handleSignOut();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'signout',
-                      child: Row(
-                        children: [
-                          Icon(Icons.logout_rounded, size: 20, color: Colors.redAccent),
-                          SizedBox(width: 8),
-                          Text('Sign Out'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              actions: const [
+                SignOutMenuButton(),
               ],
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(62),

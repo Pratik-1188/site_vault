@@ -13,8 +13,7 @@ import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/widget/status_badge.dart';
-import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
-import 'package:site_vault/feature/auth/provider/auth_provider.dart';
+import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
 
@@ -220,26 +219,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     );
   }
 
-  /// Confirms and handles user sign out
-  Future<void> _handleSignOut() async {
-    final confirmed = await ConfirmationDialogs.confirm(
-      context,
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out of KK Group Site Vault?',
-      confirmLabel: 'SIGN OUT',
-      isDestructive: true,
-    );
 
-    if (confirmed == true && mounted) {
-      try {
-        await ref.read(authActionsProvider).signOut();
-      } catch (e) {
-        if (mounted) {
-          AppSnackBar.showError(context, 'Error signing out: $e');
-        }
-      }
-    }
-  }
 
   String _cleanFirmName(String name) {
     if (name.toLowerCase().startsWith('kk ')) {
@@ -298,35 +278,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                 ),
               ),
               actions: [
-                PopupMenuButton<String>(
-                  icon: Icon(
-                    Icons.account_circle_rounded,
-                    size: 28,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  tooltip: 'User Profile Options',
-                  onSelected: (val) {
-                    if (val == 'signout') {
-                      _handleSignOut();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'signout',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.logout_rounded,
-                            size: 20,
-                            color: Colors.redAccent,
-                          ),
-                          SizedBox(width: 8),
-                          Text('Sign Out'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                const SignOutMenuButton(),
               ],
             ),
           ];

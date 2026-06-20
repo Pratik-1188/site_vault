@@ -17,15 +17,7 @@ import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/utils/number_formatter.dart';
 
 class SiteDetailDialogs {
-  static Future<bool?> confirmSignOut(BuildContext context) async {
-    return ConfirmationDialogs.confirm(
-      context,
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out of KK Group Site Vault?',
-      confirmLabel: 'SIGN OUT',
-      isDestructive: true,
-    );
-  }
+
 
   static Future<bool?> confirmStatusChange(
     BuildContext context, {

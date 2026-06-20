@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:site_vault/feature/auth/provider/auth_provider.dart';
+
 import 'package:site_vault/feature/document/model/document.dart';
 import 'package:site_vault/feature/document/provider/document_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
@@ -118,23 +118,7 @@ class SiteDetailController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> signOut(BuildContext context) async {
-    final confirmed = await SiteDetailDialogs.confirmSignOut(context);
-    if (confirmed != true) return;
 
-    try {
-      await ref.read(authActionsProvider).signOut();
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error signing out: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    }
-  }
 
   Future<void> saveSiteSettings(
     BuildContext context, {

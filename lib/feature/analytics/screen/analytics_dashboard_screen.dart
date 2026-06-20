@@ -4,10 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:site_vault/feature/analytics/model/analytics_models.dart';
 import 'package:site_vault/feature/analytics/provider/analytics_provider.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
-import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
-import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
+import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
 import 'package:site_vault/shared/utils/number_formatter.dart';
 
 /// Central analytics hub screen showing Group (All Firms) and Firm comparative cost statistics.
@@ -63,32 +62,8 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
-              actions: [
-                PopupMenuButton<String>(
-                  icon: Icon(
-                    Icons.account_circle_rounded,
-                    size: 28,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  tooltip: 'User Profile Options',
-                  onSelected: (val) {
-                    if (val == 'signout') {
-                      _handleSignOut();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'signout',
-                      child: Row(
-                        children: [
-                          Icon(Icons.logout_rounded, size: 20, color: Colors.redAccent),
-                          SizedBox(width: 8),
-                          Text('Sign Out'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              actions: const [
+                SignOutMenuButton(),
               ],
             ),
           ];
@@ -555,31 +530,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
     return '${months[date.month - 1]} ${date.year}';
   }
 
-  /// Confirms and handles user sign out
-  Future<void> _handleSignOut() async {
-    final confirmed = await ConfirmationDialogs.confirm(
-      context,
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out of KK Group Site Vault?',
-      confirmLabel: 'SIGN OUT',
-      isDestructive: true,
-    );
 
-    if (confirmed == true && mounted) {
-      try {
-        await ref.read(authActionsProvider).signOut();
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error signing out: $e'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-        }
-      }
-    }
-  }
 }
 
 class _FirmSplitItem {
