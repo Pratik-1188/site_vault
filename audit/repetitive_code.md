@@ -307,9 +307,11 @@ const SizedBox(
 
 ---
 
-### 9. NestedScrollView + SliverAppBar.medium + 4-destination NavigationBar — 3 Screens
+### 9. NestedScrollView + SliverAppBar.medium + 4-destination NavigationBar — 3 Screens [RESOLVED]
 
-The same 4 `NavigationDestination`s and the same `onDestinationSelected` route switch are copy-pasted in 3 screens:
+**Status**: Resolved. Refactored into a reusable `AppNavigationBar` widget in `lib/shared/widget/` which centralizes the navigation bar destination configuration and routing action paths.
+
+The same 4 `NavigationDestination`s and the same `onDestinationSelected` route switch were copy-pasted in 4 screens:
 
 ```dart
 NavigationBar(

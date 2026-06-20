@@ -7,6 +7,7 @@ import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
+import 'package:site_vault/shared/widget/app_navigation_bar.dart';
 import 'package:site_vault/shared/utils/number_formatter.dart';
 
 /// Central analytics hub screen showing Group (All Firms) and Firm comparative cost statistics.
@@ -136,40 +137,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
         ],
       ),
     ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 2,
-        onDestinationSelected: (index) {
-          if (index == 0) {
-            context.go('/');
-          } else if (index == 1) {
-            context.go('/sites');
-          } else if (index == 3) {
-            context.go('/admin');
-          }
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.location_on_outlined),
-            selectedIcon: Icon(Icons.location_on_rounded),
-            label: 'Sites',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.analytics_outlined),
-            selectedIcon: Icon(Icons.analytics_rounded),
-            label: 'Analytics',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
-            label: 'Admin',
-          ),
-        ],
-      ),
+      bottomNavigationBar: const AppNavigationBar(selectedIndex: 2),
     );
   }
 

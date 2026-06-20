@@ -14,6 +14,7 @@ import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/widget/status_badge.dart';
 import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
 import 'package:site_vault/shared/widget/sheet_action_row.dart';
+import 'package:site_vault/shared/widget/app_navigation_bar.dart';
 import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
@@ -379,40 +380,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
               label: const Text('ADD SITE'),
             )
           : null,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 1,
-        onDestinationSelected: (index) {
-          if (index == 0) {
-            context.go('/');
-          } else if (index == 2) {
-            context.go('/analytics');
-          } else if (index == 3) {
-            context.go('/admin');
-          }
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.location_on_outlined),
-            selectedIcon: Icon(Icons.location_on_rounded),
-            label: 'Sites',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.analytics_outlined),
-            selectedIcon: Icon(Icons.analytics_rounded),
-            label: 'Analytics',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
-            label: 'Admin',
-          ),
-        ],
-      ),
+      bottomNavigationBar: const AppNavigationBar(selectedIndex: 1),
     );
   }
 
