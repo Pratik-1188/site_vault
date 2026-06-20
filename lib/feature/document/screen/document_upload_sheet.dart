@@ -6,6 +6,7 @@ import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 
 import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
+import 'package:site_vault/shared/widget/sheet_action_row.dart';
 import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import 'package:site_vault/feature/site/widgets/site_scope_selector_mixin.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
@@ -309,28 +310,10 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with 
                             const SizedBox(height: 32),
 
                             // Bottom Action Buttons
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: isSubmitting ? null : () => Navigator.pop(context),
-                                  child: const Text('Cancel'),
-                                ),
-                                const SizedBox(width: 12),
-                                FilledButton(
-                                  onPressed: isSubmitting ? null : _submitForm,
-                                  child: isSubmitting
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                                          ),
-                                        )
-                                      : const Text('Upload Document'),
-                                ),
-                              ],
+                            SheetActionRow(
+                              isSubmitting: isSubmitting,
+                              onSubmit: _submitForm,
+                              submitLabel: 'Upload Document',
                             ),
                           ],
                         ),

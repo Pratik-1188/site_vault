@@ -8,6 +8,7 @@ import 'package:site_vault/shared/utils/date_formatter.dart';
 
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
+import 'package:site_vault/shared/widget/sheet_action_row.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
 import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 
@@ -649,36 +650,12 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
                             const SizedBox(height: 32),
 
                             // Bottom Action Buttons
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: isSubmitting
-                                      ? null
-                                      : () => Navigator.pop(context),
-                                  child: const Text('Cancel'),
-                                ),
-                                const SizedBox(width: 12),
-                                FilledButton(
-                                  onPressed: isSubmitting ? null : _submitForm,
-                                  child: isSubmitting
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation(
-                                              Colors.white,
-                                            ),
-                                          ),
-                                        )
-                                      : Text(
-                                          widget.expenseToEdit == null
-                                              ? 'Create Expense'
-                                              : 'Save Changes',
-                                        ),
-                                ),
-                              ],
+                            SheetActionRow(
+                              isSubmitting: isSubmitting,
+                              onSubmit: _submitForm,
+                              submitLabel: widget.expenseToEdit == null
+                                  ? 'Create Expense'
+                                  : 'Save Changes',
                             ),
                           ],
                         ),

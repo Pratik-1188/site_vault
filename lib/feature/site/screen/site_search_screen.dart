@@ -13,6 +13,7 @@ import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/widget/status_badge.dart';
 import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
+import 'package:site_vault/shared/widget/sheet_action_row.dart';
 import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
@@ -878,28 +879,10 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> with FormSubmitM
           ),
           const SizedBox(height: 32),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              OutlinedButton(
-                onPressed: isSubmitting ? null : () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              const SizedBox(width: 12),
-              FilledButton(
-                onPressed: isSubmitting ? null : _submit,
-                child: isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                        ),
-                      )
-                    : const Text('Create Site'),
-              ),
-            ],
+          SheetActionRow(
+            isSubmitting: isSubmitting,
+            onSubmit: _submit,
+            submitLabel: 'Create Site',
           ),
         ],
       ),

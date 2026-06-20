@@ -185,7 +185,9 @@ try {
 
 ## 🟠 High — Small but extremely frequent repetition
 
-### 5. Bottom Action Row — `[Cancel] [Submit with spinner]` — 6 Times
+### 5. Bottom Action Row — `[Cancel] [Submit with spinner]` — 6 Times [RESOLVED]
+
+**Status**: Resolved. Refactored into the reusable `SheetActionRow` widget in `lib/shared/widget/sheet_action_row.dart` which standardizes the Cancel/Submit buttons and loading spinner.
 
 ```dart
 Row(
@@ -278,7 +280,9 @@ showModalBottomSheet(
 
 ---
 
-### 8. Inline Button Spinner — `SizedBox(20×20) + CircularProgressIndicator(strokeWidth:2, white)` — 6 Times
+### 8. Inline Button Spinner — `SizedBox(20×20) + CircularProgressIndicator(strokeWidth:2, white)` — 6 Times [RESOLVED]
+
+**Status**: Resolved. Consolidated inside the reusable `SheetActionRow` widget.
 
 ```dart
 const SizedBox(

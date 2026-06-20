@@ -11,6 +11,7 @@ import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/shared/widget/status_badge.dart';
 import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
 import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
+import 'package:site_vault/shared/widget/sheet_action_row.dart';
 import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import 'package:site_vault/shared/model/profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -693,32 +694,10 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> with FormSub
           ],
           const SizedBox(height: 32),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              OutlinedButton(
-                onPressed: isSubmitting ? null : () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              const SizedBox(width: 12),
-              FilledButton(
-                onPressed: isSubmitting ? null : _submit,
-                child: isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                        ),
-                      )
-                    : Text(
-                        widget.vendorToEdit == null
-                            ? 'Create Vendor'
-                            : 'Save Changes',
-                      ),
-              ),
-            ],
+          SheetActionRow(
+            isSubmitting: isSubmitting,
+            onSubmit: _submit,
+            submitLabel: widget.vendorToEdit == null ? 'Create Vendor' : 'Save Changes',
           ),
         ],
       ),
@@ -820,32 +799,10 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> with For
           ],
           const SizedBox(height: 32),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              OutlinedButton(
-                onPressed: isSubmitting ? null : () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              const SizedBox(width: 12),
-              FilledButton(
-                onPressed: isSubmitting ? null : _submit,
-                child: isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                        ),
-                      )
-                    : Text(
-                        widget.categoryToEdit == null
-                            ? 'Create Category'
-                            : 'Save Changes',
-                      ),
-              ),
-            ],
+          SheetActionRow(
+            isSubmitting: isSubmitting,
+            onSubmit: _submit,
+            submitLabel: widget.categoryToEdit == null ? 'Create Category' : 'Save Changes',
           ),
         ],
       ),
@@ -1013,28 +970,10 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> with FormSubmitM
             },
           ),
           const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              OutlinedButton(
-                onPressed: isSubmitting ? null : () => Navigator.pop(context),
-                child: const Text('Cancel'),
-              ),
-              const SizedBox(width: 12),
-              FilledButton(
-                onPressed: isSubmitting ? null : _submit,
-                child: isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                        ),
-                      )
-                    : const Text('Create User'),
-              ),
-            ],
+          SheetActionRow(
+            isSubmitting: isSubmitting,
+            onSubmit: _submit,
+            submitLabel: 'Create User',
           ),
         ],
       ),
