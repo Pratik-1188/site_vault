@@ -31,9 +31,9 @@ class AnalyticsTab extends ConsumerWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Cost breakdown by business expense categories for this site.',
-            style: TextStyle(fontSize: 11, color: Colors.grey),
+            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
           categorySpendAsync.when(
@@ -41,12 +41,12 @@ class AnalyticsTab extends ConsumerWidget {
             error: (e, _) => Text('Error loading category splits: $e'),
             data: (categories) {
               if (categories.isEmpty) {
-                return const Center(
+                return Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    padding: const EdgeInsets.symmetric(vertical: 20.0),
                     child: Text(
                       'No category splits recorded.',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                     ),
                   ),
                 );
@@ -67,6 +67,7 @@ class AnalyticsTab extends ConsumerWidget {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
                       child: _analyticsProgressBar(
+                        context,
                         c.categoryName,
                         c.totalSpend.toCurrencySpan(
                           style: const TextStyle(
@@ -127,9 +128,9 @@ class AnalyticsTab extends ConsumerWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Timeline history of site spending aggregates.',
-            style: TextStyle(fontSize: 11, color: Colors.grey),
+            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
           monthlySpendAsync.when(
@@ -137,12 +138,12 @@ class AnalyticsTab extends ConsumerWidget {
             error: (e, _) => Text('Error loading monthly trend: $e'),
             data: (trends) {
               if (trends.isEmpty) {
-                return const Center(
+                return Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    padding: const EdgeInsets.symmetric(vertical: 20.0),
                     child: Text(
                       'No historical timelines found.',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                     ),
                   ),
                 );
@@ -218,9 +219,9 @@ class AnalyticsTab extends ConsumerWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Ranked vendor splits representing top funding receivers on this site.',
-            style: TextStyle(fontSize: 11, color: Colors.grey),
+            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
           vendorSpendAsync.when(
@@ -228,12 +229,12 @@ class AnalyticsTab extends ConsumerWidget {
             error: (e, _) => Text('Error loading vendor spend: $e'),
             data: (vendors) {
               if (vendors.isEmpty) {
-                return const Center(
+                return Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    padding: const EdgeInsets.symmetric(vertical: 20.0),
                     child: Text(
                       'No suppliers recorded for this site.',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                     ),
                   ),
                 );
@@ -286,7 +287,7 @@ class AnalyticsTab extends ConsumerWidget {
     );
   }
 
-  Widget _analyticsProgressBar(String label, dynamic value, double percentage) {
+  Widget _analyticsProgressBar(BuildContext context, String label, dynamic value, double percentage) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -316,9 +317,9 @@ class AnalyticsTab extends ConsumerWidget {
           alignment: Alignment.bottomRight,
           child: Text(
             '${(percentage * 100).toInt()}%',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
-              color: Colors.grey,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.bold,
             ),
           ),

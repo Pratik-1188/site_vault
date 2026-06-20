@@ -575,9 +575,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
                                             ),
                                       ),
                                       trailing: IconButton(
-                                        icon: const Icon(
+                                        icon: Icon(
                                           Icons.delete_outline_rounded,
-                                          color: Colors.redAccent,
+                                          color: Theme.of(context).colorScheme.error,
                                         ),
                                         onPressed: isSubmitting
                                             ? null

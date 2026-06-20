@@ -271,7 +271,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           children: [
             Text('Firm Spend Split', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
-            const Text('Spend proportional distribution across the divisions.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            Text('Spend proportional distribution across the divisions.', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 20),
             ...splits.asMap().entries.map((entry) {
               final idx = entry.key;
@@ -307,7 +307,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
             else
               Text(value.toString(), style: const TextStyle(fontSize: 12)),
             const SizedBox(width: 12),
-            Text(percent, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+            Text(percent, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
         const SizedBox(height: 6),
@@ -326,7 +326,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           children: [
             Text('Operational Categories', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
-            const Text('Spend breakdown by expense category types.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            Text('Spend breakdown by expense category types.', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 20),
 
             categorySpendAsync.when(
@@ -334,10 +334,10 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
               error: (e, _) => Text('Error category splits: $e'),
               data: (categories) {
                 if (categories.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20.0),
-                      child: Text('No category splits recorded.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      padding: const EdgeInsets.symmetric(vertical: 20.0),
+                      child: Text('No category splits recorded.', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ),
                   );
                 }
@@ -383,7 +383,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                           const SizedBox(height: 4),
                           Align(
                             alignment: Alignment.centerRight,
-                            child: Text('${(percentage * 100).toInt()}%', style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+                            child: Text('${(percentage * 100).toInt()}%', style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
@@ -408,7 +408,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           children: [
             Text('Cashflow Velocity', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
-            const Text('Month-over-month aggregated spending trends.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            Text('Month-over-month aggregated spending trends.', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 20),
 
             monthlySpendAsync.when(
@@ -416,10 +416,10 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
               error: (e, _) => Text('Error timelines: $e'),
               data: (trends) {
                 if (trends.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20.0),
-                      child: Text('No historical timelines found.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      padding: const EdgeInsets.symmetric(vertical: 20.0),
+                      child: Text('No historical timelines found.', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ),
                   );
                 }

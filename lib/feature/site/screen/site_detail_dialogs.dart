@@ -465,14 +465,7 @@ class SiteDetailDialogs {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Could not open file: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppSnackBar.showError(context, 'Could not open file: $e');
       }
     }
   }

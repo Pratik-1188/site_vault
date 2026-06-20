@@ -29,7 +29,7 @@ class AppSnackBar {
           style: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white),
         ),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: Colors.redAccent,
+        backgroundColor: Theme.of(context).colorScheme.error,
       ),
     );
   }

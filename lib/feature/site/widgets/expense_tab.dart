@@ -68,7 +68,7 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
           totalAsync.when(
             loading: () => Container(
               height: 80,
-              color: Colors.grey.withValues(alpha: 0.1),
+              color: Theme.of(context).colorScheme.surfaceContainer.withValues(alpha: 0.1),
             ),
             error: (e, _) => Text('Error loading total: $e'),
             data: (total) {
@@ -160,7 +160,7 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                           Icon(
                             Icons.receipt_long_rounded,
                             size: 48,
-                            color: Colors.grey[400],
+                            color: Theme.of(context).colorScheme.outline,
                           ),
                           const SizedBox(height: 12),
                           const Text(
@@ -168,10 +168,10 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             'Add transaction records for this site by clicking the "+" button below.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                           ),
                         ],
                       ),
@@ -299,20 +299,20 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                                     ],
                                   ),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'delete',
                                   child: Row(
                                     children: [
                                       Icon(
                                         Icons.delete_outline_rounded,
                                         size: 16,
-                                        color: Colors.redAccent,
+                                        color: Theme.of(context).colorScheme.error,
                                       ),
-                                      SizedBox(width: 8),
+                                      const SizedBox(width: 8),
                                       Text(
                                         'Delete',
                                         style: TextStyle(
-                                          color: Colors.redAccent,
+                                          color: Theme.of(context).colorScheme.error,
                                         ),
                                       ),
                                     ],

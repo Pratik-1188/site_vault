@@ -281,9 +281,9 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with 
                                             ),
                                           ),
                                           IconButton(
-                                            icon: const Icon(
+                                            icon: Icon(
                                               Icons.delete_outline_rounded,
-                                              color: Colors.redAccent,
+                                              color: Theme.of(context).colorScheme.error,
                                             ),
                                             onPressed: isSubmitting
                                                 ? null

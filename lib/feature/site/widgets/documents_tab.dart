@@ -99,7 +99,7 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                           Icon(
                             Icons.folder_open_rounded,
                             size: 48,
-                            color: Colors.grey[400],
+                            color: Theme.of(context).colorScheme.outline,
                           ),
                           const SizedBox(height: 12),
                           const Text(
@@ -107,10 +107,10 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             'Upload blueprints, layouts, safety manuals, or other project files.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                           ),
                         ],
                       ),
@@ -192,20 +192,20 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                                     ],
                                   ),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'delete',
                                   child: Row(
                                     children: [
                                       Icon(
                                         Icons.delete_outline_rounded,
                                         size: 16,
-                                        color: Colors.redAccent,
+                                        color: Theme.of(context).colorScheme.error,
                                       ),
-                                      SizedBox(width: 8),
+                                      const SizedBox(width: 8),
                                       Text(
                                         'Delete',
                                         style: TextStyle(
-                                          color: Colors.redAccent,
+                                          color: Theme.of(context).colorScheme.error,
                                         ),
                                       ),
                                     ],

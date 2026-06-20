@@ -241,8 +241,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
               error: (e, _) => Center(child: Text('Error loading vendors: $e')),
               data: (vendors) {
                 if (vendors.isEmpty) {
-                  return const Center(
-                    child: Text('No vendors found.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  return Center(
+                    child: Text('No vendors found.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                   );
                 }
 
@@ -349,8 +349,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
               error: (e, _) => Center(child: Text('Error loading categories: $e')),
               data: (categories) {
                 if (categories.isEmpty) {
-                  return const Center(
-                    child: Text('No categories found.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  return Center(
+                    child: Text('No categories found.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                   );
                 }
 
@@ -454,8 +454,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
               error: (e, _) => Center(child: Text('Error loading users: $e')),
               data: (profiles) {
                 if (profiles.isEmpty) {
-                  return const Center(
-                    child: Text('No users found.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  return Center(
+                    child: Text('No users found.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                   );
                 }
 

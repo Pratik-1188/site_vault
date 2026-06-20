@@ -130,12 +130,7 @@ class SiteDetailController extends ChangeNotifier {
     Site? currentSite,
   }) async {
     if (name.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a site name'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      AppSnackBar.showError(context, 'Please enter a site name');
       return;
     }
 

@@ -44,13 +44,13 @@ class SignOutMenuButton extends ConsumerWidget {
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'signout',
           child: Row(
             children: [
-              Icon(Icons.logout_rounded, size: 20, color: Colors.redAccent),
-              SizedBox(width: 8),
-              Text('Sign Out'),
+              Icon(Icons.logout_rounded, size: 20, color: Theme.of(context).colorScheme.error),
+              const SizedBox(width: 8),
+              const Text('Sign Out'),
             ],
           ),
         ),

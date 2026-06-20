@@ -107,7 +107,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                     Text(
                       'FINANCIAL YEARS',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
                       ),
@@ -334,10 +334,10 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.error_outline_rounded,
                         size: 48,
-                        color: Colors.redAccent,
+                        color: Theme.of(context).colorScheme.error,
                       ),
                       const SizedBox(height: 16),
                       Text(

@@ -358,7 +358,9 @@ NavigationBar(
 
 ---
 
-### 11. Hardcoded Colors
+### 11. Hardcoded Colors [RESOLVED]
+
+**Status**: Resolved. Centralized all raw, hardcoded color values (`Colors.redAccent`, `Colors.grey`, `Colors.grey[400]`) to appropriate contextual Theme token alternatives (`colorScheme.error`, `colorScheme.onSurfaceVariant`, `colorScheme.outline`, and `colorScheme.surfaceContainer`).
 
 | Color                                 | Occurrences | Files                      | Correct Token                  |
 | ------------------------------------- | ----------- | -------------------------- | ------------------------------ |
