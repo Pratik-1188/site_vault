@@ -8,6 +8,7 @@ import 'package:site_vault/feature/document/provider/document_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
 import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
+import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
 import 'package:site_vault/feature/site/model/site.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
@@ -295,12 +296,9 @@ class SiteDetailDialogs {
     required String firmId,
     Expense? expenseToEdit,
   }) {
-    return showModalBottomSheet(
+    return showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => ExpenseFormSheet(
+      child: ExpenseFormSheet(
         siteId: siteId,
         firmId: firmId,
         expenseToEdit: expenseToEdit,
@@ -433,12 +431,9 @@ class SiteDetailDialogs {
     required String siteId,
     required String firmId,
   }) {
-    return showModalBottomSheet(
+    return showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => DocumentUploadSheet(siteId: siteId, firmId: firmId),
+      child: DocumentUploadSheet(siteId: siteId, firmId: firmId),
     );
   }
 

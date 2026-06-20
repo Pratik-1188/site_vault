@@ -6,7 +6,9 @@ Scanned all 20 Dart files. Patterns are ranked by **number of duplicated lines e
 
 ## 🔴 Critical — Large, verbatim copy-paste blocks
 
-### 1. Bottom Sheet Shell — `BackdropFilter → ConstrainedBox → Material → SafeArea → Form`
+### 1. Bottom Sheet Shell — `BackdropFilter → ConstrainedBox → Material → SafeArea → Form` [RESOLVED]
+
+**Status**: Resolved. Refactored into a reusable `AppBottomSheet` widget.
 
 The entire structural wrapper of every bottom sheet is copy-pasted **6 times**. The only variation is the title string and the form fields inside.
 
@@ -212,7 +214,9 @@ Row(
 
 ---
 
-### 6. `showModalBottomSheet(...)` — 8 Identical Call Sites
+### 6. `showModalBottomSheet(...)` — 8 Identical Call Sites [RESOLVED]
+
+**Status**: Resolved. Refactored into a reusable `showAppBottomSheet` helper function.
 
 The same 4-parameter call is repeated wherever a sheet is opened:
 
@@ -325,7 +329,9 @@ NavigationBar(
 
 ## 🟡 Medium — Repetitive style constants
 
-### 10. Hardcoded EdgeInsets — Sheet Padding Duplicated 6× Each
+### 10. Hardcoded EdgeInsets — Sheet Padding Duplicated 6× Each [PARTIALLY RESOLVED]
+
+**Status**: Partially Resolved. Sheet header and body padding are now managed by the central `AppPadding` class. Remaining layouts will be refactored alongside other layout updates.
 
 | Constant          | Value                                                | Occurrences          | Used for             |
 | ----------------- | ---------------------------------------------------- | -------------------- | -------------------- |

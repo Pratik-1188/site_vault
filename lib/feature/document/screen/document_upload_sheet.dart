@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
@@ -7,7 +6,7 @@ import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
-import 'package:site_vault/shared/theme/app_radius.dart';
+import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
 import 'package:site_vault/feature/site/provider/site_provider.dart';
 import 'package:site_vault/feature/site/model/site.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
@@ -251,53 +250,14 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
   Widget build(BuildContext context) {
     final firmsAsync = ref.watch(firmsProvider);
 
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        child: Material(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.verticalMd,
-          child: Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: SafeArea(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // 1. PINNED STICKY HEADER
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Upload Document',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: _isUploading ? null : () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 24, indent: 24, endIndent: 24),
-
-                    // 2. SCROLLABLE CONTENT BODY
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
+    return AppBottomSheet(
+      title: 'Upload Document',
+      formKey: _formKey,
+      canClose: !_isUploading,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
                             // 1. Context Scope
                             if (!_isContextLocked) ...[
                               Text(
@@ -512,16 +472,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
                             ),
                           ],
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+                      );
   }
 
   IconData _getFileIcon(String fileName) {

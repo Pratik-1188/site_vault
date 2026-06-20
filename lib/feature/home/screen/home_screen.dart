@@ -5,6 +5,7 @@ import 'package:site_vault/feature/home/provider/home_provider.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
 import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
+import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
 import 'package:site_vault/shared/widget/vault_card.dart';
 import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
@@ -47,12 +48,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   /// Opens the dynamic expense form bottom sheet in unlocked mode
   void _openExpenseFormSheet(BuildContext context) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const ExpenseFormSheet(
+      child: const ExpenseFormSheet(
         siteId: '',
         firmId: '',
       ),
@@ -61,12 +59,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   /// Opens the dynamic document upload bottom sheet in unlocked mode
   void _openDocumentUploadSheet(BuildContext context) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const DocumentUploadSheet(
+      child: const DocumentUploadSheet(
         siteId: '',
         firmId: '',
       ),

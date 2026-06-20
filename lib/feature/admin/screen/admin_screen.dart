@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +5,7 @@ import 'package:site_vault/feature/admin/provider/admin_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
+import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/shared/widget/status_badge.dart';
@@ -70,34 +70,25 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
 
   /// Opens the modal bottom sheet to create or edit a vendor
   void _openVendorForm(BuildContext context, [Vendor? vendor]) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _VendorFormSheet(vendorToEdit: vendor),
+      child: _VendorFormSheet(vendorToEdit: vendor),
     );
   }
 
   /// Opens the modal bottom sheet to create or edit an expense category
   void _openCategoryForm(BuildContext context, [ExpenseCategory? category]) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _CategoryFormSheet(categoryToEdit: category),
+      child: _CategoryFormSheet(categoryToEdit: category),
     );
   }
 
   /// Opens the modal bottom sheet to create a new user
   void _openUserForm(BuildContext context) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const _UserFormSheet(),
+      child: const _UserFormSheet(),
     );
   }
 
@@ -710,128 +701,82 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        child: Material(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.verticalMd,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: SafeArea(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Pinned Sticky Header
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            widget.vendorToEdit == null ? 'Add Vendor' : 'Edit Vendor Details',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 24, indent: 24, endIndent: 24),
-
-                    // Scrollable content
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'Vendor Details',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _nameController,
-                              textCapitalization: TextCapitalization.words,
-                              decoration: const InputDecoration(
-                                labelText: 'Vendor Business Name *',
-                                prefixIcon: Icon(Icons.store_rounded),
-                              ),
-                              validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a name' : null,
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _contactController,
-                              keyboardType: TextInputType.phone,
-                              decoration: const InputDecoration(
-                                labelText: 'Contact / Phone Info',
-                                prefixIcon: Icon(Icons.phone_rounded),
-                                hintText: 'e.g. +91 98765 43210',
-                              ),
-                            ),
-                            if (widget.vendorToEdit != null) ...[
-                              const SizedBox(height: 16),
-                              SwitchListTile(
-                                contentPadding: EdgeInsets.zero,
-                                secondary: const Icon(Icons.check_circle_outline_rounded),
-                                title: const Text('Active Status'),
-                                subtitle: const Text('Allow selecting this vendor in new expenses'),
-                                value: _isActive,
-                                onChanged: (val) => setState(() => _isActive = val),
-                              ),
-                            ],
-                            const SizedBox(height: 32),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: _isSaving ? null : () => Navigator.pop(context),
-                                  child: const Text('Cancel'),
-                                ),
-                                const SizedBox(width: 12),
-                                FilledButton(
-                                  onPressed: _isSaving ? null : _submit,
-                                  child: _isSaving
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                                          ),
-                                        )
-                                      : Text(
-                                          widget.vendorToEdit == null
-                                              ? 'Create Vendor'
-                                              : 'Save Changes',
-                                        ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+    return AppBottomSheet(
+      title: widget.vendorToEdit == null ? 'Add Vendor' : 'Edit Vendor Details',
+      formKey: _formKey,
+      canClose: !_isSaving,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Vendor Details',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
                 ),
-              ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _nameController,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Vendor Business Name *',
+              prefixIcon: Icon(Icons.store_rounded),
+            ),
+            validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a name' : null,
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _contactController,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: 'Contact / Phone Info',
+              prefixIcon: Icon(Icons.phone_rounded),
+              hintText: 'e.g. +91 98765 43210',
             ),
           ),
-        ),
+          if (widget.vendorToEdit != null) ...[
+            const SizedBox(height: 16),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary: const Icon(Icons.check_circle_outline_rounded),
+              title: const Text('Active Status'),
+              subtitle: const Text('Allow selecting this vendor in new expenses'),
+              value: _isActive,
+              onChanged: (val) => setState(() => _isActive = val),
+            ),
+          ],
+          const SizedBox(height: 32),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton(
+                onPressed: _isSaving ? null : () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: 12),
+              FilledButton(
+                onPressed: _isSaving ? null : _submit,
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      )
+                    : Text(
+                        widget.vendorToEdit == null
+                            ? 'Create Vendor'
+                            : 'Save Changes',
+                      ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -906,119 +851,73 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        child: Material(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.verticalMd,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: SafeArea(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Pinned Header
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            widget.categoryToEdit == null ? 'Add Category' : 'Edit Category Details',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 24, indent: 24, endIndent: 24),
-
-                    // Scrollable content
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'Category Details',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _nameController,
-                              textCapitalization: TextCapitalization.words,
-                              decoration: const InputDecoration(
-                                labelText: 'Expense Category Name *',
-                                prefixIcon: Icon(Icons.category_rounded),
-                                hintText: 'e.g. Electric Cables, Concrete Foundation',
-                              ),
-                              validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a category name' : null,
-                            ),
-                            if (widget.categoryToEdit != null) ...[
-                              const SizedBox(height: 16),
-                              SwitchListTile(
-                                contentPadding: EdgeInsets.zero,
-                                secondary: const Icon(Icons.check_circle_outline_rounded),
-                                title: const Text('Active Status'),
-                                subtitle: const Text('Allow selecting this category in new expenses'),
-                                value: _isActive,
-                                onChanged: (val) => setState(() => _isActive = val),
-                              ),
-                            ],
-                            const SizedBox(height: 32),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: _isSaving ? null : () => Navigator.pop(context),
-                                  child: const Text('Cancel'),
-                                ),
-                                const SizedBox(width: 12),
-                                FilledButton(
-                                  onPressed: _isSaving ? null : _submit,
-                                  child: _isSaving
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                                          ),
-                                        )
-                                      : Text(
-                                          widget.categoryToEdit == null
-                                              ? 'Create Category'
-                                              : 'Save Changes',
-                                        ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+    return AppBottomSheet(
+      title: widget.categoryToEdit == null ? 'Add Category' : 'Edit Category Details',
+      formKey: _formKey,
+      canClose: !_isSaving,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Category Details',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
                 ),
-              ),
-            ),
           ),
-        ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _nameController,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Expense Category Name *',
+              prefixIcon: Icon(Icons.category_rounded),
+              hintText: 'e.g. Electric Cables, Concrete Foundation',
+            ),
+            validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a category name' : null,
+          ),
+          if (widget.categoryToEdit != null) ...[
+            const SizedBox(height: 16),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary: const Icon(Icons.check_circle_outline_rounded),
+              title: const Text('Active Status'),
+              subtitle: const Text('Allow selecting this category in new expenses'),
+              value: _isActive,
+              onChanged: (val) => setState(() => _isActive = val),
+            ),
+          ],
+          const SizedBox(height: 32),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton(
+                onPressed: _isSaving ? null : () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: 12),
+              FilledButton(
+                onPressed: _isSaving ? null : _submit,
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      )
+                    : Text(
+                        widget.categoryToEdit == null
+                            ? 'Create Category'
+                            : 'Save Changes',
+                      ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -1097,174 +996,128 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        child: Material(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.verticalMd,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: SafeArea(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Pinned Header
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Add User',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 24, indent: 24, endIndent: 24),
-
-                    // Scrollable content
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'Login Credentials & Details',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _displayNameController,
-                              decoration: const InputDecoration(
-                                labelText: 'Display Name *',
-                                prefixIcon: Icon(Icons.person_rounded),
-                                hintText: 'e.g. JohnDoe (No spaces)',
-                              ),
-                              validator: (val) {
-                                if (val == null || val.trim().isEmpty) {
-                                  return 'Please enter a display name';
-                                }
-                                if (val.trim().length < 3) {
-                                  return 'Display name must be at least 3 characters';
-                                }
-                                if (RegExp(r'\s').hasMatch(val)) {
-                                  return 'Display name cannot contain spaces';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: const InputDecoration(
-                                labelText: 'Email Address *',
-                                prefixIcon: Icon(Icons.email_rounded),
-                                hintText: 'e.g. user@kkgroup.com',
-                              ),
-                              validator: (val) {
-                                if (val == null || val.trim().isEmpty) {
-                                  return 'Please enter an email';
-                                }
-                                if (!val.contains('@')) {
-                                  return 'Please enter a valid email';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Password *',
-                                prefixIcon: Icon(Icons.lock_rounded),
-                                hintText: 'Minimum 6 characters',
-                              ),
-                              validator: (val) {
-                                if (val == null || val.isEmpty) {
-                                  return 'Please enter a password';
-                                }
-                                if (val.length < 6) {
-                                  return 'Password must be at least 6 characters';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            DropdownButtonFormField<String>(
-                              initialValue: _selectedRole,
-                              decoration: const InputDecoration(
-                                labelText: 'User Role *',
-                                prefixIcon: Icon(Icons.badge_rounded),
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'staff',
-                                  child: Text('staff'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'admin',
-                                  child: Text('admin'),
-                                ),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() => _selectedRole = val);
-                                }
-                              },
-                            ),
-                            const SizedBox(height: 32),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: _isSaving ? null : () => Navigator.pop(context),
-                                  child: const Text('Cancel'),
-                                ),
-                                const SizedBox(width: 12),
-                                FilledButton(
-                                  onPressed: _isSaving ? null : _submit,
-                                  child: _isSaving
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                                          ),
-                                        )
-                                      : const Text('Create User'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+    return AppBottomSheet(
+      title: 'Add User',
+      formKey: _formKey,
+      canClose: !_isSaving,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Login Credentials & Details',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
                 ),
-              ),
-            ),
           ),
-        ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _displayNameController,
+            decoration: const InputDecoration(
+              labelText: 'Display Name *',
+              prefixIcon: Icon(Icons.person_rounded),
+              hintText: 'e.g. JohnDoe (No spaces)',
+            ),
+            validator: (val) {
+              if (val == null || val.trim().isEmpty) {
+                return 'Please enter a display name';
+              }
+              if (val.trim().length < 3) {
+                return 'Display name must be at least 3 characters';
+              }
+              if (RegExp(r'\s').hasMatch(val)) {
+                return 'Display name cannot contain spaces';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+              labelText: 'Email Address *',
+              prefixIcon: Icon(Icons.email_rounded),
+              hintText: 'e.g. user@kkgroup.com',
+            ),
+            validator: (val) {
+              if (val == null || val.trim().isEmpty) {
+                return 'Please enter an email';
+              }
+              if (!val.contains('@')) {
+                return 'Please enter a valid email';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Password *',
+              prefixIcon: Icon(Icons.lock_rounded),
+              hintText: 'Minimum 6 characters',
+            ),
+            validator: (val) {
+              if (val == null || val.isEmpty) {
+                return 'Please enter a password';
+              }
+              if (val.length < 6) {
+                return 'Password must be at least 6 characters';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedRole,
+            decoration: const InputDecoration(
+              labelText: 'User Role *',
+              prefixIcon: Icon(Icons.badge_rounded),
+            ),
+            items: const [
+              DropdownMenuItem(
+                value: 'staff',
+                child: Text('staff'),
+              ),
+              DropdownMenuItem(
+                value: 'admin',
+                child: Text('admin'),
+              ),
+            ],
+            onChanged: (val) {
+              if (val != null) {
+                setState(() => _selectedRole = val);
+              }
+            },
+          ),
+          const SizedBox(height: 32),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton(
+                onPressed: _isSaving ? null : () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              const SizedBox(width: 12),
+              FilledButton(
+                onPressed: _isSaving ? null : _submit,
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      )
+                    : const Text('Create User'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
