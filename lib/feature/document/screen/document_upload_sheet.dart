@@ -5,10 +5,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
-import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
-import 'package:site_vault/feature/site/provider/site_provider.dart';
-import 'package:site_vault/feature/site/model/site.dart';
+import 'package:site_vault/feature/site/widgets/site_scope_selector_mixin.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
 import '../model/document.dart';
 import '../provider/document_provider.dart';
@@ -34,18 +32,11 @@ class DocumentUploadSheet extends ConsumerStatefulWidget {
       _DocumentUploadSheetState();
 }
 
-class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
+class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with SiteScopeSelectorMixin {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _fileNameController;
   late TextEditingController _descriptionController;
-
-  // Firm & Site dynamic selection state
-  String? _selectedFirmId;
-  String? _selectedSiteId;
-  List<Site>? _activeSites;
-  bool _isLoadingSites = false;
-  late bool _isContextLocked; // Locked if started from specific site details screen
 
   // File variables
   String? _pickedFileName;
@@ -59,15 +50,11 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
     _fileNameController = TextEditingController();
     _descriptionController = TextEditingController();
 
-    // Firm & Site context selection (locked if both firmId and siteId are provided)
-    _selectedFirmId = widget.firmId.isNotEmpty ? widget.firmId : null;
-    _selectedSiteId = widget.siteId.isNotEmpty ? widget.siteId : null;
-    _isContextLocked = widget.firmId.isNotEmpty && widget.siteId.isNotEmpty;
-
-    // Fetch initial active sites if firm is selected
-    if (_selectedFirmId != null) {
-      _loadSitesForFirm(_selectedFirmId!);
-    }
+    initSiteScope(
+      initialFirmId: widget.firmId.isNotEmpty ? widget.firmId : null,
+      initialSiteId: widget.siteId.isNotEmpty ? widget.siteId : null,
+      isLocked: widget.firmId.isNotEmpty && widget.siteId.isNotEmpty,
+    );
   }
 
   @override
@@ -75,38 +62,6 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
     _fileNameController.dispose();
     _descriptionController.dispose();
     super.dispose();
-  }
-
-  /// Fetches active sites dynamically under the selected firm
-  Future<void> _loadSitesForFirm(String firmId) async {
-    if (!mounted) return;
-    setState(() {
-      _isLoadingSites = true;
-      _activeSites = null;
-    });
-
-    try {
-      final sitesList =
-          await ref.read(activeSitesByFirmProvider(firmId).future);
-
-      if (!mounted) return;
-      setState(() {
-        _activeSites = sitesList;
-        _isLoadingSites = false;
-
-        // Reset selected site if it is not in the newly loaded active sites list
-        if (_selectedSiteId != null && !_activeSites!.any((s) => s.id == _selectedSiteId)) {
-          _selectedSiteId = null;
-        }
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _activeSites = [];
-        _isLoadingSites = false;
-        _selectedSiteId = null;
-      });
-    }
   }
 
   /// Picks a document file via file_picker
@@ -158,7 +113,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       return;
     }
 
-    if (_selectedFirmId == null || _selectedSiteId == null) {
+    if (selectedFirmId == null || selectedSiteId == null) {
       debugPrint('[DocumentUpload] Scope selection missing');
       if (mounted) {
         AppSnackBar.showError(context, 'Please select both Firm and Site.');
@@ -195,7 +150,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       final fileUrl = await ref
           .read(storageActionsProvider)
           .uploadFile(
-            bucket: _selectedSiteId!,
+            bucket: selectedSiteId!,
             path: 'documents',
             fileBytes: _pickedFileBytes!,
             fileName: _pickedFileName!,
@@ -208,7 +163,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
       // 2. Build the SiteDocument Object
       final document = SiteDocument(
         id: '',
-        siteId: _selectedSiteId!,
+        siteId: selectedSiteId!,
         createdBy: uploaderId,
         fileName: _fileNameController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
@@ -248,8 +203,6 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final firmsAsync = ref.watch(firmsProvider);
-
     return AppBottomSheet(
       title: 'Upload Document',
       formKey: _formKey,
@@ -258,80 +211,8 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-                            // 1. Context Scope
-                            if (!_isContextLocked) ...[
-                              Text(
-                                'Scope',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      color: Theme.of(context).colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                              const SizedBox(height: 16),
-                              firmsAsync.when(
-                                loading: () => const LinearProgressIndicator(),
-                                error: (err, _) => Text('Error loading firms: $err'),
-                                data: (firms) {
-                                  return DropdownButtonFormField<String>(
-                                    initialValue: _selectedFirmId,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Firm',
-                                      prefixIcon: Icon(Icons.business_rounded),
-                                    ),
-                                    items: firms.map((firm) {
-                                      return DropdownMenuItem<String>(
-                                        value: firm.id,
-                                        child: Text(firm.name),
-                                      );
-                                    }).toList(),
-                                    onChanged: _isUploading ? null : (val) {
-                                      if (val != null) {
-                                        setState(() {
-                                          _selectedFirmId = val;
-                                          _selectedSiteId = null;
-                                        });
-                                        _loadSitesForFirm(val);
-                                      }
-                                    },
-                                    validator: (val) => val == null ? 'Firm is required' : null,
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              DropdownButtonFormField<String>(
-                                initialValue: _selectedSiteId,
-                                decoration: InputDecoration(
-                                  labelText: 'Site',
-                                  prefixIcon: const Icon(Icons.location_on_rounded),
-                                  suffixIcon: _isLoadingSites
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: Padding(
-                                            padding: EdgeInsets.all(12.0),
-                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                                items: _activeSites?.map((site) {
-                                      return DropdownMenuItem<String>(
-                                        value: site.id,
-                                        child: Text(site.name),
-                                      );
-                                    }).toList() ??
-                                    [],
-                                onChanged: (_selectedFirmId == null || _isUploading)
-                                    ? null
-                                    : (val) {
-                                        setState(() {
-                                          _selectedSiteId = val;
-                                        });
-                                      },
-                                validator: (val) => val == null ? 'Site is required' : null,
-                              ),
-                              const SizedBox(height: 24),
-                            ],
+          // 1. Context Scope
+          buildScopeSelector(context),
 
                             // 2. Document Metadata
                             Text(

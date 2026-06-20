@@ -6,13 +6,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/error_interceptor.dart';
-import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
 
-import 'package:site_vault/feature/site/provider/site_provider.dart';
-import 'package:site_vault/feature/site/model/site.dart';
+import 'package:site_vault/feature/site/widgets/site_scope_selector_mixin.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import '../model/expense.dart';
 import '../provider/expense_provider.dart';
@@ -40,7 +38,7 @@ class ExpenseFormSheet extends ConsumerStatefulWidget {
   ConsumerState<ExpenseFormSheet> createState() => _ExpenseFormSheetState();
 }
 
-class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
+class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteScopeSelectorMixin {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _titleController;
@@ -53,14 +51,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
   String? _selectedCategoryId;
   String? _selectedVendorId;
-
-  // Firm & Site dynamic selection state
-  String? _selectedFirmId;
-  String? _selectedSiteId;
-  List<Site>? _activeSites;
-  bool _isLoadingSites = false;
-  late bool
-  _isContextLocked; // Locked if started from specific site details screen
 
   bool _isGst = false;
 
@@ -90,19 +80,13 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     _selectedCategoryId = expense?.categoryId;
     _selectedVendorId = expense?.vendorId;
 
-    // Firm & Site context selection (locked if both firmId and siteId are provided)
-    _selectedFirmId =
-        expense?.firmId ?? (widget.firmId.isNotEmpty ? widget.firmId : null);
-    _selectedSiteId =
-        expense?.siteId ?? (widget.siteId.isNotEmpty ? widget.siteId : null);
-    _isContextLocked = widget.firmId.isNotEmpty && widget.siteId.isNotEmpty;
+    initSiteScope(
+      initialFirmId: expense?.firmId ?? (widget.firmId.isNotEmpty ? widget.firmId : null),
+      initialSiteId: expense?.siteId ?? (widget.siteId.isNotEmpty ? widget.siteId : null),
+      isLocked: widget.firmId.isNotEmpty && widget.siteId.isNotEmpty,
+    );
 
     _isGst = expense?.isGst ?? false;
-
-    // Fetch initial active sites if firm is selected
-    if (_selectedFirmId != null) {
-      _loadSitesForFirm(_selectedFirmId!);
-    }
   }
 
   @override
@@ -111,40 +95,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     _amountController.dispose();
     _descriptionController.dispose();
     super.dispose();
-  }
-
-  /// Fetches active sites dynamically under the selected firm
-  Future<void> _loadSitesForFirm(String firmId) async {
-    if (!mounted) return;
-    setState(() {
-      _isLoadingSites = true;
-      _activeSites = null;
-    });
-
-    try {
-      final sitesList = await ref.read(
-        activeSitesByFirmProvider(firmId).future,
-      );
-
-      if (!mounted) return;
-      setState(() {
-        _activeSites = sitesList;
-        _isLoadingSites = false;
-
-        // Reset selected site if it is not in the newly loaded active sites list
-        if (_selectedSiteId != null &&
-            !_activeSites!.any((s) => s.id == _selectedSiteId)) {
-          _selectedSiteId = null;
-        }
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _activeSites = [];
-        _isLoadingSites = false;
-        _selectedSiteId = null;
-      });
-    }
   }
 
   /// Select Date calendar picker
@@ -280,7 +230,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       return;
     }
 
-    if (_selectedFirmId == null || _selectedSiteId == null) {
+    if (selectedFirmId == null || selectedSiteId == null) {
       AppSnackBar.showError(context, 'Please select both Firm and Site.');
       return;
     }
@@ -297,7 +247,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
         fileUrl = await ref
             .read(storageActionsProvider)
             .uploadFile(
-              bucket: _selectedSiteId!, // Site's unique UUID bucket
+              bucket: selectedSiteId!, // Site's unique UUID bucket
               path: 'expenses',
               fileBytes: _pickedFileBytes!,
               fileName: _pickedFileName!,
@@ -310,8 +260,8 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       final total = double.parse(_amountController.text.trim());
       final expense = Expense(
         id: widget.expenseToEdit?.id ?? '',
-        firmId: _selectedFirmId!,
-        siteId: _selectedSiteId!,
+        firmId: selectedFirmId!,
+        siteId: selectedSiteId!,
         createdBy: currentUserId, // Bind creator user ID behind the scenes
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
@@ -366,7 +316,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final firmsAsync = ref.watch(firmsProvider);
     final categoriesAsync = ref.watch(expenseCategoriesProvider);
     final vendorsAsync = ref.watch(vendorsProvider);
 
@@ -380,94 +329,8 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-                            // 1. Context Scope
-                            if (!_isContextLocked) ...[
-                              Text(
-                                'Scope',
-                                style: Theme.of(context).textTheme.titleMedium
-                                    ?.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                              const SizedBox(height: 16),
-                              firmsAsync.when(
-                                loading: () => const LinearProgressIndicator(),
-                                error: (err, _) =>
-                                    Text('Error loading firms: $err'),
-                                data: (firms) {
-                                  return DropdownButtonFormField<String>(
-                                    initialValue: _selectedFirmId,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Firm',
-                                      prefixIcon: Icon(Icons.business_rounded),
-                                    ),
-                                    items: firms.map((firm) {
-                                      return DropdownMenuItem<String>(
-                                        value: firm.id,
-                                        child: Text(firm.name),
-                                      );
-                                    }).toList(),
-                                    onChanged: _isUploading
-                                        ? null
-                                        : (val) {
-                                            if (val != null) {
-                                              setState(() {
-                                                _selectedFirmId = val;
-                                                _selectedSiteId = null;
-                                              });
-                                              _loadSitesForFirm(val);
-                                            }
-                                          },
-                                    validator: (val) =>
-                                        val == null ? 'Firm is required' : null,
-                                  );
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              DropdownButtonFormField<String>(
-                                initialValue: _selectedSiteId,
-                                decoration: InputDecoration(
-                                  labelText: 'Site',
-                                  prefixIcon: const Icon(
-                                    Icons.location_on_rounded,
-                                  ),
-                                  suffixIcon: _isLoadingSites
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: Padding(
-                                            padding: EdgeInsets.all(12.0),
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                            ),
-                                          ),
-                                        )
-                                      : null,
-                                ),
-                                items:
-                                    _activeSites?.map((site) {
-                                      return DropdownMenuItem<String>(
-                                        value: site.id,
-                                        child: Text(site.name),
-                                      );
-                                    }).toList() ??
-                                    [],
-                                onChanged:
-                                    (_selectedFirmId == null || _isUploading)
-                                    ? null
-                                    : (val) {
-                                        setState(() {
-                                          _selectedSiteId = val;
-                                        });
-                                      },
-                                validator: (val) =>
-                                    val == null ? 'Site is required' : null,
-                              ),
-                              const SizedBox(height: 24),
-                            ],
+          // 1. Context Scope
+          buildScopeSelector(context),
 
                             // 2. Core Details Section
                             Text(

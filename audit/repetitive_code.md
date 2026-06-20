@@ -66,9 +66,11 @@ BackdropFilter(
 
 ---
 
-### 2. `_loadSitesForFirm()` — Entire Method + 5 State Variables Duplicated
+### 2. `_loadSitesForFirm()` — Entire Method + 5 State Variables Duplicated [RESOLVED]
 
-The full method body AND 5 state variables are **copy-pasted verbatim** in both `ExpenseFormSheet` and `DocumentUploadSheet`.
+**Status**: Resolved. Refactored into the reusable `SiteScopeSelectorMixin` containing the state variables, network fetch method, and a `buildScopeSelector` UI widget.
+
+The full method body AND 5 state variables were **copy-pasted verbatim** in both `ExpenseFormSheet` and `DocumentUploadSheet`.
 
 **Duplicated state variables (in both files):**
 
