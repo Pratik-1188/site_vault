@@ -122,8 +122,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
     });
 
     try {
-      final sitesList =
-          await ref.read(activeSitesByFirmProvider(firmId).future);
+      final sitesList = await ref.read(
+        activeSitesByFirmProvider(firmId).future,
+      );
 
       if (!mounted) return;
       setState(() {
@@ -145,8 +146,6 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       });
     }
   }
-
-
 
   /// Select Date calendar picker
   Future<void> _selectDate(BuildContext context) async {
@@ -274,7 +273,10 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
 
     final currentUserId = ref.read(currentAuthUserProvider)?.id;
     if (currentUserId == null) {
-      AppSnackBar.showError(context, 'User session expired. Please log in again.');
+      AppSnackBar.showError(
+        context,
+        'User session expired. Please log in again.',
+      );
       return;
     }
 
@@ -328,22 +330,15 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
       );
 
       // 3. Database Write operations
+      // 3. Database Write operations
       if (widget.expenseToEdit == null) {
         // Create Mode
         await ref.read(expenseActionsProvider).createExpense(expense);
       } else {
         // Edit Mode
-        if (_selectedSiteId == widget.siteId) {
-          await ref.read(expenseActionsProvider).updateExpense(
-                expense,
-                previousSiteId: widget.siteId,
-              );
-        } else {
-          await ref.read(expenseActionsProvider).updateExpense(
-                expense,
-                previousSiteId: widget.siteId,
-              );
-        }
+        await ref
+            .read(expenseActionsProvider)
+            .updateExpense(expense, previousSiteId: widget.siteId);
       }
 
       if (mounted) {
@@ -402,12 +397,18 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            widget.expenseToEdit == null ? 'Add Expense' : 'Edit Expense Details',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
+                            widget.expenseToEdit == null
+                                ? 'Add Expense'
+                                : 'Edit Expense Details',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleLarge?.copyWith(fontSize: 20),
                           ),
                           IconButton(
                             icon: const Icon(Icons.close_rounded),
-                            onPressed: _isUploading ? null : () => Navigator.pop(context),
+                            onPressed: _isUploading
+                                ? null
+                                : () => Navigator.pop(context),
                           ),
                         ],
                       ),
@@ -426,15 +427,19 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                             if (!_isContextLocked) ...[
                               Text(
                                 'Scope',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      color: Theme.of(context).colorScheme.primary,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
                                       fontWeight: FontWeight.bold,
                                     ),
                               ),
                               const SizedBox(height: 16),
                               firmsAsync.when(
                                 loading: () => const LinearProgressIndicator(),
-                                error: (err, _) => Text('Error loading firms: $err'),
+                                error: (err, _) =>
+                                    Text('Error loading firms: $err'),
                                 data: (firms) {
                                   return DropdownButtonFormField<String>(
                                     initialValue: _selectedFirmId,
@@ -448,15 +453,17 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                         child: Text(firm.name),
                                       );
                                     }).toList(),
-                                    onChanged: _isUploading ? null : (val) {
-                                      if (val != null) {
-                                        setState(() {
-                                          _selectedFirmId = val;
-                                          _selectedSiteId = null;
-                                        });
-                                        _loadSitesForFirm(val);
-                                      }
-                                    },
+                                    onChanged: _isUploading
+                                        ? null
+                                        : (val) {
+                                            if (val != null) {
+                                              setState(() {
+                                                _selectedFirmId = val;
+                                                _selectedSiteId = null;
+                                              });
+                                              _loadSitesForFirm(val);
+                                            }
+                                          },
                                     validator: (val) =>
                                         val == null ? 'Firm is required' : null,
                                   );
@@ -467,7 +474,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                 initialValue: _selectedSiteId,
                                 decoration: InputDecoration(
                                   labelText: 'Site',
-                                  prefixIcon: const Icon(Icons.location_on_rounded),
+                                  prefixIcon: const Icon(
+                                    Icons.location_on_rounded,
+                                  ),
                                   suffixIcon: _isLoadingSites
                                       ? const SizedBox(
                                           width: 20,
@@ -481,14 +490,16 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                         )
                                       : null,
                                 ),
-                                items: _activeSites?.map((site) {
+                                items:
+                                    _activeSites?.map((site) {
                                       return DropdownMenuItem<String>(
                                         value: site.id,
                                         child: Text(site.name),
                                       );
                                     }).toList() ??
                                     [],
-                                onChanged: (_selectedFirmId == null || _isUploading)
+                                onChanged:
+                                    (_selectedFirmId == null || _isUploading)
                                     ? null
                                     : (val) {
                                         setState(() {
@@ -504,8 +515,11 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                             // 2. Core Details Section
                             Text(
                               'Core Details',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                             ),
@@ -533,9 +547,10 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                             TextFormField(
                               controller: _amountController,
                               enabled: !_isUploading,
-                              keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true,
-                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
                               decoration: const InputDecoration(
                                 labelText: 'Total Amount',
                                 hintText: '0.00',
@@ -556,18 +571,25 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                             SwitchListTile(
                               contentPadding: EdgeInsets.zero,
                               title: const Text('GST Bill'),
-                              subtitle: const Text('Include GST tax invoice details'),
+                              subtitle: const Text(
+                                'Include GST tax invoice details',
+                              ),
                               secondary: const Icon(Icons.receipt_long_rounded),
                               value: _isGst,
-                              onChanged: _isUploading ? null : (val) => setState(() => _isGst = val),
+                              onChanged: _isUploading
+                                  ? null
+                                  : (val) => setState(() => _isGst = val),
                             ),
                             const SizedBox(height: 24),
 
                             // 3. Attributes Section
                             Text(
                               'Attributes',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                             ),
@@ -577,7 +599,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                 child: SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 ),
                               ),
                               error: (e, _) => Text('Err: $e'),
@@ -594,9 +618,11 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                       child: Text(c.name),
                                     );
                                   }).toList(),
-                                  onChanged: _isUploading ? null : (val) => setState(
-                                    () => _selectedCategoryId = val,
-                                  ),
+                                  onChanged: _isUploading
+                                      ? null
+                                      : (val) => setState(
+                                          () => _selectedCategoryId = val,
+                                        ),
                                 );
                               },
                             ),
@@ -613,11 +639,15 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                   child: Text(mode.toDisplayLabel()),
                                 );
                               }).toList(),
-                              onChanged: _isUploading ? null : (val) {
-                                if (val != null) {
-                                  setState(() => _selectedPaymentMode = val);
-                                }
-                              },
+                              onChanged: _isUploading
+                                  ? null
+                                  : (val) {
+                                      if (val != null) {
+                                        setState(
+                                          () => _selectedPaymentMode = val,
+                                        );
+                                      }
+                                    },
                             ),
                             const SizedBox(height: 16),
                             vendorsAsync.when(
@@ -625,7 +655,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                 child: SizedBox(
                                   width: 20,
                                   height: 20,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 ),
                               ),
                               error: (e, _) => Text('Err: $e'),
@@ -642,8 +674,11 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                       child: Text(v.name),
                                     );
                                   }).toList(),
-                                  onChanged: _isUploading ? null : (val) =>
-                                      setState(() => _selectedVendorId = val),
+                                  onChanged: _isUploading
+                                      ? null
+                                      : (val) => setState(
+                                          () => _selectedVendorId = val,
+                                        ),
                                 );
                               },
                             ),
@@ -657,32 +692,47 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                 labelText: 'Expense Date',
                                 prefixIcon: Icon(Icons.calendar_today_rounded),
                               ),
-                              onTap: _isUploading ? null : () => _selectDate(context),
+                              onTap: _isUploading
+                                  ? null
+                                  : () => _selectDate(context),
                             ),
                             const SizedBox(height: 24),
 
                             // 4. Documentation & Options Section
                             Text(
                               'Documentation & Options',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                     fontWeight: FontWeight.bold,
                                   ),
                             ),
                             const SizedBox(height: 16),
-                             SwitchListTile(
-                               contentPadding: EdgeInsets.zero,
-                               title: const Text('Refundable'),
-                               subtitle: const Text('Mark this expense for reimbursement'),
-                               secondary: const Icon(Icons.assignment_return_rounded),
-                               value: _isRefundable,
-                               onChanged: _isUploading ? null : (val) => setState(() => _isRefundable = val),
-                             ),
+                            SwitchListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: const Text('Refundable'),
+                              subtitle: const Text(
+                                'Mark this expense for reimbursement',
+                              ),
+                              secondary: const Icon(
+                                Icons.assignment_return_rounded,
+                              ),
+                              value: _isRefundable,
+                              onChanged: _isUploading
+                                  ? null
+                                  : (val) =>
+                                        setState(() => _isRefundable = val),
+                            ),
                             const SizedBox(height: 16),
                             Text(
                               'Attachment',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                                     fontWeight: FontWeight.w600,
                                   ),
                             ),
@@ -690,22 +740,28 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                             _pickedFileName != null
                                 ? Card(
                                     elevation: 0,
-                                    color: Theme.of(context).colorScheme.surfaceContainer,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainer,
                                     child: ListTile(
                                       leading: Icon(
-                                        _pickedFileName!.toLowerCase().endsWith('.pdf')
+                                        _pickedFileName!.toLowerCase().endsWith(
+                                              '.pdf',
+                                            )
                                             ? Icons.picture_as_pdf_rounded
                                             : Icons.image_rounded,
-                                        color: Theme.of(context).colorScheme.primary,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
                                       ),
                                       title: Text(
                                         _pickedFileName!,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                       subtitle: Text(
                                         'Ready to upload on save',
@@ -713,9 +769,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                             .textTheme
                                             .bodySmall
                                             ?.copyWith(
-                                              color: Theme.of(context)
-                                                  .colorScheme
-                                                  .onSurfaceVariant,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
                                             ),
                                       ),
                                       trailing: IconButton(
@@ -738,15 +794,19 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                     elevation: 0,
                                     shape: RoundedRectangleBorder(
                                       side: BorderSide(
-                                        color:
-                                            Theme.of(context).colorScheme.outlineVariant,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.outlineVariant,
                                         style: BorderStyle.solid,
                                       ),
                                       borderRadius: AppRadius.brXs,
                                     ),
                                     child: InkWell(
                                       borderRadius: AppRadius.brXs,
-                                      onTap: _isUploading ? null : () => _showAttachmentPicker(context),
+                                      onTap: _isUploading
+                                          ? null
+                                          : () =>
+                                                _showAttachmentPicker(context),
                                       child: Padding(
                                         padding: const EdgeInsets.symmetric(
                                           vertical: 24.0,
@@ -756,8 +816,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                             Icon(
                                               Icons.add_a_photo_rounded,
                                               size: 32,
-                                              color:
-                                                  Theme.of(context).colorScheme.primary,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
                                             ),
                                             const SizedBox(height: 8),
                                             Text(
@@ -793,7 +854,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 OutlinedButton(
-                                  onPressed: _isUploading ? null : () => Navigator.pop(context),
+                                  onPressed: _isUploading
+                                      ? null
+                                      : () => Navigator.pop(context),
                                   child: const Text('Cancel'),
                                 ),
                                 const SizedBox(width: 12),
@@ -805,7 +868,9 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> {
                                           height: 20,
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                                            valueColor: AlwaysStoppedAnimation(
+                                              Colors.white,
+                                            ),
                                           ),
                                         )
                                       : Text(
