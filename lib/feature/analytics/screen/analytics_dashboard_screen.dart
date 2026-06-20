@@ -4,10 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:site_vault/feature/analytics/model/analytics_models.dart';
 import 'package:site_vault/feature/analytics/provider/analytics_provider.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
-import 'package:site_vault/feature/auth/provider/auth_provider.dart';
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
-import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
+import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
+import 'package:site_vault/shared/widget/app_navigation_bar.dart';
+import 'package:site_vault/shared/widget/async_value_widget.dart';
+import 'package:site_vault/shared/utils/number_formatter.dart';
 
 /// Central analytics hub screen showing Group (All Firms) and Firm comparative cost statistics.
 class AnalyticsDashboardScreen extends ConsumerStatefulWidget {
@@ -62,32 +64,8 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
-              actions: [
-                PopupMenuButton<String>(
-                  icon: Icon(
-                    Icons.account_circle_rounded,
-                    size: 28,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  tooltip: 'User Profile Options',
-                  onSelected: (val) {
-                    if (val == 'signout') {
-                      _handleSignOut();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'signout',
-                      child: Row(
-                        children: [
-                          Icon(Icons.logout_rounded, size: 20, color: Colors.redAccent),
-                          SizedBox(width: 8),
-                          Text('Sign Out'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              actions: const [
+                SignOutMenuButton(),
               ],
             ),
           ];
@@ -95,8 +73,8 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
         body: Column(
           children: [
           // Scope Toggle Selector
-          firmsAsync.when(
-            data: (firmsList) => _buildScopeSelector(firmsList),
+          AsyncValueWidget(
+            value: firmsAsync,
             loading: () => const Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
@@ -108,12 +86,13 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
               ),
             ),
             error: (err, _) => const SizedBox.shrink(),
+            data: (firmsList) => _buildScopeSelector(firmsList),
           ),
 
           Expanded(
-            child: summariesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error loading dashboard: $e')),
+            child: AsyncValueWidget(
+              value: summariesAsync,
+              errorMessage: 'Error loading dashboard',
               data: (firmSummaries) {
                 // If All Firms, compute combined summary; otherwise select matching firm
                 final activeSummaries = selectedFirmId == null
@@ -160,40 +139,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
         ],
       ),
     ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 2,
-        onDestinationSelected: (index) {
-          if (index == 0) {
-            context.go('/');
-          } else if (index == 1) {
-            context.go('/sites');
-          } else if (index == 3) {
-            context.go('/admin');
-          }
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.location_on_outlined),
-            selectedIcon: Icon(Icons.location_on_rounded),
-            label: 'Sites',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.analytics_outlined),
-            selectedIcon: Icon(Icons.analytics_rounded),
-            label: 'Analytics',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
-            label: 'Admin',
-          ),
-        ],
-      ),
+      bottomNavigationBar: const AppNavigationBar(selectedIndex: 2),
     );
   }
 
@@ -233,13 +179,23 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
       physics: const NeverScrollableScrollPhysics(),
       childAspectRatio: 1.4,
       children: [
-        _kpiCard('Total Spend', '₹${total.toStringAsFixed(2)}', Icons.payments_rounded, accentColor),
+        _kpiCard(
+          'Total Spend',
+          total.toCurrencySpan(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.1,
+                ),
+          ),
+          Icons.payments_rounded,
+          accentColor,
+        ),
         _kpiCard('Transactions', '$count logs', Icons.inventory_2_outlined, Colors.purple),
       ],
     );
   }
 
-  Widget _kpiCard(String label, String value, IconData icon, Color accentColor) {
+  Widget _kpiCard(String label, dynamic value, IconData icon, Color accentColor) {
     return Card(
       elevation: 0,
       color: Theme.of(context).colorScheme.surfaceContainer,
@@ -262,15 +218,22 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                 Icon(icon, size: 18, color: accentColor),
               ],
             ),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.1,
-                  ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            if (value is InlineSpan)
+              Text.rich(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              )
+            else
+              Text(
+                value.toString(),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.1,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
           ],
         ),
       ),
@@ -310,7 +273,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           children: [
             Text('Firm Spend Split', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
-            const Text('Spend proportional distribution across the divisions.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            Text('Spend proportional distribution across the divisions.', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 20),
             ...splits.asMap().entries.map((entry) {
               final idx = entry.key;
@@ -318,7 +281,12 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
               return Column(
                 children: [
                   if (idx > 0) const Divider(height: 16, thickness: 0.5),
-                  _legendRow(item.name, '₹${item.spend.toStringAsFixed(2)}', '${(item.percentage * 100).toInt()}%', item.percentage),
+                  _legendRow(
+                    item.name,
+                    item.spend.toCurrencySpan(style: const TextStyle(fontSize: 12)),
+                    '${(item.percentage * 100).toInt()}%',
+                    item.percentage,
+                  ),
                 ],
               );
             }),
@@ -328,7 +296,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
     );
   }
 
-  Widget _legendRow(String label, String value, String percent, double ratio) {
+  Widget _legendRow(String label, dynamic value, String percent, double ratio) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -336,9 +304,12 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           children: [
             Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
             const Spacer(),
-            Text(value, style: const TextStyle(fontSize: 12)),
+            if (value is InlineSpan)
+              Text.rich(value)
+            else
+              Text(value.toString(), style: const TextStyle(fontSize: 12)),
             const SizedBox(width: 12),
-            Text(percent, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.grey)),
+            Text(percent, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ],
         ),
         const SizedBox(height: 6),
@@ -357,18 +328,19 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           children: [
             Text('Operational Categories', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
-            const Text('Spend breakdown by expense category types.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            Text('Spend breakdown by expense category types.', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 20),
 
-            categorySpendAsync.when(
-              loading: () => const Center(child: LinearProgressIndicator()),
-              error: (e, _) => Text('Error category splits: $e'),
+            AsyncValueWidget(
+              value: categorySpendAsync,
+              useLinearProgress: true,
+              errorMessage: 'Error category splits',
               data: (categories) {
                 if (categories.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20.0),
-                      child: Text('No category splits recorded.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      padding: const EdgeInsets.symmetric(vertical: 20.0),
+                      child: Text('No category splits recorded.', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ),
                   );
                 }
@@ -396,7 +368,15 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                              Text('₹${entry.value.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary, fontSize: 13)),
+                              Text.rich(
+                                entry.value.toCurrencySpan(
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Theme.of(context).colorScheme.primary,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 6),
@@ -406,7 +386,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                           const SizedBox(height: 4),
                           Align(
                             alignment: Alignment.centerRight,
-                            child: Text('${(percentage * 100).toInt()}%', style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold)),
+                            child: Text('${(percentage * 100).toInt()}%', style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
@@ -431,18 +411,18 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           children: [
             Text('Cashflow Velocity', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
-            const Text('Month-over-month aggregated spending trends.', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            Text('Month-over-month aggregated spending trends.', style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant)),
             const SizedBox(height: 20),
 
-            monthlySpendAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Text('Error timelines: $e'),
+            AsyncValueWidget(
+              value: monthlySpendAsync,
+              errorMessage: 'Error timelines',
               data: (trends) {
                 if (trends.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20.0),
-                      child: Text('No historical timelines found.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      padding: const EdgeInsets.symmetric(vertical: 20.0),
+                      child: Text('No historical timelines found.', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ),
                   );
                 }
@@ -491,9 +471,10 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     const SizedBox.shrink(),
-                                    Text(
-                                      '₹${item.value.toStringAsFixed(2)}',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                                    Text.rich(
+                                      item.value.toCurrencySpan(
+                                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -520,31 +501,7 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
     return '${months[date.month - 1]} ${date.year}';
   }
 
-  /// Confirms and handles user sign out
-  Future<void> _handleSignOut() async {
-    final confirmed = await ConfirmationDialogs.confirm(
-      context,
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out of KK Group Site Vault?',
-      confirmLabel: 'SIGN OUT',
-      isDestructive: true,
-    );
 
-    if (confirmed == true && mounted) {
-      try {
-        await ref.read(authActionsProvider).signOut();
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error signing out: $e'),
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-          );
-        }
-      }
-    }
-  }
 }
 
 class _FirmSplitItem {

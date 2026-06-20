@@ -9,6 +9,7 @@ import 'package:site_vault/feature/site/widgets/analytics_tab.dart';
 import 'package:site_vault/feature/site/widgets/documents_tab.dart';
 import 'package:site_vault/feature/site/widgets/expense_tab.dart';
 import 'package:site_vault/feature/site/widgets/settings_tab.dart';
+import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
 
 class SiteDetailScreen extends ConsumerStatefulWidget {
   final String siteId;
@@ -211,35 +212,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                   ],
                 ),
                 actions: [
-                  PopupMenuButton<String>(
-                    icon: Icon(
-                      Icons.account_circle_rounded,
-                      size: 28,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    tooltip: 'User Profile Options',
-                    onSelected: (val) {
-                      if (val == 'signout') {
-                        controller.signOut(context);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'signout',
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.logout_rounded,
-                              size: 20,
-                              color: Colors.redAccent,
-                            ),
-                            SizedBox(width: 8),
-                            Text('Sign Out'),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+                  const SignOutMenuButton(),
                 ],
               ),
               SliverPersistentHeader(

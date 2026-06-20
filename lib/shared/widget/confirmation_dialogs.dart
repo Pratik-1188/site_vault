@@ -180,7 +180,7 @@ class ConfirmationDialogs {
                 TextButton(
                   onPressed: isMatch ? () => Navigator.pop(context, true) : null,
                   style: TextButton.styleFrom(
-                    foregroundColor: isMatch ? Theme.of(context).colorScheme.error : Colors.grey,
+                    foregroundColor: isMatch ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   child: Text(confirmLabel.toUpperCase()),
                 ),

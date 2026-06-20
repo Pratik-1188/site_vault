@@ -5,6 +5,7 @@ import 'package:site_vault/feature/document/model/document.dart';
 import 'package:site_vault/feature/document/provider/document_provider.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/widget/vault_card.dart';
+import 'package:site_vault/shared/widget/async_value_widget.dart';
 
 import '../model/site.dart';
 
@@ -84,10 +85,9 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: documentsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) =>
-                  Center(child: Text('Error loading documents: $e')),
+            child: AsyncValueWidget(
+              value: documentsAsync,
+              errorMessage: 'Error loading documents',
               data: (documents) {
                 if (documents.isEmpty) {
                   return Center(
@@ -99,7 +99,7 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                           Icon(
                             Icons.folder_open_rounded,
                             size: 48,
-                            color: Colors.grey[400],
+                            color: Theme.of(context).colorScheme.outline,
                           ),
                           const SizedBox(height: 12),
                           const Text(
@@ -107,10 +107,10 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             'Upload blueprints, layouts, safety manuals, or other project files.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                           ),
                         ],
                       ),
@@ -192,20 +192,20 @@ class _DocumentsTabState extends ConsumerState<DocumentsTab> {
                                     ],
                                   ),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'delete',
                                   child: Row(
                                     children: [
                                       Icon(
                                         Icons.delete_outline_rounded,
                                         size: 16,
-                                        color: Colors.redAccent,
+                                        color: Theme.of(context).colorScheme.error,
                                       ),
-                                      SizedBox(width: 8),
+                                      const SizedBox(width: 8),
                                       Text(
                                         'Delete',
                                         style: TextStyle(
-                                          color: Colors.redAccent,
+                                          color: Theme.of(context).colorScheme.error,
                                         ),
                                       ),
                                     ],

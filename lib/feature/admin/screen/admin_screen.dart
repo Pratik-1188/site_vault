@@ -1,19 +1,25 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:site_vault/feature/admin/provider/admin_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
-import 'package:site_vault/shared/utils/error_interceptor.dart';
+
 import 'package:site_vault/shared/theme/app_radius.dart';
+import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/shared/widget/status_badge.dart';
 import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
-import 'package:site_vault/feature/auth/provider/auth_provider.dart';
+import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
+import 'package:site_vault/shared/widget/sheet_action_row.dart';
+import 'package:site_vault/shared/widget/app_navigation_bar.dart';
+import 'package:site_vault/shared/widget/async_value_widget.dart';
+import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import 'package:site_vault/shared/model/profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
+import 'package:site_vault/shared/utils/error_handler.dart';
+import 'package:site_vault/shared/utils/form_utils.dart';
 
 /// Central administration settings panel managing Vendors, Categories, and Profiles.
 class AdminScreen extends ConsumerStatefulWidget {
@@ -47,57 +53,29 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
     super.dispose();
   }
 
-  /// Confirms and handles user sign out
-  Future<void> _handleSignOut() async {
-    final confirmed = await ConfirmationDialogs.confirm(
-      context,
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out of KK Group Site Vault?',
-      confirmLabel: 'SIGN OUT',
-      isDestructive: true,
-    );
 
-    if (confirmed && mounted) {
-      try {
-        await ref.read(authActionsProvider).signOut();
-      } catch (e) {
-        if (mounted) {
-          AppSnackBar.showError(context, 'Error signing out: $e');
-        }
-      }
-    }
-  }
 
   /// Opens the modal bottom sheet to create or edit a vendor
   void _openVendorForm(BuildContext context, [Vendor? vendor]) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _VendorFormSheet(vendorToEdit: vendor),
+      child: _VendorFormSheet(vendorToEdit: vendor),
     );
   }
 
   /// Opens the modal bottom sheet to create or edit an expense category
   void _openCategoryForm(BuildContext context, [ExpenseCategory? category]) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _CategoryFormSheet(categoryToEdit: category),
+      child: _CategoryFormSheet(categoryToEdit: category),
     );
   }
 
   /// Opens the modal bottom sheet to create a new user
   void _openUserForm(BuildContext context) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const _UserFormSheet(),
+      child: const _UserFormSheet(),
     );
   }
 
@@ -142,8 +120,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
       }
     } catch (e) {
       if (mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        AppSnackBar.showError(context, cleanMessage);
+        AppErrorHandler.show(context, e, ref);
       }
     }
   }
@@ -176,32 +153,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
-              actions: [
-                PopupMenuButton<String>(
-                  icon: Icon(
-                    Icons.account_circle_rounded,
-                    size: 28,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  tooltip: 'User Profile Options',
-                  onSelected: (val) {
-                    if (val == 'signout') {
-                      _handleSignOut();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'signout',
-                      child: Row(
-                        children: [
-                          Icon(Icons.logout_rounded, size: 20, color: Colors.redAccent),
-                          SizedBox(width: 8),
-                          Text('Sign Out'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+              actions: const [
+                SignOutMenuButton(),
               ],
               bottom: PreferredSize(
                 preferredSize: const Size.fromHeight(62),
@@ -252,40 +205,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
                   : 'ADD USER',
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 3,
-        onDestinationSelected: (index) {
-          if (index == 0) {
-            context.go('/');
-          } else if (index == 1) {
-            context.go('/sites');
-          } else if (index == 2) {
-            context.go('/analytics');
-          }
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.location_on_outlined),
-            selectedIcon: Icon(Icons.location_on_rounded),
-            label: 'Sites',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.analytics_outlined),
-            selectedIcon: Icon(Icons.analytics_rounded),
-            label: 'Analytics',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
-            label: 'Admin',
-          ),
-        ],
-      ),
+      bottomNavigationBar: const AppNavigationBar(selectedIndex: 3),
     );
   }
 
@@ -318,13 +238,13 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
 
           // Vendors list
           Expanded(
-            child: vendorsAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error loading vendors: $e')),
+            child: AsyncValueWidget(
+              value: vendorsAsync,
+              errorMessage: 'Error loading vendors',
               data: (vendors) {
                 if (vendors.isEmpty) {
-                  return const Center(
-                    child: Text('No vendors found.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  return Center(
+                    child: Text('No vendors found.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                   );
                 }
 
@@ -426,13 +346,13 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
 
           // Categories list
           Expanded(
-            child: categoriesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error loading categories: $e')),
+            child: AsyncValueWidget(
+              value: categoriesAsync,
+              errorMessage: 'Error loading categories',
               data: (categories) {
                 if (categories.isEmpty) {
-                  return const Center(
-                    child: Text('No categories found.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  return Center(
+                    child: Text('No categories found.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                   );
                 }
 
@@ -531,13 +451,13 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
 
           // Users list
           Expanded(
-            child: profilesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error loading users: $e')),
+            child: AsyncValueWidget(
+              value: profilesAsync,
+              errorMessage: 'Error loading users',
               data: (profiles) {
                 if (profiles.isEmpty) {
-                  return const Center(
-                    child: Text('No users found.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  return Center(
+                    child: Text('No users found.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
                   );
                 }
 
@@ -648,12 +568,11 @@ class _VendorFormSheet extends ConsumerStatefulWidget {
   ConsumerState<_VendorFormSheet> createState() => _VendorFormSheetState();
 }
 
-class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
+class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> with FormSubmitMixin {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   late TextEditingController _contactController;
   bool _isActive = true;
-  bool _isSaving = false;
 
   @override
   void initState() {
@@ -671,167 +590,86 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!FormUtils.validateAndScroll(context, _formKey)) return;
 
-    setState(() => _isSaving = true);
-    try {
-      final name = _nameController.text.trim();
-      final contact = _contactController.text.trim();
+    final name = _nameController.text.trim();
+    final contact = _contactController.text.trim();
 
-      if (widget.vendorToEdit == null) {
-        await ref.read(adminVendorsProvider.notifier).addVendor(name: name, contactInfo: contact);
-      } else {
-        await ref.read(adminVendorsProvider.notifier).editVendor(
-              id: widget.vendorToEdit!.id,
-              name: name,
-              contactInfo: contact,
-              isActive: _isActive,
-            );
-      }
-
-      if (mounted) {
-        Navigator.pop(context);
-        AppSnackBar.showSuccess(
-          context,
-          widget.vendorToEdit == null
-              ? 'Vendor created successfully!'
-              : 'Vendor updated successfully!',
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        AppSnackBar.showError(context, cleanMessage);
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+    await runFormSubmit(
+      action: () async {
+        if (widget.vendorToEdit == null) {
+          await ref.read(adminVendorsProvider.notifier).addVendor(name: name, contactInfo: contact);
+        } else {
+          await ref.read(adminVendorsProvider.notifier).editVendor(
+                id: widget.vendorToEdit!.id,
+                name: name,
+                contactInfo: contact,
+                isActive: _isActive,
+              );
+        }
+      },
+      successMessage: widget.vendorToEdit == null
+          ? 'Vendor created successfully!'
+          : 'Vendor updated successfully!',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        child: Material(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.verticalMd,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: SafeArea(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Pinned Sticky Header
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            widget.vendorToEdit == null ? 'Add Vendor' : 'Edit Vendor Details',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 24, indent: 24, endIndent: 24),
-
-                    // Scrollable content
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'Vendor Details',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _nameController,
-                              textCapitalization: TextCapitalization.words,
-                              decoration: const InputDecoration(
-                                labelText: 'Vendor Business Name *',
-                                prefixIcon: Icon(Icons.store_rounded),
-                              ),
-                              validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a name' : null,
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _contactController,
-                              keyboardType: TextInputType.phone,
-                              decoration: const InputDecoration(
-                                labelText: 'Contact / Phone Info',
-                                prefixIcon: Icon(Icons.phone_rounded),
-                                hintText: 'e.g. +91 98765 43210',
-                              ),
-                            ),
-                            if (widget.vendorToEdit != null) ...[
-                              const SizedBox(height: 16),
-                              SwitchListTile(
-                                contentPadding: EdgeInsets.zero,
-                                secondary: const Icon(Icons.check_circle_outline_rounded),
-                                title: const Text('Active Status'),
-                                subtitle: const Text('Allow selecting this vendor in new expenses'),
-                                value: _isActive,
-                                onChanged: (val) => setState(() => _isActive = val),
-                              ),
-                            ],
-                            const SizedBox(height: 32),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: _isSaving ? null : () => Navigator.pop(context),
-                                  child: const Text('Cancel'),
-                                ),
-                                const SizedBox(width: 12),
-                                FilledButton(
-                                  onPressed: _isSaving ? null : _submit,
-                                  child: _isSaving
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                                          ),
-                                        )
-                                      : Text(
-                                          widget.vendorToEdit == null
-                                              ? 'Create Vendor'
-                                              : 'Save Changes',
-                                        ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+    return AppBottomSheet(
+      title: widget.vendorToEdit == null ? 'Add Vendor' : 'Edit Vendor Details',
+      formKey: _formKey,
+      canClose: !isSubmitting,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Vendor Details',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
                 ),
-              ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _nameController,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Vendor Business Name *',
+              prefixIcon: Icon(Icons.store_rounded),
+            ),
+            validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a name' : null,
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _contactController,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              labelText: 'Contact / Phone Info',
+              prefixIcon: Icon(Icons.phone_rounded),
+              hintText: 'e.g. +91 98765 43210',
             ),
           ),
-        ),
+          if (widget.vendorToEdit != null) ...[
+            const SizedBox(height: 16),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary: const Icon(Icons.check_circle_outline_rounded),
+              title: const Text('Active Status'),
+              subtitle: const Text('Allow selecting this vendor in new expenses'),
+              value: _isActive,
+              onChanged: (val) => setState(() => _isActive = val),
+            ),
+          ],
+          const SizedBox(height: 32),
+
+          SheetActionRow(
+            isSubmitting: isSubmitting,
+            onSubmit: _submit,
+            submitLabel: widget.vendorToEdit == null ? 'Create Vendor' : 'Save Changes',
+          ),
+        ],
       ),
     );
   }
@@ -849,11 +687,10 @@ class _CategoryFormSheet extends ConsumerStatefulWidget {
   ConsumerState<_CategoryFormSheet> createState() => _CategoryFormSheetState();
 }
 
-class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
+class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> with FormSubmitMixin {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
   bool _isActive = true;
-  bool _isSaving = false;
 
   @override
   void initState() {
@@ -869,156 +706,75 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!FormUtils.validateAndScroll(context, _formKey)) return;
 
-    setState(() => _isSaving = true);
-    try {
-      final name = _nameController.text.trim();
+    final name = _nameController.text.trim();
 
-      if (widget.categoryToEdit == null) {
-        await ref.read(adminCategoriesProvider.notifier).addCategory(name: name);
-      } else {
-        await ref.read(adminCategoriesProvider.notifier).editCategory(
-              id: widget.categoryToEdit!.id,
-              name: name,
-              isActive: _isActive,
-            );
-      }
-
-      if (mounted) {
-        Navigator.pop(context);
-        AppSnackBar.showSuccess(
-          context,
-          widget.categoryToEdit == null
-              ? 'Category created successfully!'
-              : 'Category updated successfully!',
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        AppSnackBar.showError(context, cleanMessage);
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+    await runFormSubmit(
+      action: () async {
+        if (widget.categoryToEdit == null) {
+          await ref.read(adminCategoriesProvider.notifier).addCategory(name: name);
+        } else {
+          await ref.read(adminCategoriesProvider.notifier).editCategory(
+                id: widget.categoryToEdit!.id,
+                name: name,
+                isActive: _isActive,
+              );
+        }
+      },
+      successMessage: widget.categoryToEdit == null
+          ? 'Category created successfully!'
+          : 'Category updated successfully!',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        child: Material(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.verticalMd,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: SafeArea(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Pinned Header
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            widget.categoryToEdit == null ? 'Add Category' : 'Edit Category Details',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 24, indent: 24, endIndent: 24),
-
-                    // Scrollable content
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'Category Details',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _nameController,
-                              textCapitalization: TextCapitalization.words,
-                              decoration: const InputDecoration(
-                                labelText: 'Expense Category Name *',
-                                prefixIcon: Icon(Icons.category_rounded),
-                                hintText: 'e.g. Electric Cables, Concrete Foundation',
-                              ),
-                              validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a category name' : null,
-                            ),
-                            if (widget.categoryToEdit != null) ...[
-                              const SizedBox(height: 16),
-                              SwitchListTile(
-                                contentPadding: EdgeInsets.zero,
-                                secondary: const Icon(Icons.check_circle_outline_rounded),
-                                title: const Text('Active Status'),
-                                subtitle: const Text('Allow selecting this category in new expenses'),
-                                value: _isActive,
-                                onChanged: (val) => setState(() => _isActive = val),
-                              ),
-                            ],
-                            const SizedBox(height: 32),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: _isSaving ? null : () => Navigator.pop(context),
-                                  child: const Text('Cancel'),
-                                ),
-                                const SizedBox(width: 12),
-                                FilledButton(
-                                  onPressed: _isSaving ? null : _submit,
-                                  child: _isSaving
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                                          ),
-                                        )
-                                      : Text(
-                                          widget.categoryToEdit == null
-                                              ? 'Create Category'
-                                              : 'Save Changes',
-                                        ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+    return AppBottomSheet(
+      title: widget.categoryToEdit == null ? 'Add Category' : 'Edit Category Details',
+      formKey: _formKey,
+      canClose: !isSubmitting,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Category Details',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
                 ),
-              ),
-            ),
           ),
-        ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _nameController,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Expense Category Name *',
+              prefixIcon: Icon(Icons.category_rounded),
+              hintText: 'e.g. Electric Cables, Concrete Foundation',
+            ),
+            validator: (val) => val == null || val.trim().isEmpty ? 'Please enter a category name' : null,
+          ),
+          if (widget.categoryToEdit != null) ...[
+            const SizedBox(height: 16),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              secondary: const Icon(Icons.check_circle_outline_rounded),
+              title: const Text('Active Status'),
+              subtitle: const Text('Allow selecting this category in new expenses'),
+              value: _isActive,
+              onChanged: (val) => setState(() => _isActive = val),
+            ),
+          ],
+          const SizedBox(height: 32),
+
+          SheetActionRow(
+            isSubmitting: isSubmitting,
+            onSubmit: _submit,
+            submitLabel: widget.categoryToEdit == null ? 'Create Category' : 'Save Changes',
+          ),
+        ],
       ),
     );
   }
@@ -1034,13 +790,12 @@ class _UserFormSheet extends ConsumerStatefulWidget {
   ConsumerState<_UserFormSheet> createState() => _UserFormSheetState();
 }
 
-class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
+class _UserFormSheetState extends ConsumerState<_UserFormSheet> with FormSubmitMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _displayNameController = TextEditingController();
   String _selectedRole = 'staff';
-  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -1051,7 +806,7 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!FormUtils.validateAndScroll(context, _formKey)) return;
 
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -1072,199 +827,125 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> {
 
     if (!confirmed) return;
 
-    setState(() => _isSaving = true);
-    try {
-      await ref.read(adminProfilesProvider.notifier).addUser(
-        email: email,
-        password: password,
-        displayName: displayName,
-        role: _selectedRole,
-      );
-
-      if (mounted) {
-        Navigator.pop(context);
-        AppSnackBar.showSuccess(context, 'User created successfully!');
-      }
-    } catch (e) {
-      if (mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        AppSnackBar.showError(context, cleanMessage);
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+    await runFormSubmit(
+      action: () async {
+        await ref.read(adminProfilesProvider.notifier).addUser(
+          email: email,
+          password: password,
+          displayName: displayName,
+          role: _selectedRole,
+        );
+      },
+      successMessage: 'User created successfully!',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        child: Material(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.verticalMd,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: SafeArea(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Pinned Header
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Add User',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 24, indent: 24, endIndent: 24),
-
-                    // Scrollable content
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'Login Credentials & Details',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _displayNameController,
-                              decoration: const InputDecoration(
-                                labelText: 'Display Name *',
-                                prefixIcon: Icon(Icons.person_rounded),
-                                hintText: 'e.g. JohnDoe (No spaces)',
-                              ),
-                              validator: (val) {
-                                if (val == null || val.trim().isEmpty) {
-                                  return 'Please enter a display name';
-                                }
-                                if (val.trim().length < 3) {
-                                  return 'Display name must be at least 3 characters';
-                                }
-                                if (RegExp(r'\s').hasMatch(val)) {
-                                  return 'Display name cannot contain spaces';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              decoration: const InputDecoration(
-                                labelText: 'Email Address *',
-                                prefixIcon: Icon(Icons.email_rounded),
-                                hintText: 'e.g. user@kkgroup.com',
-                              ),
-                              validator: (val) {
-                                if (val == null || val.trim().isEmpty) {
-                                  return 'Please enter an email';
-                                }
-                                if (!val.contains('@')) {
-                                  return 'Please enter a valid email';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Password *',
-                                prefixIcon: Icon(Icons.lock_rounded),
-                                hintText: 'Minimum 6 characters',
-                              ),
-                              validator: (val) {
-                                if (val == null || val.isEmpty) {
-                                  return 'Please enter a password';
-                                }
-                                if (val.length < 6) {
-                                  return 'Password must be at least 6 characters';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            DropdownButtonFormField<String>(
-                              initialValue: _selectedRole,
-                              decoration: const InputDecoration(
-                                labelText: 'User Role *',
-                                prefixIcon: Icon(Icons.badge_rounded),
-                              ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 'staff',
-                                  child: Text('staff'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 'admin',
-                                  child: Text('admin'),
-                                ),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() => _selectedRole = val);
-                                }
-                              },
-                            ),
-                            const SizedBox(height: 32),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: _isSaving ? null : () => Navigator.pop(context),
-                                  child: const Text('Cancel'),
-                                ),
-                                const SizedBox(width: 12),
-                                FilledButton(
-                                  onPressed: _isSaving ? null : _submit,
-                                  child: _isSaving
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                                          ),
-                                        )
-                                      : const Text('Create User'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+    return AppBottomSheet(
+      title: 'Add User',
+      formKey: _formKey,
+      canClose: !isSubmitting,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Login Credentials & Details',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
                 ),
-              ),
-            ),
           ),
-        ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _displayNameController,
+            decoration: const InputDecoration(
+              labelText: 'Display Name *',
+              prefixIcon: Icon(Icons.person_rounded),
+              hintText: 'e.g. JohnDoe (No spaces)',
+            ),
+            validator: (val) {
+              if (val == null || val.trim().isEmpty) {
+                return 'Please enter a display name';
+              }
+              if (val.trim().length < 3) {
+                return 'Display name must be at least 3 characters';
+              }
+              if (RegExp(r'\s').hasMatch(val)) {
+                return 'Display name cannot contain spaces';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(
+              labelText: 'Email Address *',
+              prefixIcon: Icon(Icons.email_rounded),
+              hintText: 'e.g. user@kkgroup.com',
+            ),
+            validator: (val) {
+              if (val == null || val.trim().isEmpty) {
+                return 'Please enter an email';
+              }
+              if (!val.contains('@')) {
+                return 'Please enter a valid email';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(
+              labelText: 'Password *',
+              prefixIcon: Icon(Icons.lock_rounded),
+              hintText: 'Minimum 6 characters',
+            ),
+            validator: (val) {
+              if (val == null || val.isEmpty) {
+                return 'Please enter a password';
+              }
+              if (val.length < 6) {
+                return 'Password must be at least 6 characters';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedRole,
+            decoration: const InputDecoration(
+              labelText: 'User Role *',
+              prefixIcon: Icon(Icons.badge_rounded),
+            ),
+            items: const [
+              DropdownMenuItem(
+                value: 'staff',
+                child: Text('staff'),
+              ),
+              DropdownMenuItem(
+                value: 'admin',
+                child: Text('admin'),
+              ),
+            ],
+            onChanged: (val) {
+              if (val != null) {
+                setState(() => _selectedRole = val);
+              }
+            },
+          ),
+          const SizedBox(height: 32),
+          SheetActionRow(
+            isSubmitting: isSubmitting,
+            onSubmit: _submit,
+            submitLabel: 'Create User',
+          ),
+        ],
       ),
     );
   }

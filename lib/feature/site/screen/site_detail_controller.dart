@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:site_vault/feature/auth/provider/auth_provider.dart';
+
 import 'package:site_vault/feature/document/model/document.dart';
 import 'package:site_vault/feature/document/provider/document_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
@@ -10,7 +10,8 @@ import 'package:site_vault/feature/site/model/site.dart';
 import 'package:site_vault/feature/site/provider/site_provider.dart';
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
-import 'package:site_vault/shared/utils/error_interceptor.dart';
+import 'package:site_vault/shared/utils/snackbar_message.dart';
+import 'package:site_vault/shared/utils/error_handler.dart';
 
 import 'site_detail_dialogs.dart';
 
@@ -118,23 +119,7 @@ class SiteDetailController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> signOut(BuildContext context) async {
-    final confirmed = await SiteDetailDialogs.confirmSignOut(context);
-    if (confirmed != true) return;
 
-    try {
-      await ref.read(authActionsProvider).signOut();
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error signing out: $e'),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-      }
-    }
-  }
 
   Future<void> saveSiteSettings(
     BuildContext context, {
@@ -145,12 +130,7 @@ class SiteDetailController extends ChangeNotifier {
     Site? currentSite,
   }) async {
     if (name.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a site name'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      AppSnackBar.showError(context, 'Please enter a site name');
       return;
     }
 
@@ -187,22 +167,11 @@ class SiteDetailController extends ChangeNotifier {
       ref.invalidate(sitesProvider);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Site settings updated successfully!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showSuccess(context, 'Site settings updated successfully!');
       }
     } catch (e) {
       if (context.mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(cleanMessage),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppErrorHandler.show(context, e, ref);
       }
     } finally {
       _state = _state.copyWith(isSaving: false);
@@ -227,22 +196,11 @@ class SiteDetailController extends ChangeNotifier {
       ref.invalidate(siteTotalExpensesProvider(siteId));
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Expense deleted successfully'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showSuccess(context, 'Expense deleted successfully');
       }
     } catch (e) {
       if (context.mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(cleanMessage),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppErrorHandler.show(context, e, ref);
       }
     }
   }
@@ -263,22 +221,11 @@ class SiteDetailController extends ChangeNotifier {
           );
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Document deleted successfully'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showSuccess(context, 'Document deleted successfully');
       }
     } catch (e) {
       if (context.mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(cleanMessage),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppErrorHandler.show(context, e, ref);
       }
     }
   }

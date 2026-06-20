@@ -5,6 +5,8 @@ import 'package:site_vault/feature/analytics/model/analytics_models.dart';
 import 'package:site_vault/feature/analytics/provider/analytics_provider.dart';
 
 import '../model/site.dart';
+import 'package:site_vault/shared/widget/async_value_widget.dart';
+import 'package:site_vault/shared/utils/number_formatter.dart';
 
 class AnalyticsTab extends ConsumerWidget {
   final Site site;
@@ -30,22 +32,22 @@ class AnalyticsTab extends ConsumerWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Cost breakdown by business expense categories for this site.',
-            style: TextStyle(fontSize: 11, color: Colors.grey),
+            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
-          categorySpendAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text('Error loading category splits: $e'),
+          AsyncValueWidget(
+            value: categorySpendAsync,
+            errorMessage: 'Error loading category splits',
             data: (categories) {
               if (categories.isEmpty) {
-                return const Center(
+                return Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    padding: const EdgeInsets.symmetric(vertical: 20.0),
                     child: Text(
                       'No category splits recorded.',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                     ),
                   ),
                 );
@@ -66,8 +68,14 @@ class AnalyticsTab extends ConsumerWidget {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
                       child: _analyticsProgressBar(
+                        context,
                         c.categoryName,
-                        '₹${c.totalSpend.toStringAsFixed(2)}',
+                        c.totalSpend.toCurrencySpan(
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         percentage,
                       ),
                     );
@@ -121,22 +129,23 @@ class AnalyticsTab extends ConsumerWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Timeline history of site spending aggregates.',
-            style: TextStyle(fontSize: 11, color: Colors.grey),
+            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
-          monthlySpendAsync.when(
-            loading: () => const Center(child: LinearProgressIndicator()),
-            error: (e, _) => Text('Error loading monthly trend: $e'),
+          AsyncValueWidget(
+            value: monthlySpendAsync,
+            useLinearProgress: true,
+            errorMessage: 'Error loading monthly trend',
             data: (trends) {
               if (trends.isEmpty) {
-                return const Center(
+                return Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    padding: const EdgeInsets.symmetric(vertical: 20.0),
                     child: Text(
                       'No historical timelines found.',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                     ),
                   ),
                 );
@@ -184,11 +193,12 @@ class AnalyticsTab extends ConsumerWidget {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   const SizedBox.shrink(),
-                                  Text(
-                                    '₹${item.totalSpend.toStringAsFixed(2)}',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 10,
+                                  Text.rich(
+                                    item.totalSpend.toCurrencySpan(
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 10,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -211,22 +221,23 @@ class AnalyticsTab extends ConsumerWidget {
             style: Theme.of(context).textTheme.titleMedium,
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Ranked vendor splits representing top funding receivers on this site.',
-            style: TextStyle(fontSize: 11, color: Colors.grey),
+            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
           const SizedBox(height: 16),
-          vendorSpendAsync.when(
-            loading: () => const Center(child: LinearProgressIndicator()),
-            error: (e, _) => Text('Error loading vendor spend: $e'),
+          AsyncValueWidget(
+            value: vendorSpendAsync,
+            useLinearProgress: true,
+            errorMessage: 'Error loading vendor spend',
             data: (vendors) {
               if (vendors.isEmpty) {
-                return const Center(
+                return Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20.0),
+                    padding: const EdgeInsets.symmetric(vertical: 20.0),
                     child: Text(
                       'No suppliers recorded for this site.',
-                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                     ),
                   ),
                 );
@@ -259,11 +270,12 @@ class AnalyticsTab extends ConsumerWidget {
                             fontSize: 13,
                           ),
                         ),
-                        trailing: Text(
-                          '₹${v.totalSpend.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
+                        trailing: Text.rich(
+                          v.totalSpend.toCurrencySpan(
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                           ),
                         ),
                       ),
@@ -278,7 +290,7 @@ class AnalyticsTab extends ConsumerWidget {
     );
   }
 
-  Widget _analyticsProgressBar(String label, String value, double percentage) {
+  Widget _analyticsProgressBar(BuildContext context, String label, dynamic value, double percentage) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -289,10 +301,16 @@ class AnalyticsTab extends ConsumerWidget {
               label,
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             ),
-            Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-            ),
+            if (value is InlineSpan)
+              Text.rich(
+                value,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              )
+            else
+              Text(
+                value.toString(),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              ),
           ],
         ),
         const SizedBox(height: 8),
@@ -302,9 +320,9 @@ class AnalyticsTab extends ConsumerWidget {
           alignment: Alignment.bottomRight,
           child: Text(
             '${(percentage * 100).toInt()}%',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 10,
-              color: Colors.grey,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.bold,
             ),
           ),

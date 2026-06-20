@@ -8,22 +8,18 @@ import 'package:site_vault/feature/document/provider/document_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
 import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
+import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
 import 'package:site_vault/feature/site/model/site.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
-import 'package:site_vault/shared/utils/error_interceptor.dart';
+import 'package:site_vault/shared/utils/snackbar_message.dart';
+import 'package:site_vault/shared/utils/error_handler.dart';
+import 'package:site_vault/shared/utils/form_utils.dart';
+import 'package:site_vault/shared/utils/number_formatter.dart';
 
 class SiteDetailDialogs {
-  static Future<bool?> confirmSignOut(BuildContext context) async {
-    return ConfirmationDialogs.confirm(
-      context,
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out of KK Group Site Vault?',
-      confirmLabel: 'SIGN OUT',
-      isDestructive: true,
-    );
-  }
+
 
   static Future<bool?> confirmStatusChange(
     BuildContext context, {
@@ -142,7 +138,12 @@ class SiteDetailDialogs {
                 const SizedBox(height: 8),
                 _splitRow(
                   'Amount Spent',
-                  '₹${expense.amount.toStringAsFixed(2)}',
+                  expense.amount.toCurrencySpan(
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   isBold: true,
                 ),
                 const SizedBox(height: 8),
@@ -289,12 +290,9 @@ class SiteDetailDialogs {
     required String firmId,
     Expense? expenseToEdit,
   }) {
-    return showModalBottomSheet(
+    return showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => ExpenseFormSheet(
+      child: ExpenseFormSheet(
         siteId: siteId,
         firmId: firmId,
         expenseToEdit: expenseToEdit,
@@ -368,7 +366,7 @@ class SiteDetailDialogs {
             ),
             ElevatedButton(
               onPressed: () {
-                if (formKey.currentState!.validate()) {
+                if (FormUtils.validateAndScroll(dialogContext, formKey)) {
                   Navigator.pop(dialogContext, true);
                 }
               },
@@ -400,23 +398,11 @@ class SiteDetailDialogs {
         ref.invalidate(siteDocumentsProvider(siteId));
 
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Document updated successfully'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          AppSnackBar.showSuccess(context, 'Document updated successfully');
         }
       } catch (e) {
         if (context.mounted) {
-          final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(cleanMessage),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          AppErrorHandler.show(context, e, ref);
         }
       }
     }
@@ -427,12 +413,9 @@ class SiteDetailDialogs {
     required String siteId,
     required String firmId,
   }) {
-    return showModalBottomSheet(
+    return showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => DocumentUploadSheet(siteId: siteId, firmId: firmId),
+      child: DocumentUploadSheet(siteId: siteId, firmId: firmId),
     );
   }
 
@@ -483,23 +466,21 @@ class SiteDetailDialogs {
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Could not open file: $e'),
-            behavior: SnackBarBehavior.floating,
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppSnackBar.showError(context, 'Could not open file: $e');
       }
     }
   }
 
   static Widget _splitRow(
     String label,
-    String value, {
+    dynamic value, {
     bool isBold = false,
   }) {
+    final valueStyle = TextStyle(
+      fontSize: 14,
+      fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+    );
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -510,13 +491,16 @@ class SiteDetailDialogs {
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
+        if (value is InlineSpan)
+          Text.rich(
+            value,
+            style: valueStyle,
+          )
+        else
+          Text(
+            value.toString(),
+            style: valueStyle,
           ),
-        ),
       ],
     );
   }

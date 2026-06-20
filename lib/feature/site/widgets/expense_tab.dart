@@ -5,7 +5,9 @@ import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/feature/expense/provider/expense_provider.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
+import 'package:site_vault/shared/utils/number_formatter.dart';
 import 'package:site_vault/shared/widget/vault_card.dart';
+import 'package:site_vault/shared/widget/async_value_widget.dart';
 
 import '../model/site.dart';
 
@@ -64,12 +66,13 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          totalAsync.when(
+          AsyncValueWidget(
+            value: totalAsync,
             loading: () => Container(
               height: 80,
-              color: Colors.grey.withValues(alpha: 0.1),
+              color: Theme.of(context).colorScheme.surfaceContainer.withValues(alpha: 0.1),
             ),
-            error: (e, _) => Text('Error loading total: $e'),
+            errorMessage: 'Error loading total',
             data: (total) {
               return Card(
                 child: ListTile(
@@ -81,10 +84,11 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                     'Total Expenses Spent',
                     style: TextStyle(fontSize: 12),
                   ),
-                  subtitle: Text(
-                    '\u20B9${total.toStringAsFixed(2)}',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
+                  subtitle: Text.rich(
+                    total.toCurrencySpan(
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
                 ),
@@ -107,7 +111,8 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
             },
           ),
           const SizedBox(height: 12),
-          categoriesAsync.when(
+          AsyncValueWidget(
+            value: categoriesAsync,
             loading: () => const SizedBox(height: 38),
             error: (e, _) => const SizedBox.shrink(),
             data: (categories) {
@@ -143,10 +148,9 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
           ),
           const SizedBox(height: 12),
           Expanded(
-            child: expensesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) =>
-                  Center(child: Text('Error loading expenses: $e')),
+            child: AsyncValueWidget(
+              value: expensesAsync,
+              errorMessage: 'Error loading expenses',
               data: (expenses) {
                 if (expenses.isEmpty) {
                   return Center(
@@ -158,7 +162,7 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                           Icon(
                             Icons.receipt_long_rounded,
                             size: 48,
-                            color: Colors.grey[400],
+                            color: Theme.of(context).colorScheme.outline,
                           ),
                           const SizedBox(height: 12),
                           const Text(
@@ -166,10 +170,10 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
-                          const Text(
+                          Text(
                             'Add transaction records for this site by clicking the "+" button below.',
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12),
                           ),
                         ],
                       ),
@@ -255,11 +259,12 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                             ),
                             const SizedBox(width: 4),
                           ],
-                          Text(
-                            '\u20B9${expense.amount.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                          Text.rich(
+                            expense.amount.toCurrencySpan(
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -296,20 +301,20 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                                     ],
                                   ),
                                 ),
-                                const PopupMenuItem(
+                                PopupMenuItem(
                                   value: 'delete',
                                   child: Row(
                                     children: [
                                       Icon(
                                         Icons.delete_outline_rounded,
                                         size: 16,
-                                        color: Colors.redAccent,
+                                        color: Theme.of(context).colorScheme.error,
                                       ),
-                                      SizedBox(width: 8),
+                                      const SizedBox(width: 8),
                                       Text(
                                         'Delete',
                                         style: TextStyle(
-                                          color: Colors.redAccent,
+                                          color: Theme.of(context).colorScheme.error,
                                         ),
                                       ),
                                     ],

@@ -1,20 +1,23 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:site_vault/shared/utils/error_interceptor.dart';
-import 'package:site_vault/shared/utils/snackbar_message.dart';
+
 
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/financial_year.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
+import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
 import 'package:site_vault/shared/widget/button_group.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
 import 'package:site_vault/shared/widget/status_badge.dart';
-import 'package:site_vault/shared/widget/confirmation_dialogs.dart';
-import 'package:site_vault/feature/auth/provider/auth_provider.dart';
+import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
+import 'package:site_vault/shared/widget/sheet_action_row.dart';
+import 'package:site_vault/shared/widget/app_navigation_bar.dart';
+import 'package:site_vault/shared/widget/async_value_widget.dart';
+import 'package:site_vault/shared/utils/form_utils.dart';
+import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
 
@@ -106,7 +109,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                     Text(
                       'FINANCIAL YEARS',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.grey,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.5,
                       ),
@@ -214,35 +217,13 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
 
   /// Opens the modal bottom sheet to create a new project site
   void _openSiteForm(BuildContext context, String firmId) {
-    showModalBottomSheet(
+    showAppBottomSheet(
       context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _SiteFormSheet(firmId: firmId),
+      child: _SiteFormSheet(firmId: firmId),
     );
   }
 
-  /// Confirms and handles user sign out
-  Future<void> _handleSignOut() async {
-    final confirmed = await ConfirmationDialogs.confirm(
-      context,
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out of KK Group Site Vault?',
-      confirmLabel: 'SIGN OUT',
-      isDestructive: true,
-    );
 
-    if (confirmed == true && mounted) {
-      try {
-        await ref.read(authActionsProvider).signOut();
-      } catch (e) {
-        if (mounted) {
-          AppSnackBar.showError(context, 'Error signing out: $e');
-        }
-      }
-    }
-  }
 
   String _cleanFirmName(String name) {
     if (name.toLowerCase().startsWith('kk ')) {
@@ -301,35 +282,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                 ),
               ),
               actions: [
-                PopupMenuButton<String>(
-                  icon: Icon(
-                    Icons.account_circle_rounded,
-                    size: 28,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  tooltip: 'User Profile Options',
-                  onSelected: (val) {
-                    if (val == 'signout') {
-                      _handleSignOut();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'signout',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.logout_rounded,
-                            size: 20,
-                            color: Colors.redAccent,
-                          ),
-                          SizedBox(width: 8),
-                          Text('Sign Out'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                const SignOutMenuButton(),
               ],
             ),
           ];
@@ -338,8 +291,8 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
           // 1. Segmented Business Division Selector
-          firmsAsync.when(
-            data: (firmsList) => _buildSegmentedButton(context, selectedFirm, firmsList),
+          AsyncValueWidget(
+            value: firmsAsync,
             loading: () => const Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
@@ -351,6 +304,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
               ),
             ),
             error: (err, _) => const SizedBox.shrink(),
+            data: (firmsList) => _buildSegmentedButton(context, selectedFirm, firmsList),
           ),
 
           // 2. Floating Search Bar with Filter Reset Option
@@ -375,18 +329,18 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
 
           // 4. Scrollable Ledger Content (Active Sites list)
           Expanded(
-            child: sitesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+            child: AsyncValueWidget(
+              value: sitesAsync,
               error: (error, _) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.error_outline_rounded,
                         size: 48,
-                        color: Colors.redAccent,
+                        color: Theme.of(context).colorScheme.error,
                       ),
                       const SizedBox(height: 16),
                       Text(
@@ -429,40 +383,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
               label: const Text('ADD SITE'),
             )
           : null,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 1,
-        onDestinationSelected: (index) {
-          if (index == 0) {
-            context.go('/');
-          } else if (index == 2) {
-            context.go('/analytics');
-          } else if (index == 3) {
-            context.go('/admin');
-          }
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.location_on_outlined),
-            selectedIcon: Icon(Icons.location_on_rounded),
-            label: 'Sites',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.analytics_outlined),
-            selectedIcon: Icon(Icons.analytics_rounded),
-            label: 'Analytics',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings_rounded),
-            label: 'Admin',
-          ),
-        ],
-      ),
+      bottomNavigationBar: const AppNavigationBar(selectedIndex: 1),
     );
   }
 
@@ -813,13 +734,12 @@ class _SiteFormSheet extends ConsumerStatefulWidget {
   ConsumerState<_SiteFormSheet> createState() => _SiteFormSheetState();
 }
 
-class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
+class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> with FormSubmitMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _dateController = TextEditingController();
   DateTime? _startedOn;
-  bool _isSaving = false;
 
   @override
   void dispose() {
@@ -845,171 +765,98 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() || _startedOn == null) return;
+    final isValid = FormUtils.validateAndScroll(context, _formKey);
+    if (!isValid || _startedOn == null) return;
 
-    setState(() => _isSaving = true);
-    try {
-      final name = _nameController.text.trim();
-      final description = _descriptionController.text.trim();
+    final name = _nameController.text.trim();
+    final description = _descriptionController.text.trim();
 
-      await ref.read(siteActionsProvider).createSite(
-        firmId: widget.firmId,
-        name: name,
-        description: description.isEmpty ? null : description,
-        startedOn: _startedOn!,
-        status: 'active',
-      );
-
-      if (mounted) {
-        Navigator.pop(context);
-        AppSnackBar.showSuccess(context, 'Site created successfully!');
-      }
-    } catch (e) {
-      if (mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        AppSnackBar.showError(context, cleanMessage);
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+    await runFormSubmit(
+      action: () async {
+        await ref.read(siteActionsProvider).createSite(
+          firmId: widget.firmId,
+          name: name,
+          description: description.isEmpty ? null : description,
+          startedOn: _startedOn!,
+          status: 'active',
+        );
+      },
+      successMessage: 'Site created successfully!',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.85,
-        ),
-        child: Material(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: AppRadius.verticalMd,
-          child: Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: SafeArea(
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Sticky Header
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Add Site',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 20),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded),
-                            onPressed: () => Navigator.pop(context),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Divider(height: 24, indent: 24, endIndent: 24),
-
-                    // Scrollable form content
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              'Site Specification',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _nameController,
-                              textCapitalization: TextCapitalization.words,
-                              decoration: const InputDecoration(
-                                labelText: 'Site Name *',
-                                prefixIcon: Icon(Icons.location_on_rounded),
-                                hintText: 'e.g. Solar Power Grid A',
-                              ),
-                              validator: (val) {
-                                if (val == null || val.trim().isEmpty) {
-                                  return 'Please enter a site name';
-                                }
-                                if (val.trim().length < 3) {
-                                  return 'Site name must be at least 3 characters';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _descriptionController,
-                              maxLines: 2,
-                              textCapitalization: TextCapitalization.sentences,
-                              decoration: const InputDecoration(
-                                labelText: 'Description / Scope',
-                                prefixIcon: Icon(Icons.description_rounded),
-                                hintText: 'Describe the scope of work (optional)',
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _dateController,
-                              readOnly: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Start Date *',
-                                prefixIcon: Icon(Icons.calendar_today_rounded),
-                                hintText: 'Select project start date',
-                              ),
-                              onTap: () => _selectStartedOnDate(context),
-                              validator: (val) {
-                                if (_startedOn == null) {
-                                  return 'Please select a start date';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 32),
-
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                OutlinedButton(
-                                  onPressed: _isSaving ? null : () => Navigator.pop(context),
-                                  child: const Text('Cancel'),
-                                ),
-                                const SizedBox(width: 12),
-                                FilledButton(
-                                  onPressed: _isSaving ? null : _submit,
-                                  child: _isSaving
-                                      ? const SizedBox(
-                                          width: 20,
-                                          height: 20,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                                          ),
-                                        )
-                                      : const Text('Create Site'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+    return AppBottomSheet(
+      title: 'Add Site',
+      formKey: _formKey,
+      canClose: !isSubmitting,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Site Specification',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
                 ),
-              ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _nameController,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Site Name *',
+              prefixIcon: Icon(Icons.location_on_rounded),
+              hintText: 'e.g. Solar Power Grid A',
+            ),
+            validator: (val) {
+              if (val == null || val.trim().isEmpty) {
+                return 'Please enter a site name';
+              }
+              if (val.trim().length < 3) {
+                return 'Site name must be at least 3 characters';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _descriptionController,
+            maxLines: 2,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(
+              labelText: 'Description / Scope',
+              prefixIcon: Icon(Icons.description_rounded),
+              hintText: 'Describe the scope of work (optional)',
             ),
           ),
-        ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _dateController,
+            readOnly: true,
+            decoration: const InputDecoration(
+              labelText: 'Start Date *',
+              prefixIcon: Icon(Icons.calendar_today_rounded),
+              hintText: 'Select project start date',
+            ),
+            onTap: () => _selectStartedOnDate(context),
+            validator: (val) {
+              if (_startedOn == null) {
+                return 'Please select a start date';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 32),
+
+          SheetActionRow(
+            isSubmitting: isSubmitting,
+            onSubmit: _submit,
+            submitLabel: 'Create Site',
+          ),
+        ],
       ),
     );
   }
