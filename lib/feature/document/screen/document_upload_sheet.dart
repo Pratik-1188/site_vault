@@ -10,6 +10,7 @@ import 'package:site_vault/shared/widget/sheet_action_row.dart';
 import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import 'package:site_vault/feature/site/widgets/site_scope_selector_mixin.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
+import 'package:site_vault/shared/utils/form_utils.dart';
 import '../model/document.dart';
 import '../provider/document_provider.dart';
 
@@ -109,7 +110,7 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with 
   /// Submits the file upload and updates database
   Future<void> _submitForm() async {
     debugPrint('[DocumentUpload] _submitForm triggered');
-    if (!_formKey.currentState!.validate()) {
+    if (!FormUtils.validateAndScroll(context, _formKey)) {
       debugPrint('[DocumentUpload] Form validation failed');
       return;
     }

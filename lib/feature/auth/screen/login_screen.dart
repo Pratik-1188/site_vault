@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:site_vault/feature/auth/provider/auth_provider.dart';
+import 'package:site_vault/shared/utils/form_utils.dart';
 
 /// A standard, clean, default Material 3 Login screen.
 class LoginScreen extends ConsumerStatefulWidget {
@@ -27,7 +28,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   /// Handles Supabase Authentication
   Future<void> _handleLogin() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!FormUtils.validateAndScroll(context, _formKey)) return;
 
     setState(() {
       _isLoading = true;

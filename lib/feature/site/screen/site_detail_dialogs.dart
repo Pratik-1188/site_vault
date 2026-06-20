@@ -15,6 +15,7 @@ import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
 import 'package:site_vault/shared/utils/error_handler.dart';
+import 'package:site_vault/shared/utils/form_utils.dart';
 import 'package:site_vault/shared/utils/number_formatter.dart';
 
 class SiteDetailDialogs {
@@ -365,7 +366,7 @@ class SiteDetailDialogs {
             ),
             ElevatedButton(
               onPressed: () {
-                if (formKey.currentState!.validate()) {
+                if (FormUtils.validateAndScroll(dialogContext, formKey)) {
                   Navigator.pop(dialogContext, true);
                 }
               },

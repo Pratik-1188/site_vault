@@ -16,6 +16,7 @@ import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
 import 'package:site_vault/shared/widget/sheet_action_row.dart';
 import 'package:site_vault/shared/widget/app_navigation_bar.dart';
 import 'package:site_vault/shared/widget/async_value_widget.dart';
+import 'package:site_vault/shared/utils/form_utils.dart';
 import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
@@ -764,7 +765,8 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> with FormSubmitM
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() || _startedOn == null) return;
+    final isValid = FormUtils.validateAndScroll(context, _formKey);
+    if (!isValid || _startedOn == null) return;
 
     final name = _nameController.text.trim();
     final description = _descriptionController.text.trim();

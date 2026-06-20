@@ -19,6 +19,7 @@ import 'package:site_vault/shared/model/profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
 import 'package:site_vault/shared/utils/error_handler.dart';
+import 'package:site_vault/shared/utils/form_utils.dart';
 
 /// Central administration settings panel managing Vendors, Categories, and Profiles.
 class AdminScreen extends ConsumerStatefulWidget {
@@ -589,7 +590,7 @@ class _VendorFormSheetState extends ConsumerState<_VendorFormSheet> with FormSub
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!FormUtils.validateAndScroll(context, _formKey)) return;
 
     final name = _nameController.text.trim();
     final contact = _contactController.text.trim();
@@ -705,7 +706,7 @@ class _CategoryFormSheetState extends ConsumerState<_CategoryFormSheet> with For
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!FormUtils.validateAndScroll(context, _formKey)) return;
 
     final name = _nameController.text.trim();
 
@@ -805,7 +806,7 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> with FormSubmitM
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!FormUtils.validateAndScroll(context, _formKey)) return;
 
     final email = _emailController.text.trim();
     final password = _passwordController.text;

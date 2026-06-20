@@ -10,6 +10,7 @@ import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
 import 'package:site_vault/shared/widget/sheet_action_row.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
+import 'package:site_vault/shared/utils/form_utils.dart';
 import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 
 import 'package:site_vault/feature/site/widgets/site_scope_selector_mixin.dart';
@@ -220,7 +221,7 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
 
   /// Handles file upload and database mutations
   Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!FormUtils.validateAndScroll(context, _formKey)) return;
 
     final currentUserId = ref.read(currentAuthUserProvider)?.id;
     if (currentUserId == null) {
