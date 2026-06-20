@@ -10,7 +10,8 @@ import 'package:site_vault/feature/site/model/site.dart';
 import 'package:site_vault/feature/site/provider/site_provider.dart';
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
-import 'package:site_vault/shared/utils/error_interceptor.dart';
+import 'package:site_vault/shared/utils/snackbar_message.dart';
+import 'package:site_vault/shared/utils/error_handler.dart';
 
 import 'site_detail_dialogs.dart';
 
@@ -171,22 +172,11 @@ class SiteDetailController extends ChangeNotifier {
       ref.invalidate(sitesProvider);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Site settings updated successfully!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showSuccess(context, 'Site settings updated successfully!');
       }
     } catch (e) {
       if (context.mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(cleanMessage),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppErrorHandler.show(context, e, ref);
       }
     } finally {
       _state = _state.copyWith(isSaving: false);
@@ -211,22 +201,11 @@ class SiteDetailController extends ChangeNotifier {
       ref.invalidate(siteTotalExpensesProvider(siteId));
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Expense deleted successfully'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showSuccess(context, 'Expense deleted successfully');
       }
     } catch (e) {
       if (context.mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(cleanMessage),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppErrorHandler.show(context, e, ref);
       }
     }
   }
@@ -247,22 +226,11 @@ class SiteDetailController extends ChangeNotifier {
           );
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Document deleted successfully'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppSnackBar.showSuccess(context, 'Document deleted successfully');
       }
     } catch (e) {
       if (context.mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(cleanMessage),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
+        AppErrorHandler.show(context, e, ref);
       }
     }
   }

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:site_vault/feature/admin/provider/admin_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
-import 'package:site_vault/shared/utils/error_interceptor.dart';
+
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
 import 'package:site_vault/shared/widget/custom_search_bar.dart';
@@ -16,6 +16,7 @@ import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import 'package:site_vault/shared/model/profile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
+import 'package:site_vault/shared/utils/error_handler.dart';
 
 /// Central administration settings panel managing Vendors, Categories, and Profiles.
 class AdminScreen extends ConsumerStatefulWidget {
@@ -116,8 +117,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
       }
     } catch (e) {
       if (mounted) {
-        final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-        AppSnackBar.showError(context, cleanMessage);
+        AppErrorHandler.show(context, e, ref);
       }
     }
   }

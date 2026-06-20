@@ -13,7 +13,8 @@ import 'package:site_vault/feature/site/model/site.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
-import 'package:site_vault/shared/utils/error_interceptor.dart';
+import 'package:site_vault/shared/utils/snackbar_message.dart';
+import 'package:site_vault/shared/utils/error_handler.dart';
 import 'package:site_vault/shared/utils/number_formatter.dart';
 
 class SiteDetailDialogs {
@@ -396,23 +397,11 @@ class SiteDetailDialogs {
         ref.invalidate(siteDocumentsProvider(siteId));
 
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Document updated successfully'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          AppSnackBar.showSuccess(context, 'Document updated successfully');
         }
       } catch (e) {
         if (context.mounted) {
-          final cleanMessage = SupabaseErrorInterceptor.handle(e, ref);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(cleanMessage),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
+          AppErrorHandler.show(context, e, ref);
         }
       }
     }

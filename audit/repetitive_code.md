@@ -253,7 +253,9 @@ showModalBottomSheet(
 
 ---
 
-### 7. `SupabaseErrorInterceptor.handle(e, ref)` + `AppSnackBar.showError` — 11 Catch Blocks
+### 7. `SupabaseErrorInterceptor.handle(e, ref)` + `AppSnackBar.showError` — 11 Catch Blocks [RESOLVED]
+
+**Status**: Resolved. Refactored into the centralized `AppErrorHandler.show(context, e, ref)` utility in `lib/shared/utils/error_handler.dart`. Raw catch blocks and snackbars across `site_detail_controller` and `site_detail_dialogs` are fully unified to leverage `AppSnackBar`.
 
 ```dart
 } catch (e) {
