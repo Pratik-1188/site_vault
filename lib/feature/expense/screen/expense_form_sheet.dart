@@ -255,38 +255,49 @@ class _ExpenseFormSheetState extends ConsumerState<ExpenseFormSheet> with SiteSc
           if (!mounted) return;
         }
 
-        // 2. Build the Expense Object
         final total = double.parse(_amountController.text.trim());
-        final expense = Expense(
-          id: widget.expenseToEdit?.id ?? '',
-          firmId: selectedFirmId!,
-          siteId: selectedSiteId!,
-          createdBy: currentUserId, // Bind creator user ID behind the scenes
-          title: _titleController.text.trim(),
-          description: _descriptionController.text.trim().isEmpty
-              ? null
-              : _descriptionController.text.trim(),
-          attachmentPath: fileUrl ?? widget.expenseToEdit?.attachmentPath,
-          expenseDate: _selectedDate,
-          categoryId: _selectedCategoryId,
-          vendorId: _selectedVendorId,
-          amount: total,
-          isGst: _isGst,
-          paymentMode: _selectedPaymentMode,
-          isRefundable: _isRefundable,
-          createdAt: widget.expenseToEdit?.createdAt ?? DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
 
-        // 3. Database Write operations
+        // 2. Database Write operations
         if (widget.expenseToEdit == null) {
           // Create Mode
-          await ref.read(expenseActionsProvider).createExpense(expense);
+          await ref.read(expenseActionsProvider).createExpense(
+                firmId: selectedFirmId!,
+                siteId: selectedSiteId!,
+                createdBy: currentUserId,
+                title: _titleController.text.trim(),
+                description: _descriptionController.text.trim().isEmpty
+                    ? null
+                    : _descriptionController.text.trim(),
+                attachmentPath: fileUrl,
+                expenseDate: _selectedDate,
+                categoryId: _selectedCategoryId,
+                vendorId: _selectedVendorId,
+                amount: total,
+                isGst: _isGst,
+                paymentMode: _selectedPaymentMode,
+                isRefundable: _isRefundable,
+              );
         } else {
           // Edit Mode
-          await ref
-              .read(expenseActionsProvider)
-              .updateExpense(expense, previousSiteId: widget.siteId);
+          await ref.read(expenseActionsProvider).updateExpense(
+                expenseId: widget.expenseToEdit!.id,
+                firmId: selectedFirmId!,
+                siteId: selectedSiteId!,
+                createdBy: widget.expenseToEdit!.createdBy,
+                title: _titleController.text.trim(),
+                description: _descriptionController.text.trim().isEmpty
+                    ? null
+                    : _descriptionController.text.trim(),
+                attachmentPath: fileUrl ?? widget.expenseToEdit?.attachmentPath,
+                expenseDate: _selectedDate,
+                categoryId: _selectedCategoryId,
+                vendorId: _selectedVendorId,
+                amount: total,
+                isGst: _isGst,
+                paymentMode: _selectedPaymentMode,
+                isRefundable: _isRefundable,
+                previousSiteId: widget.siteId,
+              );
         }
       },
       successMessage: widget.expenseToEdit == null

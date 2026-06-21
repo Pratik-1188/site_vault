@@ -379,22 +379,18 @@ class SiteDetailDialogs {
 
     if (edited == true && context.mounted) {
       try {
-        final updatedDoc = SiteDocument(
-          id: document.id,
-          siteId: document.siteId,
-          createdBy: document.createdBy,
-          fileName: fileNameController.text.trim(),
-          description: descriptionController.text.trim().isEmpty
-              ? null
-              : descriptionController.text.trim(),
-          fileUrl: document.fileUrl,
-          createdAt: document.createdAt,
-          updatedAt: DateTime.now(),
-          softDeletedAt: document.softDeletedAt,
-          createdByProfile: document.createdByProfile,
-        );
-
-        await ref.read(documentActionsProvider).editDocument(updatedDoc);
+        await ref.read(documentActionsProvider).editDocument(
+              documentId: document.id,
+              siteId: document.siteId,
+              createdBy: document.createdBy,
+              fileName: fileNameController.text.trim(),
+              description: descriptionController.text.trim().isEmpty
+                  ? null
+                  : descriptionController.text.trim(),
+              fileUrl: document.fileUrl,
+              softDeletedAt: document.softDeletedAt,
+              createdAt: document.createdAt,
+            );
         ref.invalidate(siteDocumentsProvider(siteId));
 
         if (context.mounted) {

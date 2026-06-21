@@ -70,10 +70,26 @@ class DocumentActions {
   DocumentActions(this.ref);
   final Ref ref;
 
-  Future<void> addDocument(SiteDocument document) async {
+  Future<void> addDocument({
+    required String siteId,
+    required String createdBy,
+    required String fileName,
+    String? description,
+    required String fileUrl,
+  }) async {
+    final document = SiteDocument(
+      id: '',
+      siteId: siteId,
+      createdBy: createdBy,
+      fileName: fileName,
+      description: description,
+      fileUrl: fileUrl,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
     final repo = ref.read(documentRepositoryProvider);
     await repo.createDocument(document);
-    ref.invalidate(siteDocumentsProvider(document.siteId));
+    ref.invalidate(siteDocumentsProvider(siteId));
   }
 
   Future<void> deleteDocument(SiteDocument document) async {
@@ -82,10 +98,30 @@ class DocumentActions {
     ref.invalidate(siteDocumentsProvider(document.siteId));
   }
 
-  Future<void> editDocument(SiteDocument document) async {
+  Future<void> editDocument({
+    required String documentId,
+    required String siteId,
+    required String createdBy,
+    required String fileName,
+    String? description,
+    required String fileUrl,
+    DateTime? softDeletedAt,
+    DateTime? createdAt,
+  }) async {
+    final document = SiteDocument(
+      id: documentId,
+      siteId: siteId,
+      createdBy: createdBy,
+      fileName: fileName,
+      description: description,
+      fileUrl: fileUrl,
+      softDeletedAt: softDeletedAt,
+      createdAt: createdAt ?? DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
     final repo = ref.read(documentRepositoryProvider);
     await repo.updateDocument(document);
-    ref.invalidate(siteDocumentsProvider(document.siteId));
+    ref.invalidate(siteDocumentsProvider(siteId));
   }
 }
 

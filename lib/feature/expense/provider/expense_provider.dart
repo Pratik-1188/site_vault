@@ -110,7 +110,39 @@ class ExpenseActions {
   ExpenseActions(this.ref);
   final Ref ref;
 
-  Future<Expense> createExpense(Expense expense) async {
+  Future<Expense> createExpense({
+    required String firmId,
+    required String siteId,
+    required String createdBy,
+    required String title,
+    String? description,
+    String? attachmentPath,
+    required DateTime expenseDate,
+    String? categoryId,
+    String? vendorId,
+    required double amount,
+    required bool isGst,
+    required PaymentMode paymentMode,
+    required bool isRefundable,
+  }) async {
+    final expense = Expense(
+      id: '',
+      firmId: firmId,
+      siteId: siteId,
+      createdBy: createdBy,
+      title: title,
+      description: description,
+      attachmentPath: attachmentPath,
+      expenseDate: expenseDate,
+      categoryId: categoryId,
+      vendorId: vendorId,
+      amount: amount,
+      isGst: isGst,
+      paymentMode: paymentMode,
+      isRefundable: isRefundable,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
     final repo = ref.read(expenseRepositoryProvider);
     final created = await repo.createExpense(expense);
     ref.invalidate(siteExpensesProvider(expense.siteId));
@@ -118,10 +150,41 @@ class ExpenseActions {
     return created;
   }
 
-  Future<Expense> updateExpense(
-    Expense expense, {
+  Future<Expense> updateExpense({
+    required String expenseId,
+    required String firmId,
+    required String siteId,
+    required String createdBy,
+    required String title,
+    String? description,
+    String? attachmentPath,
+    required DateTime expenseDate,
+    String? categoryId,
+    String? vendorId,
+    required double amount,
+    required bool isGst,
+    required PaymentMode paymentMode,
+    required bool isRefundable,
     String? previousSiteId,
   }) async {
+    final expense = Expense(
+      id: expenseId,
+      firmId: firmId,
+      siteId: siteId,
+      createdBy: createdBy,
+      title: title,
+      description: description,
+      attachmentPath: attachmentPath,
+      expenseDate: expenseDate,
+      categoryId: categoryId,
+      vendorId: vendorId,
+      amount: amount,
+      isGst: isGst,
+      paymentMode: paymentMode,
+      isRefundable: isRefundable,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
     final repo = ref.read(expenseRepositoryProvider);
     final updated = await repo.updateExpense(expense);
 
