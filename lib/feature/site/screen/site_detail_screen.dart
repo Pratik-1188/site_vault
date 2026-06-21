@@ -11,6 +11,7 @@ import 'package:site_vault/feature/site/widgets/documents_tab.dart';
 import 'package:site_vault/feature/site/widgets/expense_tab.dart';
 import 'package:site_vault/feature/site/widgets/settings_tab.dart';
 import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
+import 'package:site_vault/shared/widget/app_refresh_indicator.dart';
 
 class SiteDetailScreen extends ConsumerStatefulWidget {
   final String siteId;
@@ -167,7 +168,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   }) {
     final baseColor = Theme.of(context).colorScheme.primary;
 
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: controller.refresh,
       child: Scaffold(
         body: NestedScrollView(

@@ -21,6 +21,8 @@ import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
 import '../model/site_status.dart';
+import 'package:site_vault/shared/utils/refresh_helper.dart';
+import 'package:site_vault/shared/widget/app_refresh_indicator.dart';
 
 /// A premium, high-contrast Material 3 screen that displays the site directory under KK Group
 /// utilizing the custom visual bento structure and technical layout designed on Stitch.
@@ -328,50 +330,65 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
           // 3. Filter Chips Row
           _buildFilterChipsRow(context, selectedStatus),
 
-          // 4. Scrollable Ledger Content (Active Sites list)
           Expanded(
-            child: AsyncValueWidget(
-              value: sitesAsync,
-              error: (error, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.error_outline_rounded,
-                        size: 48,
-                        color: Theme.of(context).colorScheme.error,
+            child: AppRefreshIndicator(
+              onRefresh: () => ref.refreshProviders(
+                providers: [sitesProvider, firmsProvider],
+                futures: [
+                  ref.read(sitesProvider.future),
+                  ref.read(firmsProvider.future),
+                ],
+              ),
+              child: AsyncValueWidget(
+                value: sitesAsync,
+                error: (error, _) => SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 48.0,
+                        horizontal: 24.0,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Failed to load sites: $error',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline_rounded,
+                            size: 48,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Failed to load sites: $error',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
+                data: (sites) {
+                  if (sites.isEmpty) {
+                    return _buildEmptyState();
+                  }
+
+                  final firmsList = firmsAsync.value ?? const [];
+
+                  return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    itemCount: sites.length,
+                    itemBuilder: (context, index) {
+                      final site = sites[index];
+                      return _buildSiteCard(site, firmsList);
+                    },
+                  );
+                },
               ),
-              data: (sites) {
-                if (sites.isEmpty) {
-                  return _buildEmptyState();
-                }
-
-                final firmsList = firmsAsync.value ?? const [];
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
-                  ),
-                  itemCount: sites.length,
-                  itemBuilder: (context, index) {
-                    final site = sites[index];
-                    return _buildSiteCard(site, firmsList);
-                  },
-                );
-              },
             ),
           ),
         ],

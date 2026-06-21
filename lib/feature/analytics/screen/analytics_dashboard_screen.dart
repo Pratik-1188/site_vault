@@ -10,6 +10,8 @@ import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
 import 'package:site_vault/shared/widget/app_navigation_bar.dart';
 import 'package:site_vault/shared/widget/async_value_widget.dart';
 import 'package:site_vault/shared/utils/number_formatter.dart';
+import 'package:site_vault/shared/utils/refresh_helper.dart';
+import 'package:site_vault/shared/widget/app_refresh_indicator.dart';
 
 /// Central analytics hub screen showing Group (All Firms) and Firm comparative cost statistics.
 class AnalyticsDashboardScreen extends ConsumerStatefulWidget {
@@ -90,50 +92,100 @@ class _AnalyticsDashboardScreenState extends ConsumerState<AnalyticsDashboardScr
           ),
 
           Expanded(
-            child: AsyncValueWidget(
-              value: summariesAsync,
-              errorMessage: 'Error loading dashboard',
-              data: (firmSummaries) {
-                // If All Firms, compute combined summary; otherwise select matching firm
-                final activeSummaries = selectedFirmId == null
-                     ? firmSummaries
-                     : firmSummaries.where((s) => s.firmId.toLowerCase() == selectedFirmId.toLowerCase()).toList();
+            child: AppRefreshIndicator(
+              onRefresh: () => ref.refreshProviders(
+                providers: [
+                  groupFirmSummariesProvider,
+                  categorySpendProvider(firmId: selectedFirmId),
+                  monthlySpendProvider(firmId: selectedFirmId),
+                  firmsProvider,
+                ],
+                futures: [
+                  ref.read(groupFirmSummariesProvider.future),
+                  ref.read(categorySpendProvider(firmId: selectedFirmId).future),
+                  ref.read(monthlySpendProvider(firmId: selectedFirmId).future),
+                  ref.read(firmsProvider.future),
+                ],
+              ),
+              child: AsyncValueWidget(
+                value: summariesAsync,
+                errorMessage: 'Error loading dashboard',
+                error: (err, _) => SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 48.0,
+                        horizontal: 24.0,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline_rounded,
+                            size: 48,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Failed to load dashboard: $err',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                data: (firmSummaries) {
+                  // If All Firms, compute combined summary; otherwise select matching firm
+                  final activeSummaries = selectedFirmId == null
+                       ? firmSummaries
+                       : firmSummaries.where((s) => s.firmId.toLowerCase() == selectedFirmId.toLowerCase()).toList();
 
-                if (firmSummaries.isEmpty) {
-                  return const Center(child: Text('No transaction logs recorded.'));
-                }
+                  if (firmSummaries.isEmpty) {
+                    return const SingleChildScrollView(
+                      physics: AlwaysScrollableScrollPhysics(),
+                      child: SizedBox(
+                        height: 300,
+                        child: Center(child: Text('No transaction logs recorded.')),
+                      ),
+                    );
+                  }
 
-                double totalSpend = 0.0;
-                int totalCount = 0;
+                  double totalSpend = 0.0;
+                  int totalCount = 0;
 
-                for (final sum in activeSummaries) {
-                  totalSpend += sum.totalSpend;
-                  totalCount += sum.expenseCount;
-                }
+                  for (final sum in activeSummaries) {
+                    totalSpend += sum.totalSpend;
+                    totalCount += sum.expenseCount;
+                  }
 
-                return ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-                  children: [
-                    // 1. KPI Cards Grid
-                    _buildKPIGrid(totalSpend, totalCount),
-                    const SizedBox(height: 24),
+                  return ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                    children: [
+                      // 1. KPI Cards Grid
+                      _buildKPIGrid(totalSpend, totalCount),
+                      const SizedBox(height: 24),
 
-                    // 2. Proportional Brand Splits (Only visible in All-Firms mode)
-                    if (selectedFirmId == null) ...[
-                      _buildFirmSplitsChart(firmSummaries, firmsAsync.value ?? const []),
+                      // 2. Proportional Brand Splits (Only visible in All-Firms mode)
+                      if (selectedFirmId == null) ...[
+                        _buildFirmSplitsChart(firmSummaries, firmsAsync.value ?? const []),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // 3. Category Spending progress meters
+                      _buildCategoryDistribution(categorySpendAsync),
+                      const SizedBox(height: 24),
+
+                      // 4. Monthly Trend Chronological Timeline
+                      _buildMonthlyTrendsTimeline(monthlySpendAsync),
                       const SizedBox(height: 24),
                     ],
-
-                    // 3. Category Spending progress meters
-                    _buildCategoryDistribution(categorySpendAsync),
-                    const SizedBox(height: 24),
-
-                    // 4. Monthly Trend Chronological Timeline
-                    _buildMonthlyTrendsTimeline(monthlySpendAsync),
-                    const SizedBox(height: 24),
-                  ],
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         ],

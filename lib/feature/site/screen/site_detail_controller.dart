@@ -13,6 +13,7 @@ import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
 import 'package:site_vault/shared/utils/error_handler.dart';
+import 'package:site_vault/shared/utils/refresh_helper.dart';
 
 import 'site_detail_dialogs.dart';
 
@@ -232,13 +233,24 @@ class SiteDetailController extends ChangeNotifier {
   }
 
   Future<void> refresh() async {
-    ref.invalidate(siteDetailsProvider(siteId));
-    ref.invalidate(sitesProvider);
-    ref.invalidate(siteExpensesProvider(siteId));
-    ref.invalidate(siteTotalExpensesProvider(siteId));
-    ref.invalidate(siteDocumentsProvider(siteId));
-    ref.invalidate(filteredSiteExpensesProvider(siteId));
-    ref.invalidate(filteredSiteDocumentsProvider(siteId));
+    await ref.refreshProviders(
+      providers: [
+        siteDetailsProvider(siteId),
+        sitesProvider,
+        siteExpensesProvider(siteId),
+        siteTotalExpensesProvider(siteId),
+        siteDocumentsProvider(siteId),
+        filteredSiteExpensesProvider(siteId),
+        filteredSiteDocumentsProvider(siteId),
+      ],
+      futures: [
+        ref.read(siteDetailsProvider(siteId).future),
+        ref.read(sitesProvider.future),
+        ref.read(siteExpensesProvider(siteId).future),
+        ref.read(siteTotalExpensesProvider(siteId).future),
+        ref.read(siteDocumentsProvider(siteId).future),
+      ],
+    );
   }
 }
 
