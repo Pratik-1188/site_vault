@@ -100,16 +100,17 @@ class _TopNotificationWidgetState extends State<_TopNotificationWidget>
       duration: const Duration(milliseconds: 300),
     );
 
-    _yAnimation = Tween<double>(begin: -80.0, end: 0.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    _yAnimation = Tween<double>(
+      begin: -80.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
     _fadeAnimation = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
 
     _controller.forward();
 
     // Auto-dismiss after 4 seconds
-    _dismissTimer = Timer(const Duration(seconds: 4), () {
+    _dismissTimer = Timer(const Duration(seconds: 10), () {
       _dismiss();
     });
   }
@@ -141,10 +142,7 @@ class _TopNotificationWidgetState extends State<_TopNotificationWidget>
           top: topPadding + 12 + _yAnimation.value,
           left: 16,
           right: 16,
-          child: Opacity(
-            opacity: _fadeAnimation.value,
-            child: child,
-          ),
+          child: Opacity(opacity: _fadeAnimation.value, child: child),
         );
       },
       child: GestureDetector(
@@ -152,7 +150,10 @@ class _TopNotificationWidgetState extends State<_TopNotificationWidget>
         child: Material(
           color: Colors.transparent,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 12.0,
+            ),
             decoration: BoxDecoration(
               color: widget.backgroundColor,
               borderRadius: BorderRadius.circular(12),
@@ -180,7 +181,11 @@ class _TopNotificationWidgetState extends State<_TopNotificationWidget>
                 ),
                 const SizedBox(width: 8),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.white70, size: 18),
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: Colors.white70,
+                    size: 18,
+                  ),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   onPressed: _dismiss,
