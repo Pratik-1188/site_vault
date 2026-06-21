@@ -8,7 +8,7 @@ part 'document_provider.g.dart';
 
 /// Provides DocumentRepository singleton
 @Riverpod(keepAlive: true)
-DocumentRepository documentRepository(Ref ref) {
+DocumentRepository _documentRepository(Ref ref) {
   final client = Supabase.instance.client;
   return DocumentRepository(client);
 }
@@ -30,7 +30,7 @@ class DocumentSearchQuery extends _$DocumentSearchQuery {
 class SiteDocuments extends _$SiteDocuments {
   @override
   Future<List<SiteDocument>> build(String siteId) async {
-    final repo = ref.watch(documentRepositoryProvider);
+    final repo = ref.watch(_documentRepositoryProvider);
     return repo.fetchDocumentsForSite(siteId);
   }
 
@@ -38,28 +38,28 @@ class SiteDocuments extends _$SiteDocuments {
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      final repo = ref.read(documentRepositoryProvider);
+      final repo = ref.read(_documentRepositoryProvider);
       return repo.fetchDocumentsForSite(siteId);
     });
   }
 
   /// Adds a new site document and reactively invalidates cache
   Future<void> addDocument(SiteDocument document) async {
-    final repo = ref.read(documentRepositoryProvider);
+    final repo = ref.read(_documentRepositoryProvider);
     await repo.createDocument(document);
     ref.invalidateSelf(); // Reactively refetches updated files
   }
 
   /// Soft deletes a document and reactively invalidates cache
   Future<void> deleteDocument(String documentId) async {
-    final repo = ref.read(documentRepositoryProvider);
+    final repo = ref.read(_documentRepositoryProvider);
     await repo.softDeleteDocument(documentId);
     ref.invalidateSelf(); // Reactively refetches updated files
   }
 
   /// Edits an existing document and reactively invalidates cache
   Future<void> editDocument(SiteDocument document) async {
-    final repo = ref.read(documentRepositoryProvider);
+    final repo = ref.read(_documentRepositoryProvider);
     await repo.updateDocument(document);
     ref.invalidateSelf(); // Reactively refetches updated files
   }
@@ -70,22 +70,58 @@ class DocumentActions {
   DocumentActions(this.ref);
   final Ref ref;
 
-  Future<void> addDocument(SiteDocument document) async {
-    final repo = ref.read(documentRepositoryProvider);
+  Future<void> addDocument({
+    required String siteId,
+    required String createdBy,
+    required String fileName,
+    String? description,
+    required String fileUrl,
+  }) async {
+    final document = SiteDocument(
+      id: '',
+      siteId: siteId,
+      createdBy: createdBy,
+      fileName: fileName,
+      description: description,
+      fileUrl: fileUrl,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    final repo = ref.read(_documentRepositoryProvider);
     await repo.createDocument(document);
-    ref.invalidate(siteDocumentsProvider(document.siteId));
+    ref.invalidate(siteDocumentsProvider(siteId));
   }
 
   Future<void> deleteDocument(SiteDocument document) async {
-    final repo = ref.read(documentRepositoryProvider);
+    final repo = ref.read(_documentRepositoryProvider);
     await repo.softDeleteDocument(document.id);
     ref.invalidate(siteDocumentsProvider(document.siteId));
   }
 
-  Future<void> editDocument(SiteDocument document) async {
-    final repo = ref.read(documentRepositoryProvider);
+  Future<void> editDocument({
+    required String documentId,
+    required String siteId,
+    required String createdBy,
+    required String fileName,
+    String? description,
+    required String fileUrl,
+    DateTime? softDeletedAt,
+    DateTime? createdAt,
+  }) async {
+    final document = SiteDocument(
+      id: documentId,
+      siteId: siteId,
+      createdBy: createdBy,
+      fileName: fileName,
+      description: description,
+      fileUrl: fileUrl,
+      softDeletedAt: softDeletedAt,
+      createdAt: createdAt ?? DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    final repo = ref.read(_documentRepositoryProvider);
     await repo.updateDocument(document);
-    ref.invalidate(siteDocumentsProvider(document.siteId));
+    ref.invalidate(siteDocumentsProvider(siteId));
   }
 }
 

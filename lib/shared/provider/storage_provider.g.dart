@@ -10,12 +10,12 @@ part of 'storage_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Provides StorageRepository singleton
 
-@ProviderFor(storageRepository)
-final storageRepositoryProvider = StorageRepositoryProvider._();
+@ProviderFor(_storageRepository)
+final _storageRepositoryProvider = _StorageRepositoryProvider._();
 
 /// Provides StorageRepository singleton
 
-final class StorageRepositoryProvider
+final class _StorageRepositoryProvider
     extends
         $FunctionalProvider<
           StorageRepository,
@@ -24,19 +24,19 @@ final class StorageRepositoryProvider
         >
     with $Provider<StorageRepository> {
   /// Provides StorageRepository singleton
-  StorageRepositoryProvider._()
+  _StorageRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'storageRepositoryProvider',
+        name: r'_storageRepositoryProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$storageRepositoryHash();
+  String debugGetCreateSourceHash() => _$_storageRepositoryHash();
 
   @$internal
   @override
@@ -46,7 +46,7 @@ final class StorageRepositoryProvider
 
   @override
   StorageRepository create(Ref ref) {
-    return storageRepository(ref);
+    return _storageRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -58,4 +58,5 @@ final class StorageRepositoryProvider
   }
 }
 
-String _$storageRepositoryHash() => r'9adcbdb18848cf0c74b42fee93ef449fd91d4a7a';
+String _$_storageRepositoryHash() =>
+    r'0ae9996b7149b22f4079b3fa06f2f0ddf3fd7230';

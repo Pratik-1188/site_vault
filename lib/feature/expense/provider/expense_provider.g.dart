@@ -10,12 +10,12 @@ part of 'expense_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Provides ExpenseRepository singleton
 
-@ProviderFor(expenseRepository)
-final expenseRepositoryProvider = ExpenseRepositoryProvider._();
+@ProviderFor(_expenseRepository)
+final _expenseRepositoryProvider = _ExpenseRepositoryProvider._();
 
 /// Provides ExpenseRepository singleton
 
-final class ExpenseRepositoryProvider
+final class _ExpenseRepositoryProvider
     extends
         $FunctionalProvider<
           ExpenseRepository,
@@ -24,19 +24,19 @@ final class ExpenseRepositoryProvider
         >
     with $Provider<ExpenseRepository> {
   /// Provides ExpenseRepository singleton
-  ExpenseRepositoryProvider._()
+  _ExpenseRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'expenseRepositoryProvider',
+        name: r'_expenseRepositoryProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$expenseRepositoryHash();
+  String debugGetCreateSourceHash() => _$_expenseRepositoryHash();
 
   @$internal
   @override
@@ -46,7 +46,7 @@ final class ExpenseRepositoryProvider
 
   @override
   ExpenseRepository create(Ref ref) {
-    return expenseRepository(ref);
+    return _expenseRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -58,7 +58,8 @@ final class ExpenseRepositoryProvider
   }
 }
 
-String _$expenseRepositoryHash() => r'f154bd4452384266c36318d0a05718c2de641625';
+String _$_expenseRepositoryHash() =>
+    r'38085bb93845332f49cbe37d82079b4d95543348';
 
 /// Dynamic categories list fetch from database
 
@@ -104,7 +105,7 @@ final class ExpenseCategoriesProvider
   }
 }
 
-String _$expenseCategoriesHash() => r'3276d17f1ca46eab4a032a7c47c9dce125716184';
+String _$expenseCategoriesHash() => r'f413fb07c9c878834cb3ec3bb38d4d0ecaf2225a';
 
 /// Dynamic vendors list fetch from database
 
@@ -148,7 +149,7 @@ final class VendorsProvider
   }
 }
 
-String _$vendorsHash() => r'74178d29653eb9fa84d9d29bd479cb36ed83826b';
+String _$vendorsHash() => r'3a1657f61f1f838c604cd47699f4db0c28d78011';
 
 /// Dynamic user profiles list fetch from database (for created_by & paid_by linking)
 
@@ -192,7 +193,7 @@ final class ProfilesProvider
   }
 }
 
-String _$profilesHash() => r'f31f89b80b2d96ec462690e12d4cde212077dc1f';
+String _$profilesHash() => r'b967bf89b48e4183a07acdbc04a78bf490fe07fa';
 
 /// Selected category filter (null = All)
 
@@ -425,7 +426,7 @@ final class SiteExpensesProvider
   }
 }
 
-String _$siteExpensesHash() => r'36d2a41a8e110f766323fe8a3a9ea6115070267a';
+String _$siteExpensesHash() => r'58e1e22a4a0171f67fdacbda5e5e258705e4e680';
 
 /// Async controller for managing all active site-specific expenses.
 ///

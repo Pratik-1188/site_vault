@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:site_vault/feature/site/model/site.dart';
+import 'package:site_vault/feature/site/model/site_status.dart';
 import 'package:site_vault/feature/site/screen/site_detail_controller.dart';
 import 'package:site_vault/feature/site/screen/site_detail_dialogs.dart';
 import 'package:site_vault/feature/site/widgets/analytics_tab.dart';
@@ -10,6 +11,7 @@ import 'package:site_vault/feature/site/widgets/documents_tab.dart';
 import 'package:site_vault/feature/site/widgets/expense_tab.dart';
 import 'package:site_vault/feature/site/widgets/settings_tab.dart';
 import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
+import 'package:site_vault/shared/widget/app_refresh_indicator.dart';
 
 class SiteDetailScreen extends ConsumerStatefulWidget {
   final String siteId;
@@ -166,7 +168,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
   }) {
     final baseColor = Theme.of(context).colorScheme.primary;
 
-    return RefreshIndicator(
+    return AppRefreshIndicator(
       onRefresh: controller.refresh,
       child: Scaffold(
         body: NestedScrollView(
@@ -307,7 +309,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                       name,
                       description,
                       startedOn, {
-                      String? status,
+                      SiteStatus? status,
                     }) =>
                         controller.saveSiteSettings(
                           context,

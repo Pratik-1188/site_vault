@@ -10,6 +10,7 @@ import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
 import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
 import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
 import 'package:site_vault/feature/site/model/site.dart';
+import 'package:site_vault/feature/site/model/site_status.dart';
 import 'package:site_vault/shared/provider/storage_provider.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
@@ -23,14 +24,13 @@ class SiteDetailDialogs {
 
   static Future<bool?> confirmStatusChange(
     BuildContext context, {
-    required String fromStatus,
-    required String toStatus,
+    required SiteStatus fromStatus,
+    required SiteStatus toStatus,
     required String siteName,
   }) async {
-    if (fromStatus.toLowerCase() == toStatus.toLowerCase()) return true;
+    if (fromStatus == toStatus) return true;
 
-    final normalizedTo = toStatus.toLowerCase();
-    final destructive = normalizedTo == 'deleted';
+    final destructive = toStatus == SiteStatus.deleted;
 
     final String title;
     final String message;
@@ -379,22 +379,18 @@ class SiteDetailDialogs {
 
     if (edited == true && context.mounted) {
       try {
-        final updatedDoc = SiteDocument(
-          id: document.id,
-          siteId: document.siteId,
-          createdBy: document.createdBy,
-          fileName: fileNameController.text.trim(),
-          description: descriptionController.text.trim().isEmpty
-              ? null
-              : descriptionController.text.trim(),
-          fileUrl: document.fileUrl,
-          createdAt: document.createdAt,
-          updatedAt: DateTime.now(),
-          softDeletedAt: document.softDeletedAt,
-          createdByProfile: document.createdByProfile,
-        );
-
-        await ref.read(documentActionsProvider).editDocument(updatedDoc);
+        await ref.read(documentActionsProvider).editDocument(
+              documentId: document.id,
+              siteId: document.siteId,
+              createdBy: document.createdBy,
+              fileName: fileNameController.text.trim(),
+              description: descriptionController.text.trim().isEmpty
+                  ? null
+                  : descriptionController.text.trim(),
+              fileUrl: document.fileUrl,
+              softDeletedAt: document.softDeletedAt,
+              createdAt: document.createdAt,
+            );
         ref.invalidate(siteDocumentsProvider(siteId));
 
         if (context.mounted) {

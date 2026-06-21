@@ -10,6 +10,7 @@ import 'package:site_vault/shared/widget/vault_card.dart';
 import 'package:site_vault/shared/widget/async_value_widget.dart';
 
 import '../model/site.dart';
+import '../model/site_status.dart';
 
 class ExpenseTab extends ConsumerStatefulWidget {
   final Site site;
@@ -268,7 +269,7 @@ class _ExpenseTabState extends ConsumerState<ExpenseTab> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          if (widget.site.status == 'active')
+                          if (widget.site.status == SiteStatus.active)
                             PopupMenuButton<String>(
                               icon: const Icon(
                                 Icons.more_vert_rounded,

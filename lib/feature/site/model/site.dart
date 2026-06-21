@@ -1,3 +1,5 @@
+import 'package:site_vault/feature/site/model/site_status.dart';
+
 class Site {
   final String id;
   final String firmId;
@@ -8,7 +10,7 @@ class Site {
   final DateTime? startedOn;
   final DateTime? completedOn;
 
-  final String status;
+  final SiteStatus status;
 
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -41,7 +43,7 @@ class Site {
           ? DateTime.parse(json['completed_on'])
           : null,
 
-      status: json['status'] as String,
+      status: SiteStatus.fromString(json['status'] as String),
 
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),

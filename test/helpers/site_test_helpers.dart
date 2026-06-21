@@ -1,5 +1,6 @@
 import 'package:mocktail/mocktail.dart';
 import 'package:site_vault/feature/site/model/site.dart';
+import 'package:site_vault/feature/site/model/site_status.dart';
 import 'package:site_vault/feature/site/repository/site_repository.dart';
 
 /// A mock implementation of [SiteRepository] for test isolated execution.
@@ -13,7 +14,7 @@ Site makeSite({
   String? description,
   DateTime? startedOn,
   DateTime? completedOn,
-  String status = 'active',
+  SiteStatus status = SiteStatus.active,
   DateTime? createdAt,
   DateTime? updatedAt,
 }) {

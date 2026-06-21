@@ -10,28 +10,28 @@ part of 'site_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Provides SiteRepository
 
-@ProviderFor(siteRepository)
-final siteRepositoryProvider = SiteRepositoryProvider._();
+@ProviderFor(_siteRepository)
+final _siteRepositoryProvider = _SiteRepositoryProvider._();
 
 /// Provides SiteRepository
 
-final class SiteRepositoryProvider
+final class _SiteRepositoryProvider
     extends $FunctionalProvider<SiteRepository, SiteRepository, SiteRepository>
     with $Provider<SiteRepository> {
   /// Provides SiteRepository
-  SiteRepositoryProvider._()
+  _SiteRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'siteRepositoryProvider',
+        name: r'_siteRepositoryProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$siteRepositoryHash();
+  String debugGetCreateSourceHash() => _$_siteRepositoryHash();
 
   @$internal
   @override
@@ -40,7 +40,7 @@ final class SiteRepositoryProvider
 
   @override
   SiteRepository create(Ref ref) {
-    return siteRepository(ref);
+    return _siteRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -52,7 +52,7 @@ final class SiteRepositoryProvider
   }
 }
 
-String _$siteRepositoryHash() => r'6a9018dfcd34695d925af7a8f16737d31f702b2f';
+String _$_siteRepositoryHash() => r'a45f334e5a5949bb8e5b18189aeec253f90ec0e1';
 
 /// Selected firm filter (null = none selected on startup)
 
@@ -119,7 +119,7 @@ final selectedStatusProvider = SelectedStatusProvider._();
 
 /// Selected status filter (defaults to 'active')
 final class SelectedStatusProvider
-    extends $NotifierProvider<SelectedStatus, String?> {
+    extends $NotifierProvider<SelectedStatus, SiteStatus?> {
   /// Selected status filter (defaults to 'active')
   SelectedStatusProvider._()
     : super(
@@ -140,29 +140,29 @@ final class SelectedStatusProvider
   SelectedStatus create() => SelectedStatus();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(String? value) {
+  Override overrideWithValue(SiteStatus? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<String?>(value),
+      providerOverride: $SyncValueProvider<SiteStatus?>(value),
     );
   }
 }
 
-String _$selectedStatusHash() => r'dc38bee129dcd30862bba8cce83652417033c455';
+String _$selectedStatusHash() => r'2c45930697cdd885da9e3dbd160b272013ae9667';
 
 /// Selected status filter (defaults to 'active')
 
-abstract class _$SelectedStatus extends $Notifier<String?> {
-  String? build();
+abstract class _$SelectedStatus extends $Notifier<SiteStatus?> {
+  SiteStatus? build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<String?, String?>;
+    final ref = this.ref as $Ref<SiteStatus?, SiteStatus?>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<String?, String?>,
-              String?,
+              AnyNotifier<SiteStatus?, SiteStatus?>,
+              SiteStatus?,
               Object?,
               Object?
             >;
@@ -326,7 +326,7 @@ final class SitesProvider
   }
 }
 
-String _$sitesHash() => r'859dd9f367f8e7cb19e3bd229e3474d17deb02a9';
+String _$sitesHash() => r'3677837cf1a239df460030b77f337a6b1970432b';
 
 /// Fetches details for a single site by its unique ID
 
@@ -382,7 +382,7 @@ final class SiteDetailsProvider
   }
 }
 
-String _$siteDetailsHash() => r'e824e89c0d720f1031e71c512ecad30b36fa0996';
+String _$siteDetailsHash() => r'987f7f38d455dcbb5eac3454d8af1a33c89dcea7';
 
 /// Fetches details for a single site by its unique ID
 

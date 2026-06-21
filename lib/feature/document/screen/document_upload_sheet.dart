@@ -11,7 +11,6 @@ import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import 'package:site_vault/feature/site/widgets/site_scope_selector_mixin.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
 import 'package:site_vault/shared/utils/form_utils.dart';
-import '../model/document.dart';
 import '../provider/document_provider.dart';
 
 /// A premium, M3-aligned modal bottom sheet that handles site document uploading.
@@ -159,25 +158,17 @@ class _DocumentUploadSheetState extends ConsumerState<DocumentUploadSheet> with 
 
         if (!mounted) return;
 
-        // 2. Build the SiteDocument Object
-        final document = SiteDocument(
-          id: '',
-          siteId: selectedSiteId!,
-          createdBy: uploaderId,
-          fileName: _fileNameController.text.trim(),
-          description: _descriptionController.text.trim().isEmpty
-              ? null
-              : _descriptionController.text.trim(),
-          fileUrl: fileUrl,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-
-        // 3. Save DB entry using the SiteDocuments controller notifier
+        // 2. Save DB entry using the SiteDocuments controller notifier
         debugPrint('[DocumentUpload] Inserting document record...');
-        await ref
-            .read(documentActionsProvider)
-            .addDocument(document);
+        await ref.read(documentActionsProvider).addDocument(
+              siteId: selectedSiteId!,
+              createdBy: uploaderId,
+              fileName: _fileNameController.text.trim(),
+              description: _descriptionController.text.trim().isEmpty
+                  ? null
+                  : _descriptionController.text.trim(),
+              fileUrl: fileUrl,
+            );
         debugPrint('[DocumentUpload] Insert OK');
       },
       successMessage: 'Document uploaded successfully!',

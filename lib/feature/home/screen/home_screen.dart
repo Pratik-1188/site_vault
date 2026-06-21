@@ -4,11 +4,14 @@ import 'package:site_vault/feature/home/provider/home_provider.dart';
 import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
 import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
 import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
+import 'package:site_vault/feature/site/model/site_status.dart';
 import 'package:site_vault/shared/widget/vault_card.dart';
 import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
 import 'package:site_vault/shared/widget/app_navigation_bar.dart';
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/utils/number_formatter.dart';
+import 'package:site_vault/shared/utils/refresh_helper.dart';
+import 'package:site_vault/shared/widget/app_refresh_indicator.dart';
 
 /// A premium, M3-styled Operations Dashboard representing the master corporate ledger overview.
 class HomeScreen extends ConsumerStatefulWidget {
@@ -88,13 +91,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
           ];
         },
-        body: RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(currentFinancialYearExpenseTotalProvider);
-            ref.invalidate(activeSitesForCurrentFinancialYearProvider);
-            ref.invalidate(missingBillExpenseTotalForCurrentFinancialYearProvider);
-            ref.invalidate(recentAuditLogsProvider);
-          },
+        body: AppRefreshIndicator(
+          onRefresh: () => ref.refreshProviders(
+            providers: [
+              currentFinancialYearExpenseTotalProvider,
+              activeSitesForCurrentFinancialYearProvider,
+              missingBillExpenseTotalForCurrentFinancialYearProvider,
+              recentAuditLogsProvider,
+            ],
+            futures: [
+              ref.read(currentFinancialYearExpenseTotalProvider.future),
+              ref.read(activeSitesForCurrentFinancialYearProvider.future),
+              ref.read(missingBillExpenseTotalForCurrentFinancialYearProvider.future),
+              ref.read(recentAuditLogsProvider.future),
+            ],
+          ),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(16.0),
@@ -491,10 +502,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                         final newData = log['new_data'] as Map<String, dynamic>?;
                         final siteName = newData?['name'] as String? ?? 'Site Created';
-                        final status = newData?['status'] as String? ?? 'active';
+                        final statusStr = newData?['status'] as String? ?? 'active';
+                        final status = SiteStatus.fromString(statusStr);
 
                         logTitle = 'Site: $siteName';
-                        logSubtitle = 'Status: ${status.toUpperCase()}';
+                        logSubtitle = 'Status: ${status.toDisplayLabel()}';
                       } else {
                         logIcon = Icons.info_outline_rounded;
                         logIconColor = Theme.of(context).colorScheme.onTertiaryContainer;

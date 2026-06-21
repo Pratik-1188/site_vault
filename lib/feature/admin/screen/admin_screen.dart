@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:site_vault/feature/admin/provider/admin_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
+import 'package:site_vault/shared/model/user_role.dart';
 
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
@@ -20,6 +21,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:site_vault/shared/utils/snackbar_message.dart';
 import 'package:site_vault/shared/utils/error_handler.dart';
 import 'package:site_vault/shared/utils/form_utils.dart';
+import 'package:site_vault/shared/utils/refresh_helper.dart';
+import 'package:site_vault/shared/widget/app_refresh_indicator.dart';
 
 /// Central administration settings panel managing Vendors, Categories, and Profiles.
 class AdminScreen extends ConsumerStatefulWidget {
@@ -238,19 +241,52 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
 
           // Vendors list
           Expanded(
-            child: AsyncValueWidget(
-              value: vendorsAsync,
-              errorMessage: 'Error loading vendors',
-              data: (vendors) {
-                if (vendors.isEmpty) {
-                  return Center(
-                    child: Text('No vendors found.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
-                  );
-                }
+            child: AppRefreshIndicator(
+              onRefresh: () => ref.refreshProviders(
+                providers: [adminVendorsProvider],
+                futures: [ref.read(adminVendorsProvider.future)],
+              ),
+              child: AsyncValueWidget(
+                value: vendorsAsync,
+                errorMessage: 'Error loading vendors',
+                error: (err, _) => SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Container(
+                    height: 300,
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.all(24.0),
+                    child: Text(
+                      'Error: $err',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                data: (vendors) {
+                  if (vendors.isEmpty) {
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Container(
+                        height: 300,
+                        alignment: Alignment.center,
+                        child: Text(
+                          'No vendors found.',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
 
-                return ListView.builder(
-                  itemCount: vendors.length,
-                  itemBuilder: (context, index) {
+                  return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: vendors.length,
+                    itemBuilder: (context, index) {
                     final vendor = vendors[index];
                     return Card(
                       elevation: 0,
@@ -312,6 +348,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
               },
             ),
           ),
+        ),
         ],
       ),
     );
@@ -346,19 +383,52 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
 
           // Categories list
           Expanded(
-            child: AsyncValueWidget(
-              value: categoriesAsync,
-              errorMessage: 'Error loading categories',
-              data: (categories) {
-                if (categories.isEmpty) {
-                  return Center(
-                    child: Text('No categories found.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
-                  );
-                }
+            child: AppRefreshIndicator(
+              onRefresh: () => ref.refreshProviders(
+                providers: [adminCategoriesProvider],
+                futures: [ref.read(adminCategoriesProvider.future)],
+              ),
+              child: AsyncValueWidget(
+                value: categoriesAsync,
+                errorMessage: 'Error loading categories',
+                error: (err, _) => SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Container(
+                    height: 300,
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.all(24.0),
+                    child: Text(
+                      'Error: $err',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                data: (categories) {
+                  if (categories.isEmpty) {
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Container(
+                        height: 300,
+                        alignment: Alignment.center,
+                        child: Text(
+                          'No categories found.',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
 
-                return ListView.builder(
-                  itemCount: categories.length,
-                  itemBuilder: (context, index) {
+                  return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: categories.length,
+                    itemBuilder: (context, index) {
                     final category = categories[index];
                     return Card(
                       elevation: 0,
@@ -416,6 +486,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
               },
             ),
           ),
+        ),
         ],
       ),
     );
@@ -451,19 +522,52 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
 
           // Users list
           Expanded(
-            child: AsyncValueWidget(
-              value: profilesAsync,
-              errorMessage: 'Error loading users',
-              data: (profiles) {
-                if (profiles.isEmpty) {
-                  return Center(
-                    child: Text('No users found.', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
-                  );
-                }
+            child: AppRefreshIndicator(
+              onRefresh: () => ref.refreshProviders(
+                providers: [adminProfilesProvider],
+                futures: [ref.read(adminProfilesProvider.future)],
+              ),
+              child: AsyncValueWidget(
+                value: profilesAsync,
+                errorMessage: 'Error loading users',
+                error: (err, _) => SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Container(
+                    height: 300,
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.all(24.0),
+                    child: Text(
+                      'Error: $err',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+                data: (profiles) {
+                  if (profiles.isEmpty) {
+                    return SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      child: Container(
+                        height: 300,
+                        alignment: Alignment.center,
+                        child: Text(
+                          'No users found.',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
 
-                return ListView.builder(
-                  itemCount: profiles.length,
-                  itemBuilder: (context, index) {
+                  return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: profiles.length,
+                    itemBuilder: (context, index) {
                     final profile = profiles[index];
                     final isSelf = profile.id == currentUserId;
                     final isActive = profile.isActive;
@@ -549,6 +653,7 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
               },
             ),
           ),
+        ),
         ],
       ),
     );
@@ -795,7 +900,7 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> with FormSubmitM
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _displayNameController = TextEditingController();
-  String _selectedRole = 'staff';
+  UserRole _selectedRole = UserRole.staff;
 
   @override
   void dispose() {
@@ -819,7 +924,7 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> with FormSubmitM
       fields: {
         'Email': email,
         'Display Name': displayName,
-        'Role': _selectedRole,
+        'Role': _selectedRole.toDisplayLabel(),
         'Password': '•' * password.length,
       },
       confirmLabel: 'Create',
@@ -917,22 +1022,18 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> with FormSubmitM
             },
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
+          DropdownButtonFormField<UserRole>(
             initialValue: _selectedRole,
             decoration: const InputDecoration(
               labelText: 'User Role *',
               prefixIcon: Icon(Icons.badge_rounded),
             ),
-            items: const [
-              DropdownMenuItem(
-                value: 'staff',
-                child: Text('staff'),
-              ),
-              DropdownMenuItem(
-                value: 'admin',
-                child: Text('admin'),
-              ),
-            ],
+            items: UserRole.values.map((role) {
+              return DropdownMenuItem<UserRole>(
+                value: role,
+                child: Text(role.toDisplayLabel()),
+              );
+            }).toList(),
             onChanged: (val) {
               if (val != null) {
                 setState(() => _selectedRole = val);

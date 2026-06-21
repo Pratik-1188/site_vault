@@ -10,28 +10,28 @@ part of 'firm_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Provides FirmRepository
 
-@ProviderFor(firmRepository)
-final firmRepositoryProvider = FirmRepositoryProvider._();
+@ProviderFor(_firmRepository)
+final _firmRepositoryProvider = _FirmRepositoryProvider._();
 
 /// Provides FirmRepository
 
-final class FirmRepositoryProvider
+final class _FirmRepositoryProvider
     extends $FunctionalProvider<FirmRepository, FirmRepository, FirmRepository>
     with $Provider<FirmRepository> {
   /// Provides FirmRepository
-  FirmRepositoryProvider._()
+  _FirmRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'firmRepositoryProvider',
+        name: r'_firmRepositoryProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$firmRepositoryHash();
+  String debugGetCreateSourceHash() => _$_firmRepositoryHash();
 
   @$internal
   @override
@@ -40,7 +40,7 @@ final class FirmRepositoryProvider
 
   @override
   FirmRepository create(Ref ref) {
-    return firmRepository(ref);
+    return _firmRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -52,7 +52,7 @@ final class FirmRepositoryProvider
   }
 }
 
-String _$firmRepositoryHash() => r'fa4657a0a98ace450be78bdd9bafc9b012a798fc';
+String _$_firmRepositoryHash() => r'cfc6f8d22b4de9a50067e97de9913fa42bb04b76';
 
 /// Fetches all firms
 
@@ -95,4 +95,4 @@ final class FirmsProvider
   }
 }
 
-String _$firmsHash() => r'3f7065447633133a7d45af819da9b24f5f0e3de5';
+String _$firmsHash() => r'9f5a7f842e384be3b1cd32620e606a47d9a4d45a';

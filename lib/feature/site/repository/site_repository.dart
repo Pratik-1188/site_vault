@@ -1,4 +1,5 @@
 import 'package:site_vault/feature/site/model/site.dart';
+import 'package:site_vault/feature/site/model/site_status.dart';
 import 'package:site_vault/shared/repository/base_repository.dart';
 
 class SiteRepository extends BaseRepository {
@@ -9,7 +10,7 @@ class SiteRepository extends BaseRepository {
     required String firmId,
     required DateTime fromDate,
     required DateTime toDate,
-    String? status,
+    SiteStatus? status,
     String? searchQuery,
   }) {
     return safeCall('SiteRepository.fetchSites', () async {
@@ -26,7 +27,7 @@ class SiteRepository extends BaseRepository {
           .lte('started_on', toStr);
 
       if (status != null) {
-        query = query.eq('status', status);
+        query = query.eq('status', status.toDbString());
       }
 
       if (searchQuery != null && searchQuery.trim().isNotEmpty) {
@@ -55,7 +56,7 @@ class SiteRepository extends BaseRepository {
           .from('sites')
           .select()
           .eq('firm_id', firmId)
-          .eq('status', 'active')
+          .eq('status', SiteStatus.active.toDbString())
           .order('created_at', ascending: false);
 
       return (response as List).map((e) => Site.fromJson(e)).toList();
@@ -68,7 +69,7 @@ class SiteRepository extends BaseRepository {
     required String name,
     String? description,
     required DateTime startedOn,
-    required String status,
+    required SiteStatus status,
     DateTime? completedOn,
   }) {
     return safeCall('SiteRepository.updateSite', () async {
@@ -78,7 +79,7 @@ class SiteRepository extends BaseRepository {
             'name': name,
             'description': description,
             'started_on': '${startedOn.year}-${startedOn.month.toString().padLeft(2, '0')}-${startedOn.day.toString().padLeft(2, '0')}',
-            'status': status,
+            'status': status.toDbString(),
             'completed_on': completedOn != null
                 ? '${completedOn.year}-${completedOn.month.toString().padLeft(2, '0')}-${completedOn.day.toString().padLeft(2, '0')}'
                 : null,
@@ -96,7 +97,7 @@ class SiteRepository extends BaseRepository {
     required String name,
     String? description,
     required DateTime startedOn,
-    String status = 'active',
+    SiteStatus status = SiteStatus.active,
     DateTime? completedOn,
   }) {
     return safeCall('SiteRepository.createSite', () async {
@@ -107,7 +108,7 @@ class SiteRepository extends BaseRepository {
             'name': name.trim(),
             'description': description?.trim().isEmpty == true ? null : description?.trim(),
             'started_on': '${startedOn.year}-${startedOn.month.toString().padLeft(2, '0')}-${startedOn.day.toString().padLeft(2, '0')}',
-            'status': status,
+            'status': status.toDbString(),
             'completed_on': completedOn != null
                 ? '${completedOn.year}-${completedOn.month.toString().padLeft(2, '0')}-${completedOn.day.toString().padLeft(2, '0')}'
                 : null,

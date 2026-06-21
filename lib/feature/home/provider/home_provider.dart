@@ -6,7 +6,7 @@ part 'home_provider.g.dart';
 
 /// Provides the HomeRepository instance.
 @Riverpod(keepAlive: true)
-HomeRepository homeRepository(Ref ref) {
+HomeRepository _homeRepository(Ref ref) {
   final client = Supabase.instance.client;
   return HomeRepository(client);
 }
@@ -14,27 +14,27 @@ HomeRepository homeRepository(Ref ref) {
 /// Provides total expenses for the current financial year.
 @riverpod
 Future<double> currentFinancialYearExpenseTotal(Ref ref) async {
-  final repo = ref.watch(homeRepositoryProvider);
+  final repo = ref.watch(_homeRepositoryProvider);
   return repo.fetchCurrentMonthExpenseTotal();
 }
 
 /// Provides count of active sites in the current financial year.
 @riverpod
 Future<int> activeSitesForCurrentFinancialYear(Ref ref) async {
-  final repo = ref.watch(homeRepositoryProvider);
+  final repo = ref.watch(_homeRepositoryProvider);
   return repo.fetchActiveSitesForCurrentFinancialYear();
 }
 
 /// Provides sum of expenses with missing bill attachments in the current financial year.
 @riverpod
 Future<double> missingBillExpenseTotalForCurrentFinancialYear(Ref ref) async {
-  final repo = ref.watch(homeRepositoryProvider);
+  final repo = ref.watch(_homeRepositoryProvider);
   return repo.fetchMissingBillExpensesForCurrentFinancialYear();
 }
 
 /// Provides latest 4 audit log entries.
 @riverpod
 Future<List<Map<String, dynamic>>> recentAuditLogs(Ref ref) async {
-  final repo = ref.watch(homeRepositoryProvider);
+  final repo = ref.watch(_homeRepositoryProvider);
   return repo.fetchRecentAuditLogs();
 }

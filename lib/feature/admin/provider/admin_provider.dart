@@ -3,13 +3,14 @@ import 'package:site_vault/feature/admin/repository/admin_repository.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/feature/expense/provider/expense_provider.dart'; // To invalidate dropdown caches
 import 'package:site_vault/shared/model/profile.dart';
+import 'package:site_vault/shared/model/user_role.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'admin_provider.g.dart';
 
 /// Provides the AdminRepository singleton.
 @Riverpod(keepAlive: true)
-AdminRepository adminRepository(Ref ref) {
+AdminRepository _adminRepository(Ref ref) {
   final client = Supabase.instance.client;
   return AdminRepository(client);
 }
@@ -47,7 +48,7 @@ class AdminProfilesSearchQuery extends _$AdminProfilesSearchQuery {
 class AdminVendors extends _$AdminVendors {
   @override
   Future<List<Vendor>> build() async {
-    final repo = ref.watch(adminRepositoryProvider);
+    final repo = ref.watch(_adminRepositoryProvider);
     return repo.fetchAllVendors();
   }
 
@@ -56,7 +57,7 @@ class AdminVendors extends _$AdminVendors {
     required String name,
     required String? contactInfo,
   }) async {
-    final repo = ref.read(adminRepositoryProvider);
+    final repo = ref.read(_adminRepositoryProvider);
     await repo.createVendor(name: name, contactInfo: contactInfo);
     
     // Invalidate local list and expense module cached dropdowns
@@ -71,7 +72,7 @@ class AdminVendors extends _$AdminVendors {
     required String? contactInfo,
     required bool isActive,
   }) async {
-    final repo = ref.read(adminRepositoryProvider);
+    final repo = ref.read(_adminRepositoryProvider);
     await repo.updateVendor(id: id, name: name, contactInfo: contactInfo, isActive: isActive);
     
     // Invalidate local list and expense module cached dropdowns
@@ -84,13 +85,13 @@ class AdminVendors extends _$AdminVendors {
 class AdminCategories extends _$AdminCategories {
   @override
   Future<List<ExpenseCategory>> build() async {
-    final repo = ref.watch(adminRepositoryProvider);
+    final repo = ref.watch(_adminRepositoryProvider);
     return repo.fetchAllCategories();
   }
 
   /// Inserts a new category row in Supabase and invalidates dropdown selections.
   Future<void> addCategory({required String name}) async {
-    final repo = ref.read(adminRepositoryProvider);
+    final repo = ref.read(_adminRepositoryProvider);
     await repo.createCategory(name: name);
     
     ref.invalidateSelf();
@@ -103,7 +104,7 @@ class AdminCategories extends _$AdminCategories {
     required String name,
     required bool isActive,
   }) async {
-    final repo = ref.read(adminRepositoryProvider);
+    final repo = ref.read(_adminRepositoryProvider);
     await repo.updateCategory(id: id, name: name, isActive: isActive);
     
     ref.invalidateSelf();
@@ -115,7 +116,7 @@ class AdminCategories extends _$AdminCategories {
 class AdminProfiles extends _$AdminProfiles {
   @override
   Future<List<Profile>> build() async {
-    final repo = ref.watch(adminRepositoryProvider);
+    final repo = ref.watch(_adminRepositoryProvider);
     return repo.fetchAllProfiles();
   }
 
@@ -124,9 +125,9 @@ class AdminProfiles extends _$AdminProfiles {
     required String email,
     required String password,
     required String displayName,
-    required String role,
+    required UserRole role,
   }) async {
-    final repo = ref.read(adminRepositoryProvider);
+    final repo = ref.read(_adminRepositoryProvider);
     await repo.createAppUser(
       email: email,
       password: password,
@@ -141,7 +142,7 @@ class AdminProfiles extends _$AdminProfiles {
 
   /// Securely deletes a user and invalidates relevant caches.
   Future<void> deleteUser(String userId) async {
-    final repo = ref.read(adminRepositoryProvider);
+    final repo = ref.read(_adminRepositoryProvider);
     await repo.deleteAppUser(userId);
     
     // Invalidate local admin profiles list and dropdown selections cache
