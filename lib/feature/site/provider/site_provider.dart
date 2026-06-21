@@ -32,10 +32,13 @@ class DateRange {
 
 /// Provides SiteRepository
 @Riverpod(keepAlive: true)
-SiteRepository siteRepository(Ref ref) {
+SiteRepository _siteRepository(Ref ref) {
   final client = Supabase.instance.client;
   return SiteRepository(client);
 }
+
+@visibleForTesting
+final siteRepositoryProvider = _siteRepositoryProvider;
 
 /// Selected firm filter (null = none selected on startup)
 @riverpod
@@ -79,7 +82,7 @@ class SearchQuery extends _$SearchQuery {
 /// Fetches sites matching the current filters directly from Supabase (Server-side)
 @riverpod
 Future<List<Site>> sites(Ref ref) async {
-  final repo = ref.watch(siteRepositoryProvider);
+  final repo = ref.watch(_siteRepositoryProvider);
   final selectedFirm = ref.watch(selectedFirmProvider);
   final selectedStatus = ref.watch(selectedStatusProvider);
   final dateRange = ref.watch(startedDateRangeProvider);
@@ -107,7 +110,7 @@ Future<List<Site>> sites(Ref ref) async {
 /// Fetches details for a single site by its unique ID
 @riverpod
 Future<Site> siteDetails(Ref ref, String siteId) async {
-  final repo = ref.watch(siteRepositoryProvider);
+  final repo = ref.watch(_siteRepositoryProvider);
   return repo.fetchSiteById(siteId);
 }
 
@@ -124,7 +127,7 @@ class SiteActions {
     required SiteStatus status,
     DateTime? completedOn,
   }) async {
-    final repo = ref.read(siteRepositoryProvider);
+    final repo = ref.read(_siteRepositoryProvider);
     final updated = await repo.updateSite(
       siteId: siteId,
       name: name,
@@ -148,7 +151,7 @@ class SiteActions {
     SiteStatus status = SiteStatus.active,
     DateTime? completedOn,
   }) async {
-    final repo = ref.read(siteRepositoryProvider);
+    final repo = ref.read(_siteRepositoryProvider);
     final created = await repo.createSite(
       firmId: firmId,
       name: name,
@@ -171,7 +174,7 @@ final siteActionsProvider = Provider<SiteActions>((ref) => SiteActions(ref));
 /// Fetches active sites for a specific firm to populate scoped dropdowns.
 final activeSitesByFirmProvider = FutureProvider.family<List<Site>, String>(
   (ref, firmId) async {
-    final repo = ref.watch(siteRepositoryProvider);
+    final repo = ref.watch(_siteRepositoryProvider);
     return repo.fetchActiveSitesByFirm(firmId);
   },
 );

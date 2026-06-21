@@ -7,7 +7,7 @@ part 'analytics_provider.g.dart';
 
 /// Provides the AnalyticsRepository instance.
 @Riverpod(keepAlive: true)
-AnalyticsRepository analyticsRepository(Ref ref) {
+AnalyticsRepository _analyticsRepository(Ref ref) {
   final client = Supabase.instance.client;
   return AnalyticsRepository(client);
 }
@@ -15,14 +15,14 @@ AnalyticsRepository analyticsRepository(Ref ref) {
 /// Provides a list of pre-aggregated firm summaries (Group-wide comparative totals).
 @riverpod
 Future<List<FirmAnalyticsSummary>> groupFirmSummaries(Ref ref) async {
-  final repo = ref.watch(analyticsRepositoryProvider);
+  final repo = ref.watch(_analyticsRepositoryProvider);
   return repo.fetchFirmSummaries();
 }
 
 /// Provides a single pre-aggregated site summary (total spent, expense count, etc.).
 @riverpod
 Future<SiteAnalyticsSummary?> siteSummary(Ref ref, String siteId) async {
-  final repo = ref.watch(analyticsRepositoryProvider);
+  final repo = ref.watch(_analyticsRepositoryProvider);
   return repo.fetchSiteSummary(siteId);
 }
 
@@ -33,7 +33,7 @@ Future<List<CategorySpendSummary>> categorySpend(
   String? siteId,
   String? firmId,
 }) async {
-  final repo = ref.watch(analyticsRepositoryProvider);
+  final repo = ref.watch(_analyticsRepositoryProvider);
   return repo.fetchCategorySpend(siteId: siteId, firmId: firmId);
 }
 
@@ -44,13 +44,13 @@ Future<List<MonthlySpendTrend>> monthlySpend(
   String? siteId,
   String? firmId,
 }) async {
-  final repo = ref.watch(analyticsRepositoryProvider);
+  final repo = ref.watch(_analyticsRepositoryProvider);
   return repo.fetchMonthlySpend(siteId: siteId, firmId: firmId);
 }
 
 /// Provides site-specific pre-aggregated vendor spending splits.
 @riverpod
 Future<List<VendorSpendSummary>> siteVendorSpend(Ref ref, String siteId) async {
-  final repo = ref.watch(analyticsRepositoryProvider);
+  final repo = ref.watch(_analyticsRepositoryProvider);
   return repo.fetchVendorSpend(siteId);
 }

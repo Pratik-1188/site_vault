@@ -10,28 +10,28 @@ part of 'home_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Provides the HomeRepository instance.
 
-@ProviderFor(homeRepository)
-final homeRepositoryProvider = HomeRepositoryProvider._();
+@ProviderFor(_homeRepository)
+final _homeRepositoryProvider = _HomeRepositoryProvider._();
 
 /// Provides the HomeRepository instance.
 
-final class HomeRepositoryProvider
+final class _HomeRepositoryProvider
     extends $FunctionalProvider<HomeRepository, HomeRepository, HomeRepository>
     with $Provider<HomeRepository> {
   /// Provides the HomeRepository instance.
-  HomeRepositoryProvider._()
+  _HomeRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'homeRepositoryProvider',
+        name: r'_homeRepositoryProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$homeRepositoryHash();
+  String debugGetCreateSourceHash() => _$_homeRepositoryHash();
 
   @$internal
   @override
@@ -40,7 +40,7 @@ final class HomeRepositoryProvider
 
   @override
   HomeRepository create(Ref ref) {
-    return homeRepository(ref);
+    return _homeRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -52,7 +52,7 @@ final class HomeRepositoryProvider
   }
 }
 
-String _$homeRepositoryHash() => r'6457281048293a3fab3fdbf608cddcb6728ae405';
+String _$_homeRepositoryHash() => r'773ee7227e2e63706ba3752baef94c1d8da633d8';
 
 /// Provides total expenses for the current financial year.
 
@@ -92,7 +92,7 @@ final class CurrentFinancialYearExpenseTotalProvider
 }
 
 String _$currentFinancialYearExpenseTotalHash() =>
-    r'1ec9b872583e7aa1d8b0003aca727c848b1f061f';
+    r'cb2f6aa0197b3c9ed29a3e325b8cc92e828f6037';
 
 /// Provides count of active sites in the current financial year.
 
@@ -133,7 +133,7 @@ final class ActiveSitesForCurrentFinancialYearProvider
 }
 
 String _$activeSitesForCurrentFinancialYearHash() =>
-    r'bc938c79735b94509548741ebaa7db2ac4a52273';
+    r'f03092bae73ef945f87c86f4eca05e163252fdb9';
 
 /// Provides sum of expenses with missing bill attachments in the current financial year.
 
@@ -174,7 +174,7 @@ final class MissingBillExpenseTotalForCurrentFinancialYearProvider
 }
 
 String _$missingBillExpenseTotalForCurrentFinancialYearHash() =>
-    r'062181e28869bd9f314b7375a1be56a90410a0f9';
+    r'31cebd9d3ddd4e3ed501b115063453816c1f5d59';
 
 /// Provides latest 4 audit log entries.
 
@@ -220,4 +220,4 @@ final class RecentAuditLogsProvider
   }
 }
 
-String _$recentAuditLogsHash() => r'1dcd80d8e3def3903f39969855c3e0911712894a';
+String _$recentAuditLogsHash() => r'0bb94a53b6b0ce40429ed9f4f97a59dd79882731';

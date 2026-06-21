@@ -10,28 +10,28 @@ part of 'auth_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Provides the AuthRepository instance.
 
-@ProviderFor(authRepository)
-final authRepositoryProvider = AuthRepositoryProvider._();
+@ProviderFor(_authRepository)
+final _authRepositoryProvider = _AuthRepositoryProvider._();
 
 /// Provides the AuthRepository instance.
 
-final class AuthRepositoryProvider
+final class _AuthRepositoryProvider
     extends $FunctionalProvider<AuthRepository, AuthRepository, AuthRepository>
     with $Provider<AuthRepository> {
   /// Provides the AuthRepository instance.
-  AuthRepositoryProvider._()
+  _AuthRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'authRepositoryProvider',
+        name: r'_authRepositoryProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$authRepositoryHash();
+  String debugGetCreateSourceHash() => _$_authRepositoryHash();
 
   @$internal
   @override
@@ -40,7 +40,7 @@ final class AuthRepositoryProvider
 
   @override
   AuthRepository create(Ref ref) {
-    return authRepository(ref);
+    return _authRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -52,7 +52,7 @@ final class AuthRepositoryProvider
   }
 }
 
-String _$authRepositoryHash() => r'b92f409508c46f210a947b0af7dc9a554861b43a';
+String _$_authRepositoryHash() => r'dc96568fc5a6944650f689abb20e0f531d5c5793';
 
 /// Provides a real-time stream of the current Supabase AuthState.
 
@@ -91,7 +91,7 @@ final class AuthStateProvider
   }
 }
 
-String _$authStateHash() => r'da36175ac41e13bd7b11b4894b68c30bdb88e285';
+String _$authStateHash() => r'600977d34557b17f0840356dc7cabeca22522ce1';
 
 /// Fetches the profile record of the currently logged-in user.
 

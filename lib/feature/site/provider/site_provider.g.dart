@@ -10,28 +10,28 @@ part of 'site_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Provides SiteRepository
 
-@ProviderFor(siteRepository)
-final siteRepositoryProvider = SiteRepositoryProvider._();
+@ProviderFor(_siteRepository)
+final _siteRepositoryProvider = _SiteRepositoryProvider._();
 
 /// Provides SiteRepository
 
-final class SiteRepositoryProvider
+final class _SiteRepositoryProvider
     extends $FunctionalProvider<SiteRepository, SiteRepository, SiteRepository>
     with $Provider<SiteRepository> {
   /// Provides SiteRepository
-  SiteRepositoryProvider._()
+  _SiteRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'siteRepositoryProvider',
+        name: r'_siteRepositoryProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$siteRepositoryHash();
+  String debugGetCreateSourceHash() => _$_siteRepositoryHash();
 
   @$internal
   @override
@@ -40,7 +40,7 @@ final class SiteRepositoryProvider
 
   @override
   SiteRepository create(Ref ref) {
-    return siteRepository(ref);
+    return _siteRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -52,7 +52,7 @@ final class SiteRepositoryProvider
   }
 }
 
-String _$siteRepositoryHash() => r'6a9018dfcd34695d925af7a8f16737d31f702b2f';
+String _$_siteRepositoryHash() => r'a45f334e5a5949bb8e5b18189aeec253f90ec0e1';
 
 /// Selected firm filter (null = none selected on startup)
 
@@ -326,7 +326,7 @@ final class SitesProvider
   }
 }
 
-String _$sitesHash() => r'859dd9f367f8e7cb19e3bd229e3474d17deb02a9';
+String _$sitesHash() => r'3677837cf1a239df460030b77f337a6b1970432b';
 
 /// Fetches details for a single site by its unique ID
 
@@ -382,7 +382,7 @@ final class SiteDetailsProvider
   }
 }
 
-String _$siteDetailsHash() => r'e824e89c0d720f1031e71c512ecad30b36fa0996';
+String _$siteDetailsHash() => r'987f7f38d455dcbb5eac3454d8af1a33c89dcea7';
 
 /// Fetches details for a single site by its unique ID
 

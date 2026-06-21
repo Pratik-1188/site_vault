@@ -9,7 +9,7 @@ part 'expense_provider.g.dart';
 
 /// Provides ExpenseRepository singleton
 @Riverpod(keepAlive: true)
-ExpenseRepository expenseRepository(Ref ref) {
+ExpenseRepository _expenseRepository(Ref ref) {
   final client = Supabase.instance.client;
   return ExpenseRepository(client);
 }
@@ -17,21 +17,21 @@ ExpenseRepository expenseRepository(Ref ref) {
 /// Dynamic categories list fetch from database
 @riverpod
 Future<List<ExpenseCategory>> expenseCategories(Ref ref) async {
-  final repo = ref.watch(expenseRepositoryProvider);
+  final repo = ref.watch(_expenseRepositoryProvider);
   return repo.fetchCategories();
 }
 
 /// Dynamic vendors list fetch from database
 @riverpod
 Future<List<Vendor>> vendors(Ref ref) async {
-  final repo = ref.watch(expenseRepositoryProvider);
+  final repo = ref.watch(_expenseRepositoryProvider);
   return repo.fetchVendors();
 }
 
 /// Dynamic user profiles list fetch from database (for created_by & paid_by linking)
 @riverpod
 Future<List<Profile>> profiles(Ref ref) async {
-  final repo = ref.watch(expenseRepositoryProvider);
+  final repo = ref.watch(_expenseRepositoryProvider);
   return repo.fetchProfiles();
 }
 
@@ -70,7 +70,7 @@ class ExpenseSearchQuery extends _$ExpenseSearchQuery {
 class SiteExpenses extends _$SiteExpenses {
   @override
   Future<List<Expense>> build(String siteId) async {
-    final repo = ref.watch(expenseRepositoryProvider);
+    final repo = ref.watch(_expenseRepositoryProvider);
     return repo.fetchExpensesForSite(siteId);
   }
 
@@ -78,28 +78,28 @@ class SiteExpenses extends _$SiteExpenses {
   Future<void> refresh() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      final repo = ref.read(expenseRepositoryProvider);
+      final repo = ref.read(_expenseRepositoryProvider);
       return repo.fetchExpensesForSite(siteId);
     });
   }
 
   /// Adds a new expense row in Supabase and reactively invalidates cache
   Future<void> addExpense(Expense expense) async {
-    final repo = ref.read(expenseRepositoryProvider);
+    final repo = ref.read(_expenseRepositoryProvider);
     await repo.createExpense(expense);
     ref.invalidateSelf(); // Reactively refetches updated entries
   }
 
   /// Updates an existing expense row in Supabase and reactively invalidates cache
   Future<void> editExpense(Expense expense) async {
-    final repo = ref.read(expenseRepositoryProvider);
+    final repo = ref.read(_expenseRepositoryProvider);
     await repo.updateExpense(expense);
     ref.invalidateSelf(); // Reactively refetches updated entries
   }
 
   /// Soft deletes an expense by setting soft_deleted_at to NOW and reactively invalidates cache
   Future<void> deleteExpense(String expenseId) async {
-    final repo = ref.read(expenseRepositoryProvider);
+    final repo = ref.read(_expenseRepositoryProvider);
     await repo.softDeleteExpense(expenseId);
     ref.invalidateSelf(); // Reactively refetches updated entries
   }
@@ -143,7 +143,7 @@ class ExpenseActions {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
-    final repo = ref.read(expenseRepositoryProvider);
+    final repo = ref.read(_expenseRepositoryProvider);
     final created = await repo.createExpense(expense);
     ref.invalidate(siteExpensesProvider(expense.siteId));
     ref.invalidate(siteTotalExpensesProvider(expense.siteId));
@@ -185,7 +185,7 @@ class ExpenseActions {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
-    final repo = ref.read(expenseRepositoryProvider);
+    final repo = ref.read(_expenseRepositoryProvider);
     final updated = await repo.updateExpense(expense);
 
     ref.invalidate(siteExpensesProvider(expense.siteId));
@@ -203,7 +203,7 @@ class ExpenseActions {
     required String siteId,
     required String expenseId,
   }) async {
-    final repo = ref.read(expenseRepositoryProvider);
+    final repo = ref.read(_expenseRepositoryProvider);
     await repo.softDeleteExpense(expenseId);
     ref.invalidate(siteExpensesProvider(siteId));
     ref.invalidate(siteTotalExpensesProvider(siteId));

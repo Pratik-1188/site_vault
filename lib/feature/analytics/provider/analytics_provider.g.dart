@@ -10,12 +10,12 @@ part of 'analytics_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Provides the AnalyticsRepository instance.
 
-@ProviderFor(analyticsRepository)
-final analyticsRepositoryProvider = AnalyticsRepositoryProvider._();
+@ProviderFor(_analyticsRepository)
+final _analyticsRepositoryProvider = _AnalyticsRepositoryProvider._();
 
 /// Provides the AnalyticsRepository instance.
 
-final class AnalyticsRepositoryProvider
+final class _AnalyticsRepositoryProvider
     extends
         $FunctionalProvider<
           AnalyticsRepository,
@@ -24,19 +24,19 @@ final class AnalyticsRepositoryProvider
         >
     with $Provider<AnalyticsRepository> {
   /// Provides the AnalyticsRepository instance.
-  AnalyticsRepositoryProvider._()
+  _AnalyticsRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'analyticsRepositoryProvider',
+        name: r'_analyticsRepositoryProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$analyticsRepositoryHash();
+  String debugGetCreateSourceHash() => _$_analyticsRepositoryHash();
 
   @$internal
   @override
@@ -46,7 +46,7 @@ final class AnalyticsRepositoryProvider
 
   @override
   AnalyticsRepository create(Ref ref) {
-    return analyticsRepository(ref);
+    return _analyticsRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -58,8 +58,8 @@ final class AnalyticsRepositoryProvider
   }
 }
 
-String _$analyticsRepositoryHash() =>
-    r'8a4202bbd186c4ac383eb1c754065e04be7f354c';
+String _$_analyticsRepositoryHash() =>
+    r'9a207f08fe403e6458c836aac8913464564e7605';
 
 /// Provides a list of pre-aggregated firm summaries (Group-wide comparative totals).
 
@@ -106,7 +106,7 @@ final class GroupFirmSummariesProvider
 }
 
 String _$groupFirmSummariesHash() =>
-    r'2c3cf4a56908ebfc300d1b93a5d2da0f5fd77f9a';
+    r'a4102d93467f868075e5d110e20c84d0c99d3193';
 
 /// Provides a single pre-aggregated site summary (total spent, expense count, etc.).
 
@@ -170,7 +170,7 @@ final class SiteSummaryProvider
   }
 }
 
-String _$siteSummaryHash() => r'f48aa78ef03e816350389e0b8423243002b049c0';
+String _$siteSummaryHash() => r'c15abc0f6bdac1e54f8f10b8f49136f8ef629042';
 
 /// Provides a single pre-aggregated site summary (total spent, expense count, etc.).
 
@@ -256,7 +256,7 @@ final class CategorySpendProvider
   }
 }
 
-String _$categorySpendHash() => r'1662cdfc47134b57746b440f49eba9fa88c71b2f';
+String _$categorySpendHash() => r'eb3c4b1c9ee39a70ae159d0cf388a8585d4cf5d6';
 
 /// Provides pre-aggregated category spending splits (supports optional filters by site or firm).
 
@@ -349,7 +349,7 @@ final class MonthlySpendProvider
   }
 }
 
-String _$monthlySpendHash() => r'95500e7f76a5e712a7d0419b926080ffc850eba6';
+String _$monthlySpendHash() => r'13eb1e429faf273ecd20903f2b85527d0d5c2902';
 
 /// Provides pre-aggregated chronological monthly cashflow trends.
 
@@ -442,7 +442,7 @@ final class SiteVendorSpendProvider
   }
 }
 
-String _$siteVendorSpendHash() => r'f88d673a558e43b35a5dd1fd433874c3e8bc5665';
+String _$siteVendorSpendHash() => r'86abd2da5875381e194f215f739546b1790cebef';
 
 /// Provides site-specific pre-aggregated vendor spending splits.
 

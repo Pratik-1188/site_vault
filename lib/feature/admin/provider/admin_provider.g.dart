@@ -10,29 +10,29 @@ part of 'admin_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Provides the AdminRepository singleton.
 
-@ProviderFor(adminRepository)
-final adminRepositoryProvider = AdminRepositoryProvider._();
+@ProviderFor(_adminRepository)
+final _adminRepositoryProvider = _AdminRepositoryProvider._();
 
 /// Provides the AdminRepository singleton.
 
-final class AdminRepositoryProvider
+final class _AdminRepositoryProvider
     extends
         $FunctionalProvider<AdminRepository, AdminRepository, AdminRepository>
     with $Provider<AdminRepository> {
   /// Provides the AdminRepository singleton.
-  AdminRepositoryProvider._()
+  _AdminRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'adminRepositoryProvider',
+        name: r'_adminRepositoryProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$adminRepositoryHash();
+  String debugGetCreateSourceHash() => _$_adminRepositoryHash();
 
   @$internal
   @override
@@ -41,7 +41,7 @@ final class AdminRepositoryProvider
 
   @override
   AdminRepository create(Ref ref) {
-    return adminRepository(ref);
+    return _adminRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -53,7 +53,7 @@ final class AdminRepositoryProvider
   }
 }
 
-String _$adminRepositoryHash() => r'c63131b371feee7f33b1353999fea8c5d201a4a8';
+String _$_adminRepositoryHash() => r'c1b59d8cc7c674218a26b3dee02ab22fb3ad6e73';
 
 @ProviderFor(AdminVendorsSearchQuery)
 final adminVendorsSearchQueryProvider = AdminVendorsSearchQueryProvider._();
@@ -239,7 +239,7 @@ final class AdminVendorsProvider
   AdminVendors create() => AdminVendors();
 }
 
-String _$adminVendorsHash() => r'06a2972f000807c069637dd13a381a6965c13f14';
+String _$adminVendorsHash() => r'6c6e44898420cbb4d35bd57e220c7df48ad16f5f';
 
 abstract class _$AdminVendors extends $AsyncNotifier<List<Vendor>> {
   FutureOr<List<Vendor>> build();
@@ -283,7 +283,7 @@ final class AdminCategoriesProvider
   AdminCategories create() => AdminCategories();
 }
 
-String _$adminCategoriesHash() => r'4eff7b08dc25b17729c79f6ccbdbf1750beb8cd3';
+String _$adminCategoriesHash() => r'b8784bfb15088fc566173718723a6ca75d62b931';
 
 abstract class _$AdminCategories extends $AsyncNotifier<List<ExpenseCategory>> {
   FutureOr<List<ExpenseCategory>> build();
@@ -332,7 +332,7 @@ final class AdminProfilesProvider
   AdminProfiles create() => AdminProfiles();
 }
 
-String _$adminProfilesHash() => r'6b7e15ff6de01bab56887604c97e9818ecff32e5';
+String _$adminProfilesHash() => r'b08193ab3f6908bb8163b58ff0c1b8e35840f804';
 
 abstract class _$AdminProfiles extends $AsyncNotifier<List<Profile>> {
   FutureOr<List<Profile>> build();

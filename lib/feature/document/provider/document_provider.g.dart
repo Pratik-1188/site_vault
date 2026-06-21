@@ -10,12 +10,12 @@ part of 'document_provider.dart';
 // ignore_for_file: type=lint, type=warning
 /// Provides DocumentRepository singleton
 
-@ProviderFor(documentRepository)
-final documentRepositoryProvider = DocumentRepositoryProvider._();
+@ProviderFor(_documentRepository)
+final _documentRepositoryProvider = _DocumentRepositoryProvider._();
 
 /// Provides DocumentRepository singleton
 
-final class DocumentRepositoryProvider
+final class _DocumentRepositoryProvider
     extends
         $FunctionalProvider<
           DocumentRepository,
@@ -24,19 +24,19 @@ final class DocumentRepositoryProvider
         >
     with $Provider<DocumentRepository> {
   /// Provides DocumentRepository singleton
-  DocumentRepositoryProvider._()
+  _DocumentRepositoryProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
-        name: r'documentRepositoryProvider',
+        name: r'_documentRepositoryProvider',
         isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
 
   @override
-  String debugGetCreateSourceHash() => _$documentRepositoryHash();
+  String debugGetCreateSourceHash() => _$_documentRepositoryHash();
 
   @$internal
   @override
@@ -46,7 +46,7 @@ final class DocumentRepositoryProvider
 
   @override
   DocumentRepository create(Ref ref) {
-    return documentRepository(ref);
+    return _documentRepository(ref);
   }
 
   /// {@macro riverpod.override_with_value}
@@ -58,8 +58,8 @@ final class DocumentRepositoryProvider
   }
 }
 
-String _$documentRepositoryHash() =>
-    r'ec311dfe105cb72f52c24d857c2136842c9c6872';
+String _$_documentRepositoryHash() =>
+    r'e13a0b41a24fffe48b272cbc5c4eaa7f59590d1f';
 
 /// Active text search query for filtering documents
 
@@ -174,7 +174,7 @@ final class SiteDocumentsProvider
   }
 }
 
-String _$siteDocumentsHash() => r'99daf4af69d0fc48596f29ac15fa245773f0f4f7';
+String _$siteDocumentsHash() => r'106d4d55975c8f913ef0e5e0f6a9784b08d02103';
 
 /// Async controller for managing all active site-specific document records.
 ///

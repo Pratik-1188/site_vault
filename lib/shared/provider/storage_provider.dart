@@ -8,7 +8,7 @@ part 'storage_provider.g.dart';
 
 /// Provides StorageRepository singleton
 @Riverpod(keepAlive: true)
-StorageRepository storageRepository(Ref ref) {
+StorageRepository _storageRepository(Ref ref) {
   final client = Supabase.instance.client;
   return StorageRepository(client);
 }
@@ -25,7 +25,7 @@ class StorageActions {
     required String fileName,
     String? mimeType,
   }) {
-    final repo = ref.read(storageRepositoryProvider);
+    final repo = ref.read(_storageRepositoryProvider);
     return repo.uploadFile(
       bucket: bucket,
       path: path,
@@ -39,7 +39,7 @@ class StorageActions {
     required String absolutePath,
     int expiresIn = 3600,
   }) {
-    final repo = ref.read(storageRepositoryProvider);
+    final repo = ref.read(_storageRepositoryProvider);
     return repo.getSignedUrl(
       absolutePath: absolutePath,
       expiresIn: expiresIn,
@@ -50,7 +50,7 @@ class StorageActions {
     required String bucket,
     required String fileUrl,
   }) {
-    final repo = ref.read(storageRepositoryProvider);
+    final repo = ref.read(_storageRepositoryProvider);
     return repo.deleteFile(bucket: bucket, fileUrl: fileUrl);
   }
 }

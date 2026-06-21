@@ -7,7 +7,7 @@ part 'firm_provider.g.dart';
 
 /// Provides FirmRepository
 @Riverpod(keepAlive: true)
-FirmRepository firmRepository(Ref ref) {
+FirmRepository _firmRepository(Ref ref) {
   final client = Supabase.instance.client;
   return FirmRepository(client);
 }
@@ -15,7 +15,7 @@ FirmRepository firmRepository(Ref ref) {
 /// Fetches all firms
 @riverpod
 Future<List<Firm>> firms(Ref ref) async {
-  final repo = ref.watch(firmRepositoryProvider);
+  final repo = ref.watch(_firmRepositoryProvider);
   return repo.fetchFirms();
 }
 

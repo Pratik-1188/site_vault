@@ -8,7 +8,7 @@ part 'auth_provider.g.dart';
 
 /// Provides the AuthRepository instance.
 @Riverpod(keepAlive: true)
-AuthRepository authRepository(Ref ref) {
+AuthRepository _authRepository(Ref ref) {
   final client = Supabase.instance.client;
   return AuthRepository(client);
 }
@@ -16,7 +16,7 @@ AuthRepository authRepository(Ref ref) {
 /// Provides a real-time stream of the current Supabase AuthState.
 @riverpod
 Stream<AuthState> authState(Ref ref) {
-  final repo = ref.watch(authRepositoryProvider);
+  final repo = ref.watch(_authRepositoryProvider);
   return repo.authStateStream;
 }
 
@@ -25,7 +25,7 @@ final currentAuthUserProvider = Provider<User?>((ref) {
   final authStateVal = ref.watch(authStateProvider);
 
   return authStateVal.value?.session?.user ??
-      ref.watch(authRepositoryProvider).currentUser;
+      ref.watch(_authRepositoryProvider).currentUser;
 });
 
 /// Auth actions exposed to the UI through Riverpod.
@@ -37,12 +37,12 @@ class AuthActions {
     required String email,
     required String password,
   }) async {
-    final repo = ref.read(authRepositoryProvider);
+    final repo = ref.read(_authRepositoryProvider);
     return repo.signIn(email: email, password: password);
   }
 
   Future<void> signOut() async {
-    final repo = ref.read(authRepositoryProvider);
+    final repo = ref.read(_authRepositoryProvider);
     await repo.signOut();
   }
 }
