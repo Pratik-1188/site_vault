@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:site_vault/feature/site/model/site.dart';
+import 'package:site_vault/feature/site/model/site_status.dart';
 import 'package:site_vault/feature/site/provider/site_provider.dart';
 import 'package:site_vault/shared/utils/financial_year.dart';
 import '../../../helpers/provider_container.dart';
@@ -25,7 +26,7 @@ void main() {
             firmId: 'firm-a',
             fromDate: fy.startDate,
             toDate: fy.endDate,
-            status: 'active',
+            status: SiteStatus.active,
           )).thenAnswer((_) async => expectedSites);
 
       final container = makeContainer(mockRepo: mockRepo);
@@ -50,7 +51,7 @@ void main() {
             firmId: 'firm-a',
             fromDate: fy.startDate,
             toDate: fy.endDate,
-            status: 'active',
+            status: SiteStatus.active,
           )).called(1);
     });
 
@@ -62,7 +63,7 @@ void main() {
             firmId: 'firm-a',
             fromDate: fy.startDate,
             toDate: fy.endDate,
-            status: 'active',
+            status: SiteStatus.active,
           )).thenThrow(exception);
 
       final container = makeContainer(mockRepo: mockRepo);
@@ -92,7 +93,7 @@ void main() {
             firmId: 'firm-a',
             fromDate: fy.startDate,
             toDate: fy.endDate,
-            status: 'active',
+            status: SiteStatus.active,
           )).thenAnswer((_) async => []);
 
       final container = makeContainer(mockRepo: mockRepo);
@@ -105,7 +106,7 @@ void main() {
             firmId: 'firm-a',
             fromDate: fy.startDate,
             toDate: fy.endDate,
-            status: 'active',
+            status: SiteStatus.active,
           )).called(1);
     });
 

@@ -119,7 +119,7 @@ final selectedStatusProvider = SelectedStatusProvider._();
 
 /// Selected status filter (defaults to 'active')
 final class SelectedStatusProvider
-    extends $NotifierProvider<SelectedStatus, String?> {
+    extends $NotifierProvider<SelectedStatus, SiteStatus?> {
   /// Selected status filter (defaults to 'active')
   SelectedStatusProvider._()
     : super(
@@ -140,29 +140,29 @@ final class SelectedStatusProvider
   SelectedStatus create() => SelectedStatus();
 
   /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(String? value) {
+  Override overrideWithValue(SiteStatus? value) {
     return $ProviderOverride(
       origin: this,
-      providerOverride: $SyncValueProvider<String?>(value),
+      providerOverride: $SyncValueProvider<SiteStatus?>(value),
     );
   }
 }
 
-String _$selectedStatusHash() => r'dc38bee129dcd30862bba8cce83652417033c455';
+String _$selectedStatusHash() => r'2c45930697cdd885da9e3dbd160b272013ae9667';
 
 /// Selected status filter (defaults to 'active')
 
-abstract class _$SelectedStatus extends $Notifier<String?> {
-  String? build();
+abstract class _$SelectedStatus extends $Notifier<SiteStatus?> {
+  SiteStatus? build();
   @$mustCallSuper
   @override
   void runBuild() {
-    final ref = this.ref as $Ref<String?, String?>;
+    final ref = this.ref as $Ref<SiteStatus?, SiteStatus?>;
     final element =
         ref.element
             as $ClassProviderElement<
-              AnyNotifier<String?, String?>,
-              String?,
+              AnyNotifier<SiteStatus?, SiteStatus?>,
+              SiteStatus?,
               Object?,
               Object?
             >;

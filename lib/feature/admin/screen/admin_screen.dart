@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:site_vault/feature/admin/provider/admin_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
+import 'package:site_vault/shared/model/user_role.dart';
 
 import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
@@ -795,7 +796,7 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> with FormSubmitM
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _displayNameController = TextEditingController();
-  String _selectedRole = 'staff';
+  UserRole _selectedRole = UserRole.staff;
 
   @override
   void dispose() {
@@ -819,7 +820,7 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> with FormSubmitM
       fields: {
         'Email': email,
         'Display Name': displayName,
-        'Role': _selectedRole,
+        'Role': _selectedRole.toDisplayLabel(),
         'Password': '•' * password.length,
       },
       confirmLabel: 'Create',
@@ -917,22 +918,18 @@ class _UserFormSheetState extends ConsumerState<_UserFormSheet> with FormSubmitM
             },
           ),
           const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
+          DropdownButtonFormField<UserRole>(
             initialValue: _selectedRole,
             decoration: const InputDecoration(
               labelText: 'User Role *',
               prefixIcon: Icon(Icons.badge_rounded),
             ),
-            items: const [
-              DropdownMenuItem(
-                value: 'staff',
-                child: Text('staff'),
-              ),
-              DropdownMenuItem(
-                value: 'admin',
-                child: Text('admin'),
-              ),
-            ],
+            items: UserRole.values.map((role) {
+              return DropdownMenuItem<UserRole>(
+                value: role,
+                child: Text(role.toDisplayLabel()),
+              );
+            }).toList(),
             onChanged: (val) {
               if (val != null) {
                 setState(() => _selectedRole = val);

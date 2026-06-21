@@ -332,7 +332,7 @@ final class AdminProfilesProvider
   AdminProfiles create() => AdminProfiles();
 }
 
-String _$adminProfilesHash() => r'19f6d135866e404694b5d3d95fe2f2b17c9c8920';
+String _$adminProfilesHash() => r'6b7e15ff6de01bab56887604c97e9818ecff32e5';
 
 abstract class _$AdminProfiles extends $AsyncNotifier<List<Profile>> {
   FutureOr<List<Profile>> build();

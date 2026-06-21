@@ -1,6 +1,7 @@
 import 'package:site_vault/shared/repository/base_repository.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/shared/model/profile.dart';
+import 'package:site_vault/shared/model/user_role.dart';
 
 /// Database repository managing administrative updates to core master tables in Supabase.
 class AdminRepository extends BaseRepository {
@@ -139,7 +140,7 @@ class AdminRepository extends BaseRepository {
     required String email,
     required String password,
     required String displayName,
-    required String role,
+    required UserRole role,
   }) {
     return safeCall('AdminRepository.createAppUser', () async {
       final response = await client.rpc(
@@ -148,7 +149,7 @@ class AdminRepository extends BaseRepository {
           'p_email': email.trim(),
           'p_password': password,
           'p_display_name': displayName.trim(),
-          'p_role': role,
+          'p_role': role.toDbString(),
         },
       );
       return response as String;

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:site_vault/feature/site/model/site.dart';
+import 'package:site_vault/feature/site/model/site_status.dart';
 import 'package:site_vault/feature/site/screen/site_detail_controller.dart';
 import 'package:site_vault/feature/site/screen/site_detail_dialogs.dart';
 import 'package:site_vault/feature/site/widgets/analytics_tab.dart';
@@ -307,7 +308,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen>
                       name,
                       description,
                       startedOn, {
-                      String? status,
+                      SiteStatus? status,
                     }) =>
                         controller.saveSiteSettings(
                           context,

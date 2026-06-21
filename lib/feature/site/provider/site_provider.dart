@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:site_vault/feature/site/model/site.dart';
+import 'package:site_vault/feature/site/model/site_status.dart';
 import 'package:site_vault/feature/site/repository/site_repository.dart';
 import 'package:site_vault/shared/utils/financial_year.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -49,9 +50,9 @@ class SelectedFirm extends _$SelectedFirm {
 @riverpod
 class SelectedStatus extends _$SelectedStatus {
   @override
-  String? build() => 'active';
+  SiteStatus? build() => SiteStatus.active;
 
-  void update(String? value) => state = value;
+  void update(SiteStatus? value) => state = value;
 }
 
 /// Started date range filter (defaults to current financial year)
@@ -120,7 +121,7 @@ class SiteActions {
     required String name,
     String? description,
     required DateTime startedOn,
-    required String status,
+    required SiteStatus status,
     DateTime? completedOn,
   }) async {
     final repo = ref.read(siteRepositoryProvider);
@@ -144,7 +145,7 @@ class SiteActions {
     required String name,
     String? description,
     required DateTime startedOn,
-    String status = 'active',
+    SiteStatus status = SiteStatus.active,
     DateTime? completedOn,
   }) async {
     final repo = ref.read(siteRepositoryProvider);

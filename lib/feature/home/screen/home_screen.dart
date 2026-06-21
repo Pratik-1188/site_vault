@@ -4,6 +4,7 @@ import 'package:site_vault/feature/home/provider/home_provider.dart';
 import 'package:site_vault/feature/expense/screen/expense_form_sheet.dart';
 import 'package:site_vault/feature/document/screen/document_upload_sheet.dart';
 import 'package:site_vault/shared/widget/app_bottom_sheet.dart';
+import 'package:site_vault/feature/site/model/site_status.dart';
 import 'package:site_vault/shared/widget/vault_card.dart';
 import 'package:site_vault/shared/widget/sign_out_menu_button.dart';
 import 'package:site_vault/shared/widget/app_navigation_bar.dart';
@@ -491,10 +492,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                         final newData = log['new_data'] as Map<String, dynamic>?;
                         final siteName = newData?['name'] as String? ?? 'Site Created';
-                        final status = newData?['status'] as String? ?? 'active';
+                        final statusStr = newData?['status'] as String? ?? 'active';
+                        final status = SiteStatus.fromString(statusStr);
 
                         logTitle = 'Site: $siteName';
-                        logSubtitle = 'Status: ${status.toUpperCase()}';
+                        logSubtitle = 'Status: ${status.toDisplayLabel()}';
                       } else {
                         logIcon = Icons.info_outline_rounded;
                         logIconColor = Theme.of(context).colorScheme.onTertiaryContainer;

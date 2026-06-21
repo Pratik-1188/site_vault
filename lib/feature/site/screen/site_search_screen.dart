@@ -20,6 +20,7 @@ import 'package:site_vault/shared/utils/form_utils.dart';
 import 'package:site_vault/shared/mixin/form_submit_mixin.dart';
 import '../provider/site_provider.dart';
 import '../model/site.dart';
+import '../model/site_status.dart';
 
 /// A premium, high-contrast Material 3 screen that displays the site directory under KK Group
 /// utilizing the custom visual bento structure and technical layout designed on Stitch.
@@ -51,7 +52,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     ref.read(selectedFirmProvider.notifier).update(firmId);
   }
 
-  void _onStatusChanged(String? status) {
+  void _onStatusChanged(SiteStatus? status) {
     final currentStatus = ref.read(selectedStatusProvider);
     if (currentStatus == status) {
       ref
@@ -64,7 +65,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
 
   void _resetAllFilters() {
     _clearSearch();
-    ref.read(selectedStatusProvider.notifier).update('active');
+    ref.read(selectedStatusProvider.notifier).update(SiteStatus.active);
     final fy = FinancialYear.current();
     ref
         .read(startedDateRangeProvider.notifier)
@@ -404,7 +405,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     );
   }
 
-  Widget _buildFilterChipsRow(BuildContext context, String? selectedStatus) {
+  Widget _buildFilterChipsRow(BuildContext context, SiteStatus? selectedStatus) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -425,7 +426,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
             context,
             label: 'Active',
             icon: Icons.check_circle_outline_rounded,
-            value: 'active',
+            value: SiteStatus.active,
             selectedValue: selectedStatus,
           ),
           const SizedBox(width: 8),
@@ -433,7 +434,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
             context,
             label: 'Completed',
             icon: Icons.history_rounded,
-            value: 'completed',
+            value: SiteStatus.completed,
             selectedValue: selectedStatus,
           ),
           const SizedBox(width: 8),
@@ -441,7 +442,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
             context,
             label: 'Deleted',
             icon: Icons.delete_outline_rounded,
-            value: 'deleted',
+            value: SiteStatus.deleted,
             selectedValue: selectedStatus,
           ),
         ],
@@ -453,8 +454,8 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
     BuildContext context, {
     required String label,
     required IconData icon,
-    required String value,
-    required String? selectedValue,
+    required SiteStatus value,
+    required SiteStatus? selectedValue,
   }) {
     final isSelected = selectedValue == value;
     final primaryColor = Theme.of(context).colorScheme.primary;
@@ -607,7 +608,7 @@ class _SitesScreenState extends ConsumerState<SitesScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  StatusBadge(status: site.status),
+                  StatusBadge(status: site.status.toDbString()),
                 ],
               ),
 
@@ -778,7 +779,7 @@ class _SiteFormSheetState extends ConsumerState<_SiteFormSheet> with FormSubmitM
           name: name,
           description: description.isEmpty ? null : description,
           startedOn: _startedOn!,
-          status: 'active',
+          status: SiteStatus.active,
         );
       },
       successMessage: 'Site created successfully!',

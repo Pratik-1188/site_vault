@@ -7,6 +7,7 @@ import 'package:site_vault/feature/document/provider/document_provider.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/feature/expense/provider/expense_provider.dart';
 import 'package:site_vault/feature/site/model/site.dart';
+import 'package:site_vault/feature/site/model/site_status.dart';
 import 'package:site_vault/feature/site/provider/site_provider.dart';
 import 'package:site_vault/shared/model/firm.dart';
 import 'package:site_vault/shared/provider/firm_provider.dart';
@@ -79,7 +80,7 @@ final siteDetailContextProvider =
     siteAsync: siteAsync,
     site: site,
     firmName: firmName,
-    isEditable: (site?.status ?? 'active') == 'active',
+    isEditable: (site?.status ?? SiteStatus.active) == SiteStatus.active,
   );
 });
 
@@ -126,7 +127,7 @@ class SiteDetailController extends ChangeNotifier {
     required String name,
     required String description,
     required DateTime startedOn,
-    String? status,
+    SiteStatus? status,
     Site? currentSite,
   }) async {
     if (name.trim().isEmpty) {
@@ -137,7 +138,7 @@ class SiteDetailController extends ChangeNotifier {
     _state = _state.copyWith(isSaving: true);
     notifyListeners();
     try {
-      final previousStatus = currentSite?.status ?? 'active';
+      final previousStatus = currentSite?.status ?? SiteStatus.active;
       final targetStatus = status ?? previousStatus;
 
       if (targetStatus != previousStatus) {
@@ -152,7 +153,7 @@ class SiteDetailController extends ChangeNotifier {
         }
       }
 
-      final completedOn = targetStatus == 'completed' ? DateTime.now() : null;
+      final completedOn = targetStatus == SiteStatus.completed ? DateTime.now() : null;
 
       await ref.read(siteActionsProvider).updateSite(
             siteId: siteId,

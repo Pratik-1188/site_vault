@@ -3,6 +3,7 @@ import 'package:site_vault/feature/admin/repository/admin_repository.dart';
 import 'package:site_vault/feature/expense/model/expense.dart';
 import 'package:site_vault/feature/expense/provider/expense_provider.dart'; // To invalidate dropdown caches
 import 'package:site_vault/shared/model/profile.dart';
+import 'package:site_vault/shared/model/user_role.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'admin_provider.g.dart';
@@ -124,7 +125,7 @@ class AdminProfiles extends _$AdminProfiles {
     required String email,
     required String password,
     required String displayName,
-    required String role,
+    required UserRole role,
   }) async {
     final repo = ref.read(adminRepositoryProvider);
     await repo.createAppUser(

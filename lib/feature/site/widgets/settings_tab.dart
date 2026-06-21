@@ -4,6 +4,7 @@ import 'package:site_vault/shared/theme/app_radius.dart';
 import 'package:site_vault/shared/utils/date_formatter.dart';
 
 import '../model/site.dart';
+import '../model/site_status.dart';
 
 class SettingsTab extends StatefulWidget {
   final Site site;
@@ -14,7 +15,7 @@ class SettingsTab extends StatefulWidget {
     String name,
     String description,
     DateTime startedOn, {
-    String? status,
+    SiteStatus? status,
   })
   onSaveSiteSettings;
 
@@ -52,7 +53,7 @@ class _SettingsTabState extends State<SettingsTab> {
     );
     _selectedStartDate ??= widget.site.startedOn ?? DateTime.now();
 
-    final isEditable = widget.site.status == 'active';
+    final isEditable = widget.site.status == SiteStatus.active;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
@@ -72,7 +73,7 @@ class _SettingsTabState extends State<SettingsTab> {
               child: Row(
                 children: [
                   Icon(
-                    widget.site.status == 'completed'
+                    widget.site.status == SiteStatus.completed
                         ? Icons.lock_rounded
                         : Icons.delete_forever_rounded,
                     color: theme.colorScheme.onErrorContainer,
@@ -81,7 +82,7 @@ class _SettingsTabState extends State<SettingsTab> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: Text(
-                      widget.site.status == 'completed'
+                      widget.site.status == SiteStatus.completed
                           ? 'This project is marked as COMPLETED. Its settings and status are locked and cannot be modified.'
                           : 'This project is marked as DELETED. All settings are locked in read-only archive mode.',
                       style: TextStyle(
@@ -249,7 +250,7 @@ class _SettingsTabState extends State<SettingsTab> {
                       _nameEditController!.text.trim(),
                       _descEditController!.text.trim(),
                       _selectedStartDate ?? DateTime.now(),
-                      status: 'completed',
+                      status: SiteStatus.completed,
                     ),
             ),
             const SizedBox(height: 12),
@@ -268,7 +269,7 @@ class _SettingsTabState extends State<SettingsTab> {
                       _nameEditController!.text.trim(),
                       _descEditController!.text.trim(),
                       _selectedStartDate ?? DateTime.now(),
-                      status: 'deleted',
+                      status: SiteStatus.deleted,
                     ),
             ),
           ],
